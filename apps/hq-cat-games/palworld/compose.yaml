@@ -9,9 +9,6 @@ services:
       # - 8212:8212/tcp  # Port for REST API if REST_API_ENABLED: true
     env_file:
       - stack.env
-    environment:
-      SERVER_PASSWORD: ${SERVER_PASSWORD}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:
       - ${GAMES_PATH}:/palworld
     deploy:
