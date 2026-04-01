@@ -54,3 +54,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
       - ${LOCAL_PATH}/periphery:/etc/komodo
+      - /data:/data

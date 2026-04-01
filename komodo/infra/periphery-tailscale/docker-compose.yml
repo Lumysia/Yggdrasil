@@ -10,6 +10,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
       - ./komodo-periphery:/etc/komodo
+      - /data:/data
+      - /root:/root
     environment:
       PERIPHERY_CORE_PUBLIC_KEYS: MCowBQYDK2VuAyEAMnQVnJN2WVoWyyWbaA8R8wzvon/XJ2cYQzvpb7S14TU=
       PERIPHERY_SSL_ENABLED: true
