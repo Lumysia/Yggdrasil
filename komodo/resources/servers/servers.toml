@@ -34,6 +34,14 @@ enabled = true
 ##
 
 [[server]]
+name = "hq-cat-sandbox"
+[server.config]
+address = "https://100.106.135.31:8120"
+enabled = true
+
+##
+
+[[server]]
 name = "hq-cat-services"
 [server.config]
 address = "https://100.126.143.61:8120"
