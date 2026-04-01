@@ -1,0 +1,61 @@
+services:
+  new-api:
+    image: calciumion/new-api:latest
+    restart: unless-stopped
+    labels:
+      caddy: api.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    env_file:
+      - stack.env
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shared_newapi_net
+      - intra_newapi_net
+    volumes:
+      - ${APPDATA_PATH}/newapi:/data
+      - ${LOGS_PATH}/newapi:/app/logs
+    healthcheck:
+      test: "wget -q -O - http://localhost:3000/api/status | grep -q '\"success\":true\\|\"success\": true' || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1000 --appendonly yes
+    volumes:
+      - ${DB_PATH}/newapi-redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - intra_newapi_net
+
+  postgresql:
+    image: postgres:15
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    volumes:
+      - ${DB_PATH}/newapi-postgresql:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - intra_newapi_net
+
+networks:
+  shared_newapi_net:
+    external: true
+  intra_newapi_net:
+    internal: true
