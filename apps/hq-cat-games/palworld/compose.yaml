@@ -13,7 +13,7 @@ services:
       SERVER_PASSWORD: ${SERVER_PASSWORD}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:
-      - ${GAMES_PATH}:/palworld
+      - ${GAMES_PATH}/palworld:/palworld
     deploy:
       resources:
         limits:
