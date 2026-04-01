@@ -3,7 +3,7 @@ services:
     image: calciumion/new-api:latest
     restart: unless-stopped
     labels:
-      caddy: api.${COMMON_DOMAIN_A}
+      caddy: newapi.${COMMON_DOMAIN_A}
       caddy.import: common_tls
       caddy.reverse_proxy: "{{upstreams 3000}}"
     env_file:
