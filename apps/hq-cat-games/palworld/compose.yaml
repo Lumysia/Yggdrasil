@@ -1,0 +1,20 @@
+services:
+  palworld:
+    image: thijsvanloef/palworld-server-docker:latest
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      - 8211:8211/udp
+      # - 27015:27015/udp
+      # - 8212:8212/tcp  # Port for REST API if REST_API_ENABLED: true
+    env_file:
+      - stack.env
+    environment:
+      SERVER_PASSWORD: ${SERVER_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ${GAMES_PATH}:/palworld
+    deploy:
+      resources:
+        limits:
+          memory: ${PAL_MEMORY_MAX}

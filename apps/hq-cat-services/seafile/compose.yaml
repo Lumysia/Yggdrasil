@@ -1,0 +1,178 @@
+services:
+  db:
+    image: mariadb:10
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${INIT_SEAFILE_MYSQL_ROOT_PASSWORD}
+      SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+    volumes:
+      - ${DB_PATH}/seafile:/var/lib/mysql
+    networks:
+      - seafile_net
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh", "--connect", "--mariadbupgrade", "--innodb_initialized"]
+      interval: 20s
+      start_period: 30s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    command: ["sh", "-c", "redis-server --requirepass \"$$REDIS_PASSWORD\""]
+    env_file:
+      - stack.env
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - /tmp/redisseafile:/data
+    networks:
+      - seafile_net
+
+  seafile:
+    image: creamed/seafile-server:13-nightly
+    # image: seafileltd/seafile-pro-mc:13.0-latest
+    restart: unless-stopped
+    labels:
+      caddy: seafile.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.0_handle_path: /socket.io/*
+      caddy.0_handle_path.0_rewrite: "* /socket.io{path}{query}"
+      caddy.0_handle_path.1_reverse_proxy: seadoc:80
+      caddy.1_handle_path: /sdoc-server/*
+      caddy.1_handle_path.reverse_proxy: seadoc:80
+      caddy.2_handle_path: /notification*
+      caddy.2_handle_path.reverse_proxy: notification-server:8083
+      caddy.3_handle.reverse_proxy: "{{upstreams 80}}"
+    volumes:
+      - ${BLOBSTORE_PATH}/seafile:/shared
+    env_file:
+      - stack.env
+    environment:
+      INIT_SS_ADMIN_USER: ${INIT_SS_ADMIN_USER}
+      INIT_SS_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - seafile_net
+      - shared_seafile_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  seadoc:
+    image: seafileltd/sdoc-server:2.0-latest
+    restart: unless-stopped
+    volumes:
+      - ${BLOBSTORE_PATH}/seadoc:/shared
+    env_file:
+      - stack.env
+    environment:
+      SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      seafile:
+        condition: service_healthy
+    networks:
+      - seafile_net
+      - shared_seafile_net
+
+  notification-server:
+    image: seafileltd/notification-server:13.0-latest
+    restart: unless-stopped
+    volumes:
+      - ${LOGS_PATH}/seafile-notification:/shared/logs
+    env_file:
+      - stack.env
+    environment:
+      SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      seafile:
+        condition: service_healthy
+    networks:
+      - seafile_net
+      - shared_seafile_net
+
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    restart: unless-stopped
+    labels:
+      caddy: office.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.encode: zstd gzip
+      caddy.reverse_proxy: "{{upstreams 80}}"
+    environment:
+      JWT_ENABLED: true
+      JWT_SECRET: ${ONLYOFFICE_JWT_SECRET:?Variable is not set or empty}
+    volumes:
+      - ${APPDATA_PATH}/onlyoffice/data:/var/www/onlyoffice/Data
+      - ${APPDATA_PATH}/onlyoffice/lib:/var/lib/onlyoffice
+      - ${APPDATA_PATH}/onlyoffice/fonts:/usr/share/fonts/truetype/custom
+      - ${DB_PATH}/onlyoffice:/var/lib/postgresql
+      - ${DB_PATH}/onlyoffice-mom:/var/lib/rabbitmq
+      - ${LOGS_PATH}/onlyoffice:/var/log/onlyoffice
+      - /tmp/redisonlyoffice:/var/lib/redis
+    networks:
+      - shared_seafile_net
+
+  seafile-md-server:
+    image: seafileltd/seafile-md-server:13.0-latest
+    restart: unless-stopped
+    volumes:
+      # - ${BLOBSTORE_PATH}/seafile/metadata:/shared
+      - ${BLOBSTORE_PATH}/seafile:/shared
+    #ports:
+      # - ${MD_PORT:-8084}:${MD_PORT:-8084}
+    env_file:
+      - stack.env
+    environment:
+      SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      seafile:
+        condition: service_healthy
+    networks:
+      - seafile_net
+      - shared_seafile_net
+
+  seasearch:
+    image: seafileltd/seasearch:1.0-latest
+    restart: unless-stopped
+    volumes:
+      - ${BLOBSTORE_PATH}/seasearch:/opt/seasearch/data
+    env_file:
+      - stack.env
+    environment:
+      INIT_SS_ADMIN_USER: ${INIT_SS_ADMIN_USER}
+      INIT_SS_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
+    networks:
+      - seafile_net
+    depends_on:
+      seafile:
+        condition: service_healthy
+
+  av:
+    image: clamav/clamav:latest
+    restart: unless-stopped
+    networks:
+      - seafile_net
+
+networks:
+  shared_seafile_net:
+    external: true
+  seafile_net:
+    internal: true

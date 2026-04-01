@@ -1,0 +1,44 @@
+services:
+  xiaoya:
+    image: ghcr.io/monlor/xiaoya-alist:latest
+    restart: unless-stopped
+    networks:
+      - default
+      - shared_xiaoya_net
+    # ports:
+    #   - 5678:5678
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    volumes:
+      - ${APPDATA_PATH}/xiaoya/data:/data
+    tmpfs:
+      - /opt/alist/data
+    env_file:
+      - stack.env
+    deploy:
+      resources:
+        limits:
+          cpus: 0.05
+    
+  metadata:
+    image: ghcr.io/monlor/xiaoya-metadata:latest
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - ${APPDATA_PATH}/xiaoya/data:/etc/xiaoya
+      - ${MEDIA_PATH}/xiaoya/media:/media/xiaoya
+      - ${APPDATA_PATH}/xiaoya/config:/media/config
+      - ${MEDIA_PATH}/xiaoya/cache:/media/config/cache
+      - ${MEDIA_PATH}/xiaoya/meta:/media/temp
+    # tmpfs:
+    #   - /media/config/cache
+    #   - /media/temp
+    depends_on:
+      - xiaoya
+    env_file:
+      - stack.env
+networks:
+  shared_xiaoya_net:
+    external: true

@@ -1,0 +1,61 @@
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    restart: unless-stopped
+    labels:
+      caddy: immich.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 2283}}"
+    networks:
+      - shared_immich_net
+      - default
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - ${APPDATA_PATH}/immich:/data
+      - ${MEDIA_PATH}/immich:/usr/src/app/upload
+    env_file:
+      - stack.env
+    environment:
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    #ports:
+    #  - 2283:2283
+    depends_on:
+      - redis
+      - database
+    healthcheck:
+      disable: false
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - ${AIMODELS_PATH}/immich:/cache
+    env_file:
+      - stack.env
+    healthcheck:
+      disable: false
+
+  redis:
+    image: valkey/valkey:latest
+    restart: unless-stopped
+    volumes:
+      - /tmp/immich-redis:/data
+    healthcheck:
+      test: redis-cli ping || exit 1
+
+  database:
+    image: pgvector/pgvector:pg14
+    restart: unless-stopped
+    volumes:
+      - ${DB_PATH}/immich:/var/lib/postgresql/data
+    env_file:
+      - stack.env
+    shm_size: 128mb
+
+networks:
+  shared_immich_net:
+    external: true

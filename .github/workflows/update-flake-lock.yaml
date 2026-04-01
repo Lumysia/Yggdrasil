@@ -1,0 +1,26 @@
+name: Update Nix flake lock
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-flake-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Update flake.lock
+        uses: DeterminateSystems/update-flake-lock@v28
+        with:
+          path-to-flake-dir: nixos
+          pr-title: 'chore(nix): update flake.lock'
+          pr-labels: |
+            dependencies
+            nix
+          commit-msg: 'chore(nix): update flake.lock'

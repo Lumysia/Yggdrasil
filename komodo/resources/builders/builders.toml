@@ -1,0 +1,7 @@
+[[builder]]
+name = "default"
+[builder.config]
+type = "Server"
+params.server_id = "hq-cat-services"
+
+##

@@ -1,0 +1,56 @@
+services:
+  forgejo-runner-1:
+    image: code.forgejo.org/forgejo/runner:12
+    restart: unless-stopped
+    user: root
+    command: sh -c "cd /data; if [ ! -f .runner ]; then echo '⚙️ Registering...'; forgejo-runner register --no-interactive --instance https://${FORGEJO_DOMAIN} --token ${FORGEJO_RUNNER_REGISTRATION_TOKEN} --name ${FORGEJO_RUNNER_NAME}-1 --labels 'ubuntu-latest:docker://node:16-bullseye,docker:docker://node:16-bullseye'; fi; echo '🚀 Starting daemon...'; forgejo-runner daemon"
+    env_file:
+      - stack.env
+    environment:
+      FORGEJO_DOMAIN: ${FORGEJO_DOMAIN}
+      FORGEJO_RUNNER_REGISTRATION_TOKEN: ${FORGEJO_RUNNER_REGISTRATION_TOKEN}
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock:ro
+       - ${APPDATA_PATH}/forgejo-runner-1:/data
+
+  forgejo-runner-2:
+    image: code.forgejo.org/forgejo/runner:12
+    restart: unless-stopped
+    user: root
+    command: sh -c "cd /data; if [ ! -f .runner ]; then echo '⚙️ Registering...'; forgejo-runner register --no-interactive --instance https://${FORGEJO_DOMAIN} --token ${FORGEJO_RUNNER_REGISTRATION_TOKEN} --name ${FORGEJO_RUNNER_NAME}-2 --labels 'ubuntu-latest:docker://node:16-bullseye,docker:docker://node:16-bullseye'; fi; echo '🚀 Starting daemon...'; forgejo-runner daemon"
+    env_file:
+      - stack.env
+    environment:
+      FORGEJO_DOMAIN: ${FORGEJO_DOMAIN}
+      FORGEJO_RUNNER_REGISTRATION_TOKEN: ${FORGEJO_RUNNER_REGISTRATION_TOKEN}
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock:ro
+       - ${APPDATA_PATH}/forgejo-runner-2:/data
+
+  forgejo-runner-3:
+    image: code.forgejo.org/forgejo/runner:12
+    restart: unless-stopped
+    user: root
+    command: sh -c "cd /data; if [ ! -f .runner ]; then echo '⚙️ Registering...'; forgejo-runner register --no-interactive --instance https://${FORGEJO_DOMAIN} --token ${FORGEJO_RUNNER_REGISTRATION_TOKEN} --name ${FORGEJO_RUNNER_NAME}-3 --labels 'ubuntu-latest:docker://node:16-bullseye,docker:docker://node:16-bullseye'; fi; echo '🚀 Starting daemon...'; forgejo-runner daemon"
+    env_file:
+      - stack.env
+    environment:
+      FORGEJO_DOMAIN: ${FORGEJO_DOMAIN}
+      FORGEJO_RUNNER_REGISTRATION_TOKEN: ${FORGEJO_RUNNER_REGISTRATION_TOKEN}
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock:ro
+       - ${APPDATA_PATH}/forgejo-runner-3:/data
+
+  forgejo-runner-4:
+    image: code.forgejo.org/forgejo/runner:12
+    restart: unless-stopped
+    user: root
+    command: sh -c "cd /data; if [ ! -f .runner ]; then echo '⚙️ Registering...'; forgejo-runner register --no-interactive --instance https://${FORGEJO_DOMAIN} --token ${FORGEJO_RUNNER_REGISTRATION_TOKEN} --name ${FORGEJO_RUNNER_NAME}-4 --labels 'ubuntu-latest:docker://node:16-bullseye,docker:docker://node:16-bullseye'; fi; echo '🚀 Starting daemon...'; forgejo-runner daemon"
+    env_file:
+      - stack.env
+    environment:
+      FORGEJO_DOMAIN: ${FORGEJO_DOMAIN}
+      FORGEJO_RUNNER_REGISTRATION_TOKEN: ${FORGEJO_RUNNER_REGISTRATION_TOKEN}
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock:ro
+       - ${APPDATA_PATH}/forgejo-runner-4:/data

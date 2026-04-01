@@ -1,0 +1,22 @@
+services:
+  periphery:
+    image: ghcr.io/moghtech/komodo-periphery:2
+    init: true
+    restart: always
+    ports:
+      - 8120:8120
+    volumes:
+      - ./komodo-keys:/config/keys
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/proc
+      - ./komodo-periphery:/etc/komodo
+    environment:
+      PERIPHERY_CORE_PUBLIC_KEYS: MCowBQYDK2VuAyEAMnQVnJN2WVoWyyWbaA8R8wzvon/XJ2cYQzvpb7S14TU=
+      PERIPHERY_SSL_ENABLED: true
+      PERIPHERY_DISABLE_TERMINALS: false
+      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
+      PERIPHERY_LOGGING_PRETTY: false
+      PERIPHERY_PRETTY_STARTUP_CONFIG: false
+      # PERIPHERY_EXCLUDE_DISK_MOUNTS: /snap,/etc/repos
+    labels:
+      komodo.skip:

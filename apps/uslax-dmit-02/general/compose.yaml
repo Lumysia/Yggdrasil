@@ -1,0 +1,26 @@
+services:
+  xray:
+    image: teddysun/xray:latest
+    restart: always
+    ports:
+      - 443:443/tcp
+      - 443:443/udp
+    volumes:
+      - ${APPDATA_PATH}/xray:/etc/xray:ro
+    tmpfs:
+      - /var/log/xray
+  
+  hysteria:
+    image: tobyxdd/hysteria:latest
+    restart: always
+    ports:
+      - 8443:8443/tcp
+      - 8443:8443/udp
+    volumes:
+      - ${APPDATA_PATH}/hysteria/acme:/acme
+      - ${APPDATA_PATH}/hysteria/hysteria.yaml:/etc/hysteria.yaml
+    command: ["server", "-c", "/etc/hysteria.yaml"]
+
+networks:
+  default:
+    enable_ipv6: true

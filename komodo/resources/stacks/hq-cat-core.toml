@@ -1,0 +1,39 @@
+[[stack]]
+name = "hq-cat-core-dns"
+[stack.config]
+server = "hq-cat-core"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-core/dns"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+
+##
+
+[[stack]]
+name = "hq-cat-core-networking"
+[stack.config]
+server = "hq-cat-core"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-core/networking"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
+HQCAT_CORE_CFD_TOKEN=[[HQCAT_CORE_CFD_TOKEN]]
+COMMON_CADDY_ADMIN_EMAIL=[[COMMON_CADDY_ADMIN_EMAIL]]
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+HQCAT_CORE_MAXMIND_LICENSE_KEY=[[HQCAT_CORE_MAXMIND_LICENSE_KEY]]
+OAUTH2_PROXY_CLIENT_SECRET=[[HQCAT_CORE_OAUTH2_CLIENT_SECRET]]
+OAUTH2_PROXY_COOKIE_SECRET=[[HQCAT_CORE_OAUTH2_COOKIE_SECRET]]
+ENCRYPTION_KEY=[[HQCAT_CORE_POCKETID_ENCRYPTION_KEY]]
+"""
+
+##

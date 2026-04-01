@@ -1,0 +1,59 @@
+services:
+  caddy:
+    image: docker.libcuda.so/purposely/caddy:latest
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      default:
+      cloudflare_net:
+    volumes:
+      - ${APPDATA_PATH}/caddyservices/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${APPDATA_PATH}/caddyservices/data:/data/caddy
+      - ${APPDATA_PATH}/caddyservices/config:/config/caddy
+    env_file:
+      - stack.env
+  cloudflared:
+    image: docker.libcuda.so/cloudflare/cloudflared:latest
+    restart: always
+    networks:
+      - cloudflare_net
+    env_file:
+      - stack.env
+    command: tunnel --no-autoupdate --protocol auto run --token ${CLOUDFLARED_TUNNEL_TOKEN}
+
+  tinyproxy:
+    image: docker.libcuda.so/kalaksi/tinyproxy:latest
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    ports:
+      - 8888:8888
+    env_file:
+      - stack.env
+    healthcheck:
+      test: ["CMD", "curl", "-I", "-H", "Host: tinyproxy.stats", "http://localhost:8888"]
+      interval: 5m
+      timeout: 10s
+      retries: 1
+
+  xray:
+    image: docker.libcuda.so/teddysun/xray:latest
+    restart: always
+    networks:
+      proxy_net:
+    ports:
+      - 10808:10808
+    volumes:
+      - ${APPDATA_PATH}/xray:/etc/xray:ro
+    tmpfs:
+      - /var/log/xray
+    env_file:
+      - stack.env
+networks:
+  default:
+  proxy_net:
+    external: true
+  cloudflare_net:
+    enable_ipv6: true

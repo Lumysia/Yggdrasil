@@ -1,0 +1,45 @@
+[[stack]]
+name = "camtr-ovh-01-services-gateway"
+[stack.config]
+server = "camtr-ovh-01-services"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/camtr-ovh-01-services/gateway"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
+COMMON_CADDY_ADMIN_EMAIL=[[COMMON_CADDY_ADMIN_EMAIL]]
+CAMTROVH01_SERVICES_CFD_TOKEN=[[CAMTROVH01_SERVICES_CFD_TOKEN]]
+"""
+
+##
+
+[[stack]]
+name = "camtr-ovh-01-services-media"
+[stack.config]
+server = "camtr-ovh-01-services"
+poll_for_updates = true
+auto_update = true
+auto_update_all_services = true
+destroy_before_deploy = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/camtr-ovh-01-services/media"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+docker network create shared_media_net || true
+"""
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+OPENVPN_USER=[[CAMTROVH01_PIA_USERNAME]]
+OPENVPN_PASSWORD=[[CAMTROVH01_PIA_PASSWORD]]
+"""
+
+##

@@ -1,0 +1,9 @@
+##
+
+[[resource_sync]]
+name = "Sync-Yggdrasil"
+[resource_sync.config]
+linked_repo = "GitHub-Yggdrasil"
+resource_path = ["komodo/resources"]
+managed = true
+delete = true

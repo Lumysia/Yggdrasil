@@ -1,0 +1,78 @@
+services:
+  postgresql:
+    image: paradedb/paradedb:latest-pg17
+    volumes:
+      - ${DB_PATH}/lobe-postgresql:/var/lib/postgresql/data
+    env_file:
+      - stack.env
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - intra_lobechat_net
+
+  redis:
+    image: redis:8-alpine
+    command: redis-server --save 60 1000 --appendonly yes
+    volumes:
+      - ${DB_PATH}/lobe-redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+    networks:
+      - intra_lobechat_net
+
+  searxng:
+    image: searxng/searxng
+    volumes:
+      - ${APPDATA_PATH}/lobe-searxng:/etc/searxng
+      - /tmp/lobe-searxng:/var/cache/searxng
+    env_file:
+      - stack.env
+    
+    restart: always
+    networks:
+      - shared_lobechat_net
+
+  lobe:
+    image: lobehub/lobehub
+    labels:
+      caddy: lobe.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3210}}"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - stack.env
+    environment:
+      KEY_VAULTS_SECRET: ${KEY_VAULTS_SECRET}
+      AUTH_SECRET: ${AUTH_SECRET}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgresql:5432/lobechat
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      JWKS_KEY: ${JWKS_KEY}
+      AUTH_GENERIC_OIDC_SECRET: ${AUTH_GENERIC_OIDC_SECRET}
+      QSTASH_TOKEN: ${QSTASH_TOKEN}
+      COHERE_API_KEY: ${COHERE_API_KEY}
+    restart: always
+    networks:
+      - intra_lobechat_net
+      - shared_lobechat_net
+
+networks:
+  shared_lobechat_net:
+    external: true
+  intra_lobechat_net:
+    internal: true

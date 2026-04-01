@@ -1,0 +1,31 @@
+services:
+  mc:
+    image: itzg/minecraft-server:${MC_JAVA_VERSION}
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    ports:
+      - 25565:25565/tcp
+    env_file:
+      - stack.env
+    environment:
+      RCON_PASSWORD: ${RCON_PASSWORD}
+    volumes:
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}_downloads:/downloads
+    deploy:
+      resources:
+        limits:
+          memory: ${MAX_MEMORY}
+
+  backups:
+    image: itzg/mc-backup:latest
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    environment:
+      RCON_PASSWORD: ${RCON_PASSWORD}
+    volumes:
+      - ${GAMES_PATH}/rclone:/config/rclone # Optional, only if using rclone
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data:ro
+      - ${BACKUPS_PATH}/${MC_FOLDER_NAME}:/backups

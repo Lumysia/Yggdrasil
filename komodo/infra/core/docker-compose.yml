@@ -1,0 +1,56 @@
+services:
+  mongo:
+    image: mongo:latest
+    labels:
+      komodo.skip:
+    command: --quiet --wiredTigerCacheSizeGB 0.25
+    restart: unless-stopped
+    env_file:
+      - .env
+    # ports:
+    #   - 27017:27017
+    volumes:
+      - ${LOCAL_PATH}/mongo-data:/data/db
+      - ${LOCAL_PATH}/mongo-config:/data/configdb
+  
+  core:
+    image: ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    init: true
+    labels:
+      komodo.skip:
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file:
+      - .env
+    ports:
+      - 9120:9120
+    volumes:
+      ## Attach the Core / Periphery communication keys
+      - ${LOCAL_PATH}/keys:/config/keys
+      ## Core cache for repos for latest commit hash / contents
+      - ${LOCAL_PATH}/repo-cache:/repo-cache
+      ## Store sync files on server
+      - ${LOCAL_PATH}/syncs:/syncs
+      ## Optionally mount a custom core.config.toml
+      # - /path/to/core.config.toml:/config/config.toml
+      - ${LOCAL_PATH}/backups:/backups
+    ## Allows for systemd Periphery connection at "http://host.docker.internal:8120"
+    # extra_hosts:
+    #   - host.docker.internal:host-gateway
+
+  periphery:
+    image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    init: true
+    labels:
+      komodo.skip:
+    restart: unless-stopped
+    depends_on:
+      - core
+    env_file:
+      - .env
+    volumes:
+      - ${LOCAL_PATH}/keys:/config/keys
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/proc
+      - ${LOCAL_PATH}/periphery:/etc/komodo

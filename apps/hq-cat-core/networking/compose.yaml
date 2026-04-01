@@ -1,0 +1,110 @@
+services:
+  caddy:
+    image: essaypu/caddy:alpine-proxy-nightly
+    command:
+      - caddy
+      - docker-proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    networks:
+      - default
+      - cloudflare_net
+    volumes:
+      - ${APPDATA_PATH}/caddycore/data:/data/caddy
+      - ${APPDATA_PATH}/caddycore/config:/config/caddy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    env_file:
+      - stack.env
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    depends_on:
+      pocketid:
+        condition: service_healthy
+        restart: true
+    labels:
+      caddy_0.email: ${COMMON_CADDY_ADMIN_EMAIL}
+      caddy_1.admin: "off"
+      caddy_2.servers.trusted_proxies: static private_ranges 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 104.16.0.0/13 104.24.0.0/14 108.162.192.0/18 131.0.72.0/22 141.101.64.0/18 162.158.0.0/15 172.64.0.0/13 173.245.48.0/20 188.114.96.0/20 190.93.240.0/20 197.234.240.0/22 198.41.128.0/17 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+      caddy_3: (common_tls)
+      caddy_3.tls.dns: cloudflare ${CLOUDFLARE_API_TOKEN}
+      caddy_3.tls.resolvers: 1.1.1.1 8.8.8.8 8.8.4.4
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: always
+    networks:
+      - cloudflare_net
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    env_file:
+      - stack.env
+    command: tunnel --no-autoupdate --protocol auto run --token ${HQCAT_CORE_CFD_TOKEN}
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    restart: unless-stopped
+    labels:
+      caddy: www.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    # ports:
+    #   - 3000:3000
+    volumes:
+      - ${APPDATA_PATH}/homepage:/app/config
+    env_file:
+      - stack.env
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: www.${COMMON_DOMAIN_A}
+
+  pocketid:
+    image: ghcr.io/pocket-id/pocket-id:v2
+    restart: unless-stopped
+    labels:
+      caddy: id.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 1411}}"
+    # ports:
+    #   - 1411:1411
+    volumes:
+      - ${APPDATA_PATH}/pocketid:/app/data
+    env_file:
+      - stack.env
+    environment:
+      MAXMIND_LICENSE_KEY: ${HQCAT_CORE_MAXMIND_LICENSE_KEY}
+      APP_URL: https://id.${COMMON_DOMAIN_A}
+    healthcheck:
+      test: [ "CMD", "/app/pocket-id", "healthcheck" ]
+      interval: 1m30s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    restart: unless-stopped
+    labels:
+      caddy: sso.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 4180}}"
+    #ports:
+    #  - 4180:4180
+    env_file:
+      - stack.env
+    environment:
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://id.${COMMON_DOMAIN_A}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_DOMAINS: .${COMMON_DOMAIN_A}
+      OAUTH2_PROXY_WHITELIST_DOMAINS: .${COMMON_DOMAIN_A}
+    depends_on:
+      pocketid:
+        condition: service_healthy
+        restart: true
+
+networks:
+  default:
+  cloudflare_net:
+    enable_ipv6: true

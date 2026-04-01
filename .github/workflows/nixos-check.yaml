@@ -1,0 +1,63 @@
+name: NixOS Configuration Check
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'nixos/**'
+  pull_request:
+    paths:
+      - 'nixos/**'
+
+jobs:
+  check-flake:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nixos
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/determinate-nix-action@v3
+      - name: Check Flake Structure
+        run: nix flake check
+
+  prepare-build-matrix:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nixos
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: set-matrix
+        name: Generate Host Matrix
+        run: |
+          HOSTS=$(find hosts -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "matrix=$HOSTS" >> "$GITHUB_OUTPUT"
+
+  check-host-builds:
+    needs: [check-flake, prepare-build-matrix]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nixos
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        host: ${{ fromJson(needs.prepare-build-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/determinate-nix-action@v3
+      - name: Dry Run Build
+        run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run

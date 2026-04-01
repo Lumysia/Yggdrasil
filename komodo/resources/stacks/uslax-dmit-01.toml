@@ -1,0 +1,12 @@
+[[stack]]
+name = "uslax-dmit-01-general"
+[stack.config]
+server = "uslax-dmit-01"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/uslax-dmit-01/general"
+extra_args = ["--remove-orphans"]
+environment = """
+APPDATA_PATH=/root/docker
+"""

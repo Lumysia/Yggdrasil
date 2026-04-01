@@ -1,0 +1,91 @@
+services:
+  sure:
+    image: ghcr.io/we-promise/sure:stable
+    restart: unless-stopped
+    labels:
+      caddy: sure.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    volumes:
+      - ${APPDATA_PATH}/sure_storage:/rails/storage
+    # ports:
+    #   - 3000:3000
+    env_file:
+      - stack.env
+      - sure.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shared_sure_net
+      - sure_net
+
+  worker:
+    image: ghcr.io/we-promise/sure:stable
+    command: bundle exec sidekiq
+    restart: unless-stopped
+    volumes:
+      - ${APPDATA_PATH}/sure_storage:/rails/storage
+    env_file:
+      - stack.env
+      - sure.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shared_sure_net
+      - sure_net
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    volumes:
+      - ${DB_PATH}/sure_db:/var/lib/postgresql/data
+    env_file:
+      - stack.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sure_net
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - ${DB_PATH}/sure_redis:/data
+    env_file:
+      - stack.env
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sure_net
+
+  backup:
+    profiles:
+      - backup
+    image: prodrigestivill/postgres-backup-local
+    restart: unless-stopped
+    volumes:
+      - ${DB_PATH}/sure_backups:/backups
+    env_file:
+      - stack.env
+    depends_on:
+      - db
+    networks:
+      - sure_net
+
+networks:
+  shared_sure_net:
+    external: true
+  sure_net:
+    internal: true

@@ -1,0 +1,56 @@
+[[stack]]
+name = "hq-cat-games-networking"
+[stack.config]
+server = "hq-cat-games"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-games/networking"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+ET_NETWORK_SECRET=[[HQCAT_GAMES_ET_NETWORK_SECRET]]
+LOCALTONET_TOKEN=[[HQCAT_GAMES_LOCALTONET_TOKEN]]
+PLAYIT_TOKEN=[[HQCAT_GAMES_PLAYIT_TOKEN]]
+"""
+
+##
+
+[[stack]]
+name = "hq-cat-games-minecraft"
+[stack.config]
+server = "hq-cat-games"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-games/minecraft"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+RCON_PASSWORD=[[HQCAT_GAMES_MC_ROCNPWD]]
+"""
+
+##
+
+[[stack]]
+name = "hq-cat-games-palworld"
+[stack.config]
+server = "hq-cat-games"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-games/palworld"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+SERVER_PASSWORD=[[HQCAT_GAMES_PAL_SERVER_PASSWORD]]
+ADMIN_PASSWORD=[[HQCAT_GAMES_PAL_ADMIN_PASSWORD]]
+"""
+
+##

@@ -1,0 +1,15 @@
+services:
+  xray:
+    image: teddysun/xray:latest
+    restart: always
+    ports:
+      - 443:443/tcp
+      - 443:443/udp
+    volumes:
+      - ${APPDATA_PATH}/xray:/etc/xray:ro
+    tmpfs:
+      - /var/log/xray
+
+networks:
+  default:
+    enable_ipv6: true

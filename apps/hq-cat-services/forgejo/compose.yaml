@@ -1,0 +1,34 @@
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:14
+    restart: unless-stopped
+    labels:
+      caddy: code.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    env_file:
+      - stack.env
+    environment:
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST}
+      EMAIL_SMTP_USERNAME: ${EMAIL_SMTP_USERNAME}
+      EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
+    networks:
+      - shared_forgejo_net
+    #ports:
+    #  - '3000:3000'
+    #  - '222:22'
+    volumes:
+      - ${BLOBSTORE_PATH}/forgejo:/data
+
+  renovate:
+    image: renovate/renovate:full
+    restart: none
+    volumes:
+      - /tmp/renovate-cache:/tmp/renovate-cache
+    env_file:
+      - stack.env
+    environment:
+      RENOVATE_TOKEN: ${RENOVATE_TOKEN}
+networks:
+  shared_forgejo_net:
+    external: true

@@ -1,0 +1,235 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    networks:
+      - shared_media_net
+    labels:
+      caddy: jellyfin.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 8096}}"
+    # ports:
+    #   - 127.0.0.1:8096:8096
+    volumes:
+      - ${APPDATA_PATH}/jellyfin:/config
+      - ${MEDIA_PATH}/tvshows:/data/tvshows
+      - ${MEDIA_PATH}/others:/data/others
+      - ${MEDIA_PATH}/movies:/data/movies
+      - ${MEDIA_PATH}/musics:/data/musics
+    tmpfs:
+      - /cache
+    restart: unless-stopped
+    env_file:
+      - stack.env
+
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    networks:
+      - shared_media_net
+    labels:
+      caddy: qbt.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.1_forward_auth: https://sso.${COMMON_DOMAIN_A}
+      caddy.1_forward_auth.1_uri: /oauth2/auth
+      caddy.1_forward_auth.2_@error: status 401
+      caddy.1_forward_auth.3_handle_response: "@error"
+      caddy.1_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+      caddy.reverse_proxy.header_up_0: -Referer
+    #ports:
+    #  - 8080:8080
+    volumes:
+      - ${APPDATA_PATH}/gluetun:/gluetun
+      - /tmp-gluetun:/tmp/gluetun
+    env_file:
+      - stack.env
+    environment:
+      VPN_SERVICE_PROVIDER: private internet access
+      OPENVPN_USER: ${OPENVPN_USER}
+      OPENVPN_PASSWORD: ${OPENVPN_PASSWORD}
+      SERVER_REGIONS: CA Montreal
+      VPN_PORT_FORWARDING: true
+  
+  gluetun-qbittorrent-port-manager:
+    image: snoringdragon/gluetun-qbittorrent-port-manager:latest
+    restart: unless-stopped
+    volumes:
+      - /tmp-gluetun:/tmp/gluetun
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
+      - qbittorrent
+    env_file:
+      - stack.env
+    environment:
+      QBITTORRENT_SERVER: localhost
+      QBITTORRENT_PORT: 8080
+      PORT_FORWARDED: /tmp/gluetun/forwarded_port
+      HTTP_S: http
+  
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    restart: unless-stopped
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
+    # ports:
+    #   - 127.0.0.1:8080:8080
+    volumes:
+      - ${APPDATA_PATH}/qbittorrent:/config
+      - ${DOWNLOADS_PATH}/qbittorrent:/downloads
+    env_file:
+      - stack.env
+
+  peerbanhelper:
+    image: ghostchu/peerbanhelper:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: pbh.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 9898}}"
+    volumes:
+      - ${APPDATA_PATH}/peerbanhelper:/app/data
+      - /tmp/peerbanhelper:/tmp
+    # ports:
+    #   - 9898:9898
+    env_file:
+      - stack.env
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: prowlarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.1_forward_auth: https://sso.${COMMON_DOMAIN_A}
+      caddy.1_forward_auth.1_uri: /oauth2/auth
+      caddy.1_forward_auth.2_@error: status 401
+      caddy.1_forward_auth.3_handle_response: "@error"
+      caddy.1_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy.reverse_proxy: "{{upstreams 9696}}"
+    # ports:
+    #   - 9696:9696
+    volumes:
+      - ${APPDATA_PATH}/prowlarr:/config
+    env_file:
+      - stack.env
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: radarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.1_@protected: not path /api/* /ping
+      caddy.2_forward_auth: "@protected https://sso.${COMMON_DOMAIN_A}"
+      caddy.2_forward_auth.1_uri: /oauth2/auth
+      caddy.2_forward_auth.2_@error: status 401
+      caddy.2_forward_auth.3_handle_response: "@error"
+      caddy.2_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy.reverse_proxy: "{{upstreams 7878}}"
+    # ports:
+    #   - 7878:7878
+    volumes:
+      - ${APPDATA_PATH}/radarr:/config
+      - ${MEDIA_PATH}/movies:/movies
+      - ${DOWNLOADS_PATH}/qbittorrent:/downloads
+    env_file:
+      - stack.env
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: sonarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.1_@protected: not path /api/* /ping
+      caddy.2_forward_auth: "@protected https://sso.${COMMON_DOMAIN_A}"
+      caddy.2_forward_auth.1_uri: /oauth2/auth
+      caddy.2_forward_auth.2_@error: status 401
+      caddy.2_forward_auth.3_handle_response: "@error"
+      caddy.2_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy.reverse_proxy: "{{upstreams 8989}}"
+    # ports:
+    #   - 8989:8989
+    volumes:
+      - ${APPDATA_PATH}/sonarr:/config
+      - ${MEDIA_PATH}/tvshows:/tvshows
+      - ${DOWNLOADS_PATH}/qbittorrent:/downloads
+    env_file:
+      - stack.env
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: lidarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.1_@protected: not path /api/* /ping
+      caddy.2_forward_auth: "@protected https://sso.${COMMON_DOMAIN_A}"
+      caddy.2_forward_auth.1_uri: /oauth2/auth
+      caddy.2_forward_auth.2_@error: status 401
+      caddy.2_forward_auth.3_handle_response: "@error"
+      caddy.2_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy.reverse_proxy: "{{upstreams 8686}}"
+    # ports:
+    #   - 8686:8686
+    volumes:
+      - ${APPDATA_PATH}/lidarr:/config
+      - ${MEDIA_PATH}/musics:/musics
+      - ${DOWNLOADS_PATH}/qbittorrent:/downloads
+    env_file:
+      - stack.env
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: bazarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.1_forward_auth: https://sso.${COMMON_DOMAIN_A}
+      caddy.1_forward_auth.1_uri: /oauth2/auth
+      caddy.1_forward_auth.2_@error: status 401
+      caddy.1_forward_auth.3_handle_response: "@error"
+      caddy.1_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy.reverse_proxy: "{{upstreams 6767}}"
+    volumes:
+      - ${APPDATA_PATH}/bazarr:/config
+      - ${MEDIA_PATH}/movies:/movies
+      - ${MEDIA_PATH}/tvshows:/tvshows
+    # ports:
+    #   - 6767:6767
+    env_file:
+      - stack.env
+
+  flaresolverr:
+    image: flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    networks:
+      shared_media_net:
+    # ports:
+    #   - 8191:8191
+    volumes:
+      - ${APPDATA_PATH}/flaresolverr:/config
+    env_file:
+      - stack.env
+
+networks:
+  shared_media_net:
+    external: true

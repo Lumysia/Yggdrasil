@@ -1,0 +1,38 @@
+[[stack]]
+name = "hq-nya-services-networking"
+[stack.config]
+server = "hq-nya-services"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-nya-services/networking"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+CLOUDFLARED_TUNNEL_TOKEN=[[HQNYA_SERVICES_CLOUDFLARED_TUNNEL_TOKEN]]
+"""
+
+##
+
+[[stack]]
+name = "hq-nya-services-xiaoya"
+[stack.config]
+server = "hq-nya-services"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-nya-services/xiaoya"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+EMBY_APIKEY=[[HQNYA_SERVICES_XIAOYA_EMBY_APIKEY]]
+PAN115_COOKIE=[[HQNYA_SERVICES_XIAOYA_PAN115_COOKIE]]
+PIKPAK_USER=[[HQNYA_SERVICES_XIAOYA_PIKPAK_USER]]
+QUARK_COOKIE=[[HQNYA_SERVICES_XIAOYA_QUARK_COOKIE]]
+"""
+
+##

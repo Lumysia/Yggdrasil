@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: ^nixos/secrets/.*\.(ya?ml|env)$
+    age: age15ahyejyg4yrq4jvftsdpha7tmpumg6z7kjswz25mhhtkfqjmp9wqkahlfg
