@@ -8,6 +8,9 @@ services:
       caddy.reverse_proxy: "{{upstreams 3000}}"
     env_file:
       - stack.env
+    environment:
+      SESSION_SECRET: ${HQCAT_SERVICES_NEWAPI_SESSIONSEC}
+      CRYPTO_SECRET: ${HQCAT_SERVICES_NEWAPI_CRYPTOSEC}
     depends_on:
       postgresql:
         condition: service_healthy
