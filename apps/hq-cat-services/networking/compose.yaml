@@ -15,8 +15,6 @@ services:
       - shared_forgejo_net
       - shared_lobechat_net
       - shared_sure_net
-      - shared_oneapi_net
-      - shared_newapi_net
       - cloudflare_net
     volumes:
       - ${APPDATA_PATH}/caddyservices/data:/data/caddy
@@ -56,8 +54,4 @@ networks:
   shared_lobechat_net:
     external: true
   shared_sure_net:
-    external: true
-  shared_oneapi_net:
-    external: true
-  shared_newapi_net:
     external: true
