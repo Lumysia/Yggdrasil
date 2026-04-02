@@ -17,6 +17,15 @@ enabled = true
 ##
 
 [[server]]
+name = "cator-oracle-01"
+[server.config]
+address = "https://100.80.22.102:8120"
+region = "ca-central"
+enabled = true
+
+##
+
+[[server]]
 name = "hq-cat-core"
 [server.config]
 region = "ca-central"
