@@ -9,8 +9,6 @@ services:
     env_file:
       - stack.env
     environment:
-      ADMIN_EMAIL: admin@${COMMON_DOMAIN_A}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY}
     volumes:
