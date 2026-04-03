@@ -126,6 +126,28 @@ TOTP_ENCRYPTION_KEY=[[HQCAT_SERVICES_SUB2API_TOTP_ENCRYPTION_KEY]]
 ##
 
 [[stack]]
+name = "hq-cat-services-trek"
+[stack.config]
+server = "hq-cat-services"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-services/trek"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+docker network create shared_trek_net || true
+"""
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+ENCRYPTION_KEY=[[HQCAT_SERVICES_TREK_ENCRYPTION_KEY]]
+"""
+
+##
+
+[[stack]]
 name = "hq-cat-services-forgejo"
 [stack.config]
 server = "hq-cat-services"

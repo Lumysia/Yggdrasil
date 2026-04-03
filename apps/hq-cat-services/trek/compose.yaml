@@ -1,0 +1,38 @@
+services:
+  trek:
+    image: mauriceboe/trek:latest
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    labels:
+      caddy: trek.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    env_file:
+      - stack.env
+    environment:
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    volumes:
+      - ${APPDATA_PATH}/trek/data:/app/data
+      - ${APPDATA_PATH}/trek/uploads:/app/uploads
+    networks:
+      - shared_trek_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  shared_trek_net:
+    external: true

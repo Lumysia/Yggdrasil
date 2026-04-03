@@ -10,6 +10,7 @@ services:
       - 443:443
       - 443:443/udp
     networks:
+      - shared_trek_net
       - shared_sub2api_net
       - shared_seafile_net
       - shared_immich_net
@@ -46,6 +47,8 @@ services:
 networks:
   cloudflare_net:
     enable_ipv6: true
+  shared_trek_net:
+    external: true
   shared_sub2api_net:
     external: true
   shared_seafile_net:
