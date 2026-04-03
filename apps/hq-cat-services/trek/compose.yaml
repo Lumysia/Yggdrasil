@@ -20,7 +20,11 @@ services:
     env_file:
       - stack.env
     environment:
+      APP_URL: https://trek.${COMMON_DOMAIN_A}
+      ALLOWED_ORIGINS: https://trek.${COMMON_DOMAIN_A}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      OIDC_ISSUER: https://id.${COMMON_DOMAIN_A}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
     volumes:
       - ${APPDATA_PATH}/trek/data:/app/data
       - ${APPDATA_PATH}/trek/uploads:/app/uploads
