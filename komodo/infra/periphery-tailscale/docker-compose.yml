@@ -48,6 +48,9 @@ services:
 
   watchtower:
     image: nickfedor/watchtower:latest
+    labels:
+      komodo.skip:
+      com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
     command:
       - --label-enable
