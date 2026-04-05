@@ -28,4 +28,4 @@ services:
     volumes:
       - ${GAMES_PATH}/rclone:/config/rclone # Optional, only if using rclone
       - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data:ro
-      - ${BACKUPS_PATH}/${MC_FOLDER_NAME}:/backups
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}-backups:/backups
