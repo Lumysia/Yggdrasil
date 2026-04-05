@@ -28,12 +28,6 @@
 
   networking.firewall.enable = true;
 
-  fileSystems."/data/infra" = {
-    device = "infra";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
   fileSystems."/data" = {
     device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1";
     fsType = "ext4";
