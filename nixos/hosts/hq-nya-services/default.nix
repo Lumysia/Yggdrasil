@@ -28,41 +28,5 @@
 
   networking.firewall.enable = true;
 
-  fileSystems."/data/infra" = {
-    device = "infra";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
-  fileSystems."/data/appdata" = {
-    device = "appdata";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
-  fileSystems."/data/backups" = {
-    device = "backups";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
-  fileSystems."/data/db" = {
-    device = "db";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
-  fileSystems."/data/downloads" = {
-    device = "downloads";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
-  fileSystems."/data/logs" = {
-    device = "logs";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
   system.stateVersion = "25.05";
 }
