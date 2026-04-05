@@ -83,6 +83,12 @@
     options = [ "defaults" "nofail" "noatime" ];
   };
 
+  fileSystems."/data-new" = {
+    device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1";
+    fsType = "ext4";
+    options = [ "defaults" "nofail" "noatime" ];
+  };
+
   # Cron Jobs
   services.cron = {
     enable = true;
