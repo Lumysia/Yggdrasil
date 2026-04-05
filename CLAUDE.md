@@ -19,7 +19,7 @@ For each app stack:
 ### Rules
 
 - prefer putting non-secret app configuration in `stack.env`
-- keep secrets out of `stack.env`
+- keep secrets out of `stack.env`; exception: passwords for internal-only services (not exposed to the public internet) may be stored in `stack.env`
 - in `compose.yaml`, use `env_file:` for `stack.env`
 - use `environment:` in `compose.yaml` mainly for:
   - secrets injected from Komodo

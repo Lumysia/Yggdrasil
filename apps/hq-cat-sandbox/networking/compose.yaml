@@ -1,0 +1,46 @@
+services:
+  caddy:
+    image: essaypu/caddy:alpine-proxy-nightly
+    command:
+      - caddy
+      - docker-proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    networks:
+      - shared_goclaw_net
+      - cloudflare_net
+    volumes:
+      - ${APPDATA_PATH}/caddy/data:/data/caddy
+      - ${APPDATA_PATH}/caddy/config:/config/caddy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    env_file:
+      - stack.env
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    labels:
+      caddy_0.email: ${COMMON_CADDY_ADMIN_EMAIL}
+      caddy_1.admin: "off"
+      caddy_2.servers.trusted_proxies: static private_ranges 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 104.16.0.0/13 104.24.0.0/14 108.162.192.0/18 131.0.72.0/22 141.101.64.0/18 162.158.0.0/15 172.64.0.0/13 173.245.48.0/20 188.114.96.0/20 190.93.240.0/20 197.234.240.0/22 198.41.128.0/17 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+      caddy_3: (common_tls)
+      caddy_3.tls.dns: cloudflare ${CLOUDFLARE_API_TOKEN}
+      caddy_3.tls.resolvers: 8.8.8.8 8.8.4.4 1.1.1.1
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: always
+    networks:
+      - cloudflare_net
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    env_file:
+      - stack.env
+    command: tunnel --no-autoupdate --protocol auto run --token ${HQCAT_SANDBOX_CFD_TOKEN}
+
+networks:
+  cloudflare_net:
+    enable_ipv6: true
+  shared_goclaw_net:
+    external: true

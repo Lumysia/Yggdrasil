@@ -52,6 +52,15 @@ enabled = true
 ##
 
 [[server]]
+name = "hq-cat-sandbox"
+[server.config]
+address = "https://REPLACE_WITH_TAILSCALE_IP:8120"
+region = "ca-central"
+enabled = true
+
+##
+
+[[server]]
 name = "hq-nya-services"
 [server.config]
 address = "https://100.106.116.9:8120"

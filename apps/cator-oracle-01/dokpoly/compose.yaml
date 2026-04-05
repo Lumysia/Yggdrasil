@@ -31,15 +31,18 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      caddy: dokploy.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
     env_file:
       - stack.env
-    ports:
-      - ${DOKPLOY_PORT}:3000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${APPDATA_PATH}/dokploy/etc:/etc/dokploy
       - ${APPDATA_PATH}/dokploy/docker:/root/.docker
     networks:
+      - shared_dokpoly_net
       - dokploy_internal_net
       - dokploy-network
 
@@ -50,26 +53,15 @@ services:
       - dokploy
     command:
       - --providers.file.filename=/etc/traefik/traefik.yml
-    ports:
-      - ${TRAEFIK_PORT}:80
-      - ${TRAEFIK_SSL_PORT}:443
-      - ${TRAEFIK_SSL_PORT}:443/udp
     volumes:
       - ${APPDATA_PATH}/dokploy/etc/traefik:/etc/traefik
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - dokploy-network
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    restart: always
-    networks:
-      - dokploy-network
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    command: tunnel --no-autoupdate --protocol auto run --token ${HQCAT_SANDBOX_CFD_TOKEN}
-
 networks:
+  shared_dokpoly_net:
+    external: true
   dokploy_internal_net:
     internal: true
   dokploy-network:
