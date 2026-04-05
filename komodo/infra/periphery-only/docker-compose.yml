@@ -21,3 +21,13 @@ services:
       # PERIPHERY_EXCLUDE_DISK_MOUNTS: /snap,/etc/repos
     labels:
       komodo.skip:
+      com.centurylinklabs.watchtower.enable: "true"
+
+  watchtower:
+    image: nickfedor/watchtower:latest
+    restart: unless-stopped
+    command:
+      - --label-enable
+      - --cleanup
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

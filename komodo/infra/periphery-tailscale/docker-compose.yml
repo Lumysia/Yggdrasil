@@ -22,10 +22,13 @@ services:
       # PERIPHERY_EXCLUDE_DISK_MOUNTS: /snap,/etc/repos
     labels:
       komodo.skip:
+      com.centurylinklabs.watchtower.enable: "true"
 
   tailscale:
     image: tailscale/tailscale:latest
     restart: always
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
     cap_add:
       - net_admin
       - sys_module
@@ -42,3 +45,12 @@ services:
       TS_EXTRA_ARGS: --advertise-exit-node --snat-subnet-routes=false
       TS_AUTH_ONCE: true
       TS_STATE_DIR: /var/lib/tailscale/state
+
+  watchtower:
+    image: nickfedor/watchtower:latest
+    restart: unless-stopped
+    command:
+      - --label-enable
+      - --cleanup
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
