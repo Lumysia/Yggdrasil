@@ -27,7 +27,8 @@
   boot.kernelParams = [ "console=ttyS0,115200" "console=tty1" ];
 
   networking.firewall.enable = true;
-  
+  services.qemuGuest.enable = true;
+
   # Mounts
   fileSystems."/data" = {
     device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1";
