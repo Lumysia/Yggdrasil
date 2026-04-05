@@ -1,0 +1,49 @@
+[[action]]
+name = "Deploy Auto-Deploy Tagged Stacks"
+description = "Lists stacks tagged auto-deploy and runs DeployStackIfChanged sequentially, leaving untagged or manually managed stacks untouched."
+tags = ["system", "stacks", "auto-deploy"]
+
+[action.config]
+file_contents = """
+const TAG = "auto-deploy";
+
+const stacks = await komodo.read("ListFullStacks", {
+  query: {
+    tags: [TAG],
+  },
+});
+
+console.log(`Found ${stacks.length} stack(s) with tag '${TAG}'`);
+
+const failures: string[] = [];
+
+for (const stack of stacks) {
+  const stackName = stack.name;
+  console.log(`Checking stack: ${stackName}`);
+
+  try {
+    const update = await komodo.execute_and_poll("DeployStackIfChanged", {
+      stack: stackName,
+    });
+
+    console.log(
+      `[${stackName}] success=${update.success} operation=${update.operation}`,
+    );
+
+    if (!update.success) {
+      failures.push(stackName);
+    }
+  } catch (error) {
+    console.error(`[${stackName}] execution failed`, error);
+    failures.push(stackName);
+  }
+}
+
+if (failures.length) {
+  throw new Error(`DeployStackIfChanged failed for: ${failures.join(", ")}`);
+}
+
+console.log("Tagged stack deployment check complete.");
+"""
+
+##
