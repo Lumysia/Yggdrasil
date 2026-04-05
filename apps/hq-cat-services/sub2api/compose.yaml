@@ -34,7 +34,7 @@ services:
     env_file:
       - stack.env
     volumes:
-      - ${DB_PATH}/sub2api-postgres:/var/lib/postgresql/data
+      - ${DB_PATH}/sub2api-postgres:/var/lib/postgresql
     networks:
       - sub2api_net
     healthcheck:
