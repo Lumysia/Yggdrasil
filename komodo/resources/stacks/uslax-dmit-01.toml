@@ -1,5 +1,6 @@
 [[stack]]
 name = "uslax-dmit-01-general"
+tags = ["auto-deploy"]
 [stack.config]
 server = "uslax-dmit-01"
 poll_for_updates = true

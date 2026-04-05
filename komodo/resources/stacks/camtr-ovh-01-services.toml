@@ -1,5 +1,6 @@
 [[stack]]
 name = "camtr-ovh-01-services-gateway"
+tags = ["auto-deploy"]
 [stack.config]
 server = "camtr-ovh-01-services"
 poll_for_updates = true
@@ -21,6 +22,7 @@ CAMTROVH01_SERVICES_CFD_TOKEN=[[CAMTROVH01_SERVICES_CFD_TOKEN]]
 
 [[stack]]
 name = "camtr-ovh-01-services-media"
+tags = ["auto-deploy"]
 [stack.config]
 server = "camtr-ovh-01-services"
 poll_for_updates = true

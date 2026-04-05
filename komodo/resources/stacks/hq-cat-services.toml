@@ -1,5 +1,6 @@
 [[stack]]
 name = "hq-cat-services-networking"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -104,6 +105,7 @@ OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_SURE_OIDC_CLIENT_SECRET]]
 
 [[stack]]
 name = "hq-cat-services-sub2api"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -127,6 +129,7 @@ TOTP_ENCRYPTION_KEY=[[HQCAT_SERVICES_SUB2API_TOTP_ENCRYPTION_KEY]]
 
 [[stack]]
 name = "hq-cat-services-trek"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -150,6 +153,7 @@ OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_TREK_OIDC_CLIENT_SECRET]]
 
 [[stack]]
 name = "hq-cat-services-forgejo"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -178,6 +182,7 @@ RENOVATE_TOKEN=[[HQCAT_SERVICES_FORGEJO_RENOVATE_TOKEN]]
 
 [[stack]]
 name = "hq-cat-services-immich"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -198,6 +203,7 @@ DB_PASSWORD=[[HQCAT_SERVICES_IMMICH_DBPWD]]
 
 [[stack]]
 name = "hq-cat-services-seafile"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true

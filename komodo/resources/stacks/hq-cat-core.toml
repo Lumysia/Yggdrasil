@@ -1,5 +1,6 @@
 [[stack]]
 name = "hq-cat-core-dns"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-core"
 poll_for_updates = true
@@ -15,6 +16,7 @@ extra_args = ["--remove-orphans"]
 
 [[stack]]
 name = "hq-cat-core-networking"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-core"
 poll_for_updates = true
