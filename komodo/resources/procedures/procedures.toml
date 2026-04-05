@@ -1,5 +1,6 @@
 [[procedure]]
-name = "Automatic Sync and Deployment"
+name = "Run Sync and Deploy"
+tags = ["system"]
 config.schedule = "0 0 */6 * * *"
 config.schedule_format = "Cron"
 
