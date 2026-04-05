@@ -34,19 +34,7 @@
     options = [ "defaults" "nofail" "noatime" ];
   };
 
-  fileSystems."/data/games" = {
-    device = "games";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
-  fileSystems."/data/backups" = {
-    device = "backups";
-    fsType = "virtiofs";
-    options = [ "defaults" "nofail" "noatime" ];
-  };
-
-  fileSystems."/data-new" = {
+  fileSystems."/data" = {
     device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1";
     fsType = "ext4";
     options = [ "defaults" "nofail" "noatime" ];
