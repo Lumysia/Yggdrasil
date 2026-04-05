@@ -10,6 +10,13 @@ executions = [
   { execution.type = "RunSync", execution.params.sync = "Sync-Yggdrasil", enabled = true }
 ]
 
+[[procedure.config.stage]]
+name = "Stage 2"
+enabled = true
+executions = [
+  { execution.type = "BatchDeployStackIfChanged", execution.params.pattern = "*", enabled = true }
+]
+
 ##
 
 [[procedure]]
