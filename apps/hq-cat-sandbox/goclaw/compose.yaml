@@ -1,6 +1,6 @@
 services:
   goclaw:
-    image: ghcr.io/nextlevelbuilder/goclaw:latest
+    image: ghcr.io/nextlevelbuilder/goclaw:full
     restart: unless-stopped
     depends_on:
       postgres:
