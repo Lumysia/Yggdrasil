@@ -66,6 +66,10 @@
           hostname = "hq-cat-services";
         };
 
+        hq-cat-sandbox = mkSystem {
+          hostname = "hq-cat-sandbox";
+        };
+
         hq-nya-services = mkSystem {
           hostname = "hq-nya-services";
         };

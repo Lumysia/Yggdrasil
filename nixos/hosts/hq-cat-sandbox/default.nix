@@ -22,21 +22,21 @@
 
   time.timeZone = "America/Toronto";
 
-  # Bootloader.
+  # Bootloader
   boot.loader.grub.enable = true;
   boot.loader.grub.device = "/dev/sda";
   boot.loader.grub.useOSProber = true;
   boot.kernelParams = [ "console=ttyS0,115200" "console=tty1" ];
 
   networking.firewall.enable = true;
+  services.qemuGuest.enable = true;
 
   # Mounts
-  fileSystems."/data/infra" = {
-    device = "infra";
-    fsType = "virtiofs";
+  fileSystems."/data" = {
+    device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1";
+    fsType = "ext4";
     options = [ "defaults" "nofail" "noatime" ];
   };
 
   system.stateVersion = "25.05";
-
 }

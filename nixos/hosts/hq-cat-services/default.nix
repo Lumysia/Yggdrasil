@@ -16,7 +16,6 @@
   features.server.openssh.enable = true;
   features.virtualisation.docker.enable = true;
   features.services.tailscale.enable = true;
-  # services.tailscale.authKeyFile = "/home/suser/tailscalekey";
   features.user.suser.enable = true;
 
   time.timeZone = "America/Toronto";
