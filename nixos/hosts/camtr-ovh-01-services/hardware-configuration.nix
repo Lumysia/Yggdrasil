@@ -15,9 +15,9 @@
       fsType = "ext4";
     };
 
-  swapDevices =
-    [ { device = "/dev/disk/by-uuid/0c9c9c2a-898c-47dc-918e-2934a2c59a5f"; }
-    ];
+  swapDevices = [
+    { device = "/swapfile"; size = 4096; }
+  ];
 
   networking.useDHCP = lib.mkDefault true;
   # networking.interfaces.ens18.useDHCP = lib.mkDefault true;
