@@ -54,7 +54,7 @@ enabled = true
 [[server]]
 name = "hq-cat-sandbox"
 [server.config]
-address = "https://REPLACE_WITH_TAILSCALE_IP:8120"
+address = "https://100.103.135.32:8120"
 region = "ca-central"
 enabled = true
 
