@@ -23,6 +23,7 @@ services:
       caddy.reverse_proxy: "{{upstreams 4141}}"
     environment:
       GH_TOKEN: ${GH_TOKEN}
+      COPILOT_API_KEY: ${COPILOT_API_KEY}
     networks:
       - shared_aiapi_net
 

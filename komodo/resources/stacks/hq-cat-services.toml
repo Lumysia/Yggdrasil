@@ -39,6 +39,7 @@ extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 GH_TOKEN=[[HQCAT_SERVICES_AIAPI_GH_TOKEN]]
+COPILOT_API_KEY=[[HQCAT_SERVICES_AIAPI_CAAK]]
 """
 
 ##
