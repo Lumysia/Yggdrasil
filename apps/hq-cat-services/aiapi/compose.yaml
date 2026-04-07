@@ -1,0 +1,31 @@
+services:
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   restart: unless-stopped
+  #   tty: true
+  #   networks:
+  #     - shared_aiapi_net
+  #   env_file:
+  #     - stack.env
+  #   volumes:
+  #     - ${BLOBSTORE_PATH}/ollama:/root/.ollama
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '4.0'
+
+  copilot-api:
+    image: essaypu/copilot-api-plus:alpine-nightly
+    restart: unless-stopped
+    labels:
+      caddy: capi.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 4141}}"
+    environment:
+      GH_TOKEN: ${GH_TOKEN}
+    networks:
+      - shared_aiapi_net
+
+networks:
+  shared_aiapi_net:
+    external: true

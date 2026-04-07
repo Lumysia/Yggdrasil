@@ -21,20 +21,25 @@ HQCAT_SERVICES_CFD_TOKEN=[[HQCAT_SERVICES_CFD_TOKEN]]
 ##
 
 [[stack]]
-name = "hq-cat-services-ollama"
+name = "hq-cat-services-aiapi"
+tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/ollama"
+run_directory = "apps/hq-cat-services/aiapi"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_ollama_net || true
+docker network create shared_aiapi_net || true
 """
 extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+GH_TOKEN=[[HQCAT_SERVICES_AIAPI_GH_TOKEN]]
+"""
 
 ##
 
@@ -105,7 +110,6 @@ OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_SURE_OIDC_CLIENT_SECRET]]
 
 [[stack]]
 name = "hq-cat-services-sub2api"
-tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -123,7 +127,6 @@ environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 JWT_SECRET=[[HQCAT_SERVICES_SUB2API_JWT_SECRET]]
 TOTP_ENCRYPTION_KEY=[[HQCAT_SERVICES_SUB2API_TOTP_ENCRYPTION_KEY]]
-GH_TOKEN=[[HQCAT_SERVICES_SUB2API_GH_TOKEN]]
 """
 
 ##

@@ -12,6 +12,7 @@ services:
     networks:
       - shared_trek_net
       - shared_sub2api_net
+      - shared_aiapi_net
       - shared_seafile_net
       - shared_immich_net
       - shared_forgejo_net
@@ -50,6 +51,8 @@ networks:
   shared_trek_net:
     external: true
   shared_sub2api_net:
+    external: true
+  shared_aiapi_net:
     external: true
   shared_seafile_net:
     external: true
