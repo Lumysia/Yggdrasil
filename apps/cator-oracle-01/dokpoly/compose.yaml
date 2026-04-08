@@ -47,7 +47,7 @@ services:
       - dokploy-network
 
   traefik:
-    image: traefik:v3.6.12
+    image: traefik:v3.6.13
     restart: unless-stopped
     depends_on:
       - dokploy
