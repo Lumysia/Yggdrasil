@@ -67,7 +67,7 @@ services:
       - sure_net
 
   db:
-    image: postgres:17
+    image: postgres:18
     restart: unless-stopped
     volumes:
       - ${DB_PATH}/sure_db:/var/lib/postgresql/data
