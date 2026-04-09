@@ -230,22 +230,6 @@ In the Komodo UI, populate all `[[VARIABLE]]` references used in stack environme
 
 ## Usage
 
-### Accessing Services
-
-After deployment, services are reachable at their Caddy-assigned subdomains:
-
-| Service | URL Pattern |
-|---|---|
-| Homepage | `https://www.{DOMAIN}` |
-| Pocket ID | `https://id.{DOMAIN}` |
-| SSO Proxy | `https://sso.{DOMAIN}` |
-| Forgejo | `https://code.{DOMAIN}` |
-| Immich | `https://immich.{DOMAIN}` |
-| Seafile | `https://seafile.{DOMAIN}` |
-| OnlyOffice | `https://office.{DOMAIN}` |
-| Copilot API | `https://capi.{DOMAIN}` |
-| Dokploy | `https://dokploy.{DOMAIN}` |
-
 ### Viewing Logs
 
 ```
@@ -265,75 +249,6 @@ git push
 ```
 
 The GitHub Actions pipeline will also validate the change across all hosts automatically.
-
-## Directory Structure
-
-```
-Yggdrasil/
-├── apps/                          # Docker Compose stacks, grouped by host
-│   ├── hq-cat-core/               #   Core infra: DNS, networking, identity
-│   │   ├── dns/                    #     AdGuard Home
-│   │   └── networking/             #     Caddy, Cloudflared, Homepage, Pocket ID, OAuth2 Proxy
-│   ├── hq-cat-services/           #   Primary service host
-│   │   ├── networking/             #     Caddy + Cloudflared ingress
-│   │   ├── forgejo/                #     Git forge
-│   │   ├── immich/                 #     Photo management
-│   │   ├── seafile/                #     File sync + OnlyOffice
-│   │   ├── lobechat/               #     AI chat interface
-│   │   ├── aiapi/                  #     Copilot API proxy
-│   │   └── .../                    #     trek, sure, sub2api
-│   ├── hq-cat-games/              #   Game servers: Minecraft, Palworld
-│   ├── hq-cat-sandbox/            #   Experimental workloads
-│   ├── hq-nya-services/           #   Secondary service host (cn-north)
-│   ├── camtr-ovh-01-*/            #   OVH Canada cloud instances
-│   ├── cator-oracle-01/           #   Oracle Cloud: Dokploy PaaS
-│   ├── uslax-dmit-01/             #   DMIT US West: Xray + Hysteria
-│   ├── uslax-dmit-02/             #   DMIT US West: Xray + Hysteria
-│   └── jptyo-greencloud-01/       #   GreenCloud Japan: Xray
-│
-├── komodo/                        # Komodo orchestration platform
-│   ├── infra/                     #   Deployment manifests
-│   │   ├── core/                  #     Komodo Core + MongoDB + Periphery
-│   │   ├── periphery-only/        #     Periphery agent (NixOS hosts)
-│   │   └── periphery-tailscale/   #     Periphery + Tailscale sidecar (non-NixOS)
-│   └── resources/                 #   GitOps resource definitions (TOML)
-│       ├── servers/               #     Fleet inventory (Tailscale addresses)
-│       ├── stacks/                #     Per-host stack configs with secrets refs
-│       ├── syncs/                 #     Repo sync configuration
-│       ├── procedures/            #     Scheduled automation (sync, deploy, backup, key rotation)
-│       ├── actions/               #     Programmable actions (TypeScript)
-│       └── alerters/              #     Ntfy notification rules
-│
-├── nixos/                         # NixOS system configurations
-│   ├── flake.nix                  #   Flake entry point with host definitions
-│   ├── hosts/                     #   Per-host config (8 servers + 1 desktop)
-│   │   ├── hq-cat-core/
-│   │   ├── hq-cat-services/
-│   │   ├── kawaii/                #     Personal desktop (GNOME, Nvidia, gaming)
-│   │   └── .../
-│   ├── modules/                   #   Reusable NixOS modules
-│   │   ├── features/
-│   │   │   ├── core.nix           #     Base system (Nix settings, packages, locale)
-│   │   │   ├── security/          #     SOPS integration
-│   │   │   ├── server/            #     OpenSSH (key-only)
-│   │   │   ├── services/          #     Tailscale
-│   │   │   ├── virtualisation/    #     Docker, Podman, libvirtd
-│   │   │   ├── desktop/           #     GNOME, Flatpak, gaming
-│   │   │   └── hardware/          #     Nvidia
-│   │   └── home/users/            #     Home Manager user profiles
-│   └── secrets/                   #   SOPS-encrypted secrets (age)
-│
-├── .github/                       # CI/CD
-│   ├── workflows/
-│   │   ├── nixos-check.yaml       #   Flake check + dry-run build matrix
-│   │   └── update-flake-lock.yaml #   Weekly flake.lock auto-update PR
-│   └── dependabot.yml             #   Docker Compose image updates
-│
-├── nixos-rebuild.sh               # Host build/rebuild helper script
-├── .sops.yaml                     # SOPS encryption rules
-├── CLAUDE.md                      # Repository conventions
-└── LICENSE                        # AGPL-3.0
-```
 
 ## License
 
