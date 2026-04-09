@@ -36,6 +36,9 @@ services:
       - ${AIMODELS_PATH}/immich:/cache
     env_file:
       - stack.env
+    environment:
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     healthcheck:
       disable: false
 
@@ -54,6 +57,9 @@ services:
       - ${DB_PATH}/immich:/var/lib/postgresql/data
     env_file:
       - stack.env
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     shm_size: 128mb
 
 networks:

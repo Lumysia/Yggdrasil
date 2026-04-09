@@ -9,6 +9,13 @@ services:
     env_file:
       - stack.env
     environment:
+      FORGEJO__SERVER__DOMAIN: code.${COMMON_DOMAIN_A}
+      FORGEJO__SERVER__ROOT_URL: https://code.${COMMON_DOMAIN_A}
+      FORGEJO__SERVER__SSH_DOMAIN: code-ssh.${COMMON_DOMAIN_A}
+      FORGEJO__MAILER__FROM: Forgejo <no-reply@${COMMON_DOMAIN_A}>
+      FORGEJO__MAILER__SMTP_ADDR: ${EMAIL_SMTP_HOST}
+      FORGEJO__MAILER__USER: ${EMAIL_SMTP_USERNAME}
+      FORGEJO__MAILER__PASSWD: ${EMAIL_SMTP_PASSWORD}
       EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST}
       EMAIL_SMTP_USERNAME: ${EMAIL_SMTP_USERNAME}
       EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
@@ -28,6 +35,7 @@ services:
     env_file:
       - stack.env
     environment:
+      RENOVATE_ENDPOINT: https://code.${COMMON_DOMAIN_A}/api/v1/
       RENOVATE_TOKEN: ${RENOVATE_TOKEN}
 networks:
   shared_forgejo_net:
