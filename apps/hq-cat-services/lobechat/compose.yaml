@@ -56,6 +56,7 @@ services:
     env_file:
       - stack.env
     environment:
+      APP_URL: https://lobe.${COMMON_DOMAIN_A}
       KEY_VAULTS_SECRET: ${KEY_VAULTS_SECRET}
       AUTH_SECRET: ${AUTH_SECRET}
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgresql:5432/lobechat
