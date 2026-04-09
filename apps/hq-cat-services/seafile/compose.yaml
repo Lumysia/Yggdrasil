@@ -54,7 +54,10 @@ services:
       INIT_SS_ADMIN_USER: ${INIT_SS_ADMIN_USER}
       INIT_SS_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+      SEAFILE_SERVER_HOSTNAME: seafile.${COMMON_DOMAIN_A}
+      SEADOC_SERVER_URL: https://seafile.${COMMON_DOMAIN_A}/sdoc-server
     depends_on:
       db:
         condition: service_healthy
@@ -78,7 +81,9 @@ services:
     env_file:
       - stack.env
     environment:
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+      DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -96,6 +101,7 @@ services:
     env_file:
       - stack.env
     environment:
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
     depends_on:
       db:
@@ -139,6 +145,8 @@ services:
     env_file:
       - stack.env
     environment:
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
     depends_on:
       db:
