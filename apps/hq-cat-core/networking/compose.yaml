@@ -75,6 +75,7 @@ services:
     environment:
       MAXMIND_LICENSE_KEY: ${HQCAT_CORE_MAXMIND_LICENSE_KEY}
       APP_URL: https://id.${COMMON_DOMAIN_A}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     healthcheck:
       test: [ "CMD", "/app/pocket-id", "healthcheck" ]
       interval: 1m30s
