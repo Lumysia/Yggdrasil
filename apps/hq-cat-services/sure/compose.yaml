@@ -13,6 +13,19 @@ services:
     env_file:
       - stack.env
       - sure.env
+    environment:
+      SMTP_ADDRESS: ${SMTP_ADDRESS}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      EMAIL_SENDER: no-reply@${COMMON_DOMAIN_A}
+      POSTHOG_KEY: ${POSTHOG_KEY}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      OPENAI_ACCESS_TOKEN: ${OPENAI_ACCESS_TOKEN}
+      BRAND_FETCH_CLIENT_ID: ${BRAND_FETCH_CLIENT_ID}
+      APP_DOMAIN: https://sure.${COMMON_DOMAIN_A}
+      OIDC_ISSUER: https://id.${COMMON_DOMAIN_A}
+      OIDC_REDIRECT_URI: https://sure.${COMMON_DOMAIN_A}/auth/openid_connect/callback
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
     depends_on:
       db:
         condition: service_healthy
@@ -31,6 +44,19 @@ services:
     env_file:
       - stack.env
       - sure.env
+    environment:
+      SMTP_ADDRESS: ${SMTP_ADDRESS}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      EMAIL_SENDER: no-reply@${COMMON_DOMAIN_A}
+      POSTHOG_KEY: ${POSTHOG_KEY}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      OPENAI_ACCESS_TOKEN: ${OPENAI_ACCESS_TOKEN}
+      BRAND_FETCH_CLIENT_ID: ${BRAND_FETCH_CLIENT_ID}
+      APP_DOMAIN: https://sure.${COMMON_DOMAIN_A}
+      OIDC_ISSUER: https://id.${COMMON_DOMAIN_A}
+      OIDC_REDIRECT_URI: https://sure.${COMMON_DOMAIN_A}/auth/openid_connect/callback
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
     depends_on:
       db:
         condition: service_healthy
