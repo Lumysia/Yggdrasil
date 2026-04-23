@@ -45,6 +45,28 @@ COPILOT_API_KEY=[[HQCAT_SERVICES_AIAPI_CAAK]]
 ##
 
 [[stack]]
+name = "hq-cat-services-opencode"
+tags = ["auto-deploy"]
+[stack.config]
+server = "hq-cat-services"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-services/opencode"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+docker network create shared_opencode_net || true
+"""
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+"""
+
+##
+
+[[stack]]
 name = "hq-cat-services-lobechat"
 [stack.config]
 server = "hq-cat-services"

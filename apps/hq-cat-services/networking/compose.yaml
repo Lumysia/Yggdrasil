@@ -10,6 +10,7 @@ services:
       - 443:443
       - 443:443/udp
     networks:
+      - shared_opencode_net
       - shared_trek_net
       - shared_sub2api_net
       - shared_aiapi_net
@@ -34,6 +35,20 @@ services:
       caddy_3: (common_tls)
       caddy_3.tls.dns: cloudflare ${CLOUDFLARE_API_TOKEN}
       caddy_3.tls.resolvers: 8.8.8.8 8.8.4.4 1.1.1.1
+      caddy_4: (protected_forward_auth)
+      caddy_4.forward_auth: https://sso.${COMMON_DOMAIN_A}
+      caddy_4.forward_auth.1_uri: /oauth2/auth
+      caddy_4.forward_auth.2_@error: status 401
+      caddy_4.forward_auth.3_handle_response: "@error"
+      caddy_4.forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy_5: (protected_forward_auth_except)
+      caddy_5.@protected_paths: |-
+        not path {args[0:]}
+      caddy_5.forward_auth: "@protected_paths https://sso.${COMMON_DOMAIN_A}"
+      caddy_5.forward_auth.1_uri: /oauth2/auth
+      caddy_5.forward_auth.2_@error: status 401
+      caddy_5.forward_auth.3_handle_response: "@error"
+      caddy_5.forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
   
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -49,6 +64,8 @@ networks:
   cloudflare_net:
     enable_ipv6: true
   shared_trek_net:
+    external: true
+  shared_opencode_net:
     external: true
   shared_sub2api_net:
     external: true
