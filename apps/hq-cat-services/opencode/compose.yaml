@@ -1,5 +1,5 @@
 services:
-  oc-shar:
+  opencode:
     image: ghcr.io/anomalyco/opencode:latest
     command:
       - web
@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     working_dir: /workspace
     labels:
-      caddy: oc-shar.${COMMON_DOMAIN_A}
+      caddy: opencode.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
       caddy.import_1: protected_forward_auth
       caddy.reverse_proxy: "{{upstreams 4096}}"
@@ -22,36 +22,8 @@ services:
       XDG_CACHE_HOME: /data/cache
       XDG_STATE_HOME: /data/state
     volumes:
-      - ${APPDATA_PATH}/oc-shar:/data
-      - ${APPDATA_PATH}/oc-shar-workspace:/workspace
-    networks:
-      - shared_opencode_net
-
-  oc-selina:
-    image: ghcr.io/anomalyco/opencode:latest
-    command:
-      - web
-      - --hostname
-      - 0.0.0.0
-      - --port
-      - "4096"
-    restart: unless-stopped
-    working_dir: /workspace
-    labels:
-      caddy: oc-selina.${COMMON_DOMAIN_A}
-      caddy.import_0: common_tls
-      caddy.import_1: protected_forward_auth
-      caddy.reverse_proxy: "{{upstreams 4096}}"
-    env_file:
-      - stack.env
-    environment:
-      XDG_CONFIG_HOME: /data/config
-      XDG_DATA_HOME: /data/data
-      XDG_CACHE_HOME: /data/cache
-      XDG_STATE_HOME: /data/state
-    volumes:
-      - ${APPDATA_PATH}/oc-selina:/data
-      - ${APPDATA_PATH}/oc-selina-workspace:/workspace
+      - ${APPDATA_PATH}/opencode:/data
+      - ${APPDATA_PATH}/opencode-workspace:/workspace
     networks:
       - shared_opencode_net
 
