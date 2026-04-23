@@ -17,6 +17,7 @@ services:
     env_file:
       - stack.env
     environment:
+      BRAVE_API_KEY: ${BRAVE_API_KEY}
       XDG_CONFIG_HOME: /data/config
       XDG_DATA_HOME: /data/data
       XDG_CACHE_HOME: /data/cache
@@ -45,6 +46,7 @@ services:
     env_file:
       - stack.env
     environment:
+      BRAVE_API_KEY: ${BRAVE_API_KEY}
       OPENCODE_SERVER_PASSWORD: ${OPENCODE_SERVER_PASSWORD}
       XDG_CONFIG_HOME: /data/config
       XDG_DATA_HOME: /data/data
