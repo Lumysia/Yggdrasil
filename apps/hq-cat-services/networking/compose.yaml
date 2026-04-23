@@ -11,14 +11,12 @@ services:
       - 443:443/udp
     networks:
       - shared_opencode_net
-      - shared_trek_net
       - shared_sub2api_net
       - shared_aiapi_net
       - shared_seafile_net
       - shared_immich_net
       - shared_forgejo_net
       - shared_lobechat_net
-      - shared_sure_net
       - cloudflare_net
     volumes:
       - ${APPDATA_PATH}/caddyservices/data:/data/caddy
@@ -63,8 +61,6 @@ services:
 networks:
   cloudflare_net:
     enable_ipv6: true
-  shared_trek_net:
-    external: true
   shared_opencode_net:
     external: true
   shared_sub2api_net:
@@ -78,6 +74,4 @@ networks:
   shared_forgejo_net:
     external: true
   shared_lobechat_net:
-    external: true
-  shared_sure_net:
     external: true

@@ -98,40 +98,6 @@ COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 ##
 
 [[stack]]
-name = "hq-cat-services-sure"
-[stack.config]
-server = "hq-cat-services"
-poll_for_updates = true
-auto_update = true
-linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/sure"
-additional_env_files = [
-  { path = "stack.env", track = true },
-  { path = "sure.env", track = true }
-]
-pre_deploy.command = """
-docker network create shared_sure_net || true
-"""
-extra_args = ["--remove-orphans"]
-environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-POSTGRES_PASSWORD=[[HQCAT_SERVICES_SURE_DBPWD]]
-SMTP_USERNAME=[[COMMON_SMTP_01_SERVER_USERNAME]]
-SMTP_PASSWORD=[[COMMON_SMTP_01_SERVER_PASSWORD]]
-SMTP_ADDRESS=[[COMMON_SMTP_01_SERVER_ADDRESS]]
-
-SECRET_KEY_BASE=[[HQCAT_SERVICES_SURE_SECRET_KEY_BASE]]
-OPENAI_ACCESS_TOKEN=[[HQCAT_SERVICES_SURE_OPENAI_ACCESS_TOKEN]]
-BRAND_FETCH_CLIENT_ID=[[HQCAT_SERVICES_SURE_BRANDFETCH_CLIENT_ID]]
-# TWELVE_DATA_API_KEY=[[HQCAT_SERVICES_SURE_TWELVE_DATA_API_KEY]]
-POSTHOG_KEY=[[HQCAT_SERVICES_SURE_POSTHOG_KEY]]
-
-OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_SURE_OIDC_CLIENT_SECRET]]
-"""
-
-##
-
-[[stack]]
 name = "hq-cat-services-sub2api"
 [stack.config]
 server = "hq-cat-services"
@@ -150,30 +116,6 @@ environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 JWT_SECRET=[[HQCAT_SERVICES_SUB2API_JWT_SECRET]]
 TOTP_ENCRYPTION_KEY=[[HQCAT_SERVICES_SUB2API_TOTP_ENCRYPTION_KEY]]
-"""
-
-##
-
-[[stack]]
-name = "hq-cat-services-trek"
-tags = ["auto-deploy"]
-[stack.config]
-server = "hq-cat-services"
-poll_for_updates = true
-auto_update = true
-linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/trek"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
-pre_deploy.command = """
-docker network create shared_trek_net || true
-"""
-extra_args = ["--remove-orphans"]
-environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-ENCRYPTION_KEY=[[HQCAT_SERVICES_TREK_ENCRYPTION_KEY]]
-OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_TREK_OIDC_CLIENT_SECRET]]
 """
 
 ##
