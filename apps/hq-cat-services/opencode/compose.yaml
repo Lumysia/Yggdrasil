@@ -12,11 +12,11 @@ services:
     labels:
       caddy: oc-shar.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
+      caddy.import_1: protected_forward_auth
       caddy.reverse_proxy: "{{upstreams 4096}}"
     env_file:
       - stack.env
     environment:
-      OPENCODE_SERVER_PASSWORD: ${OPENCODE_SERVER_PASSWORD}
       XDG_CONFIG_HOME: /data/config
       XDG_DATA_HOME: /data/data
       XDG_CACHE_HOME: /data/cache
@@ -40,11 +40,11 @@ services:
     labels:
       caddy: oc-selina.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
+      caddy.import_1: protected_forward_auth
       caddy.reverse_proxy: "{{upstreams 4096}}"
     env_file:
       - stack.env
     environment:
-      OPENCODE_SERVER_PASSWORD: ${OPENCODE_SERVER_PASSWORD}
       XDG_CONFIG_HOME: /data/config
       XDG_DATA_HOME: /data/data
       XDG_CACHE_HOME: /data/cache

@@ -62,7 +62,6 @@ docker network create shared_opencode_net || true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-OPENCODE_SERVER_PASSWORD=[[HQCAT_SERVICES_OPENCODE_SERVER_PASSWORD]]
 """
 
 ##
