@@ -26,6 +26,7 @@ For each app stack:
   - values built from Komodo-provided variables such as `${COMMON_DOMAIN_A}`
 - avoid defining the same variable in both `stack.env` and `compose.yaml` unless there is an intentional override
 - in Komodo `*.toml`, keep only interpolation source values in the stack `environment` block
+- do not assume `~` or a home directory; check the actual runtime user/home
 
 ### Environment Mapping Rules
 
