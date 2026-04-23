@@ -1,6 +1,5 @@
 [[stack]]
 name = "hq-cat-core-dns"
-tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-core"
 poll_for_updates = true
