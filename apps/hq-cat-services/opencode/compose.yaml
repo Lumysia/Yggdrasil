@@ -12,7 +12,6 @@ services:
     labels:
       caddy: oc-shar.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.import_1: protected_forward_auth
       caddy.reverse_proxy: "{{upstreams 4096}}"
     env_file:
       - stack.env
@@ -41,7 +40,6 @@ services:
     labels:
       caddy: oc-selina.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.import_1: protected_forward_auth
       caddy.reverse_proxy: "{{upstreams 4096}}"
     env_file:
       - stack.env
