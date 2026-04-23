@@ -4,7 +4,6 @@ tags = ["auto-deploy"]
 [stack.config]
 server = "cator-oracle-01"
 poll_for_updates = true
-auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/cator-oracle-01/networking"
 additional_env_files = [
@@ -38,6 +37,23 @@ extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 DOKPLOY_POSTGRES_PASSWORD=[[CATOR_ORACLE_01_DOKPOLY_POSTGRES_PASSWORD]]
+"""
+
+##
+
+[[stack]]
+name = "cator-oracle-01-cua"
+[stack.config]
+server = "cator-oracle-01"
+poll_for_updates = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/cator-oracle-01/cua"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 """
 
 ##

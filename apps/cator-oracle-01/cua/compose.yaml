@@ -1,0 +1,27 @@
+services:
+  cua:
+    image: trycua/cua-xfce:latest
+    restart: unless-stopped
+    shm_size: 512m
+    env_file:
+      - stack.env
+    environment:
+      VNC_RESOLUTION: ${CUA_VNC_RESOLUTION}
+      VNC_COL_DEPTH: ${CUA_VNC_COL_DEPTH}
+    labels:
+      caddy: cua.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_forward_auth
+      caddy.reverse_proxy: "{{upstreams 6901}}"
+    volumes:
+      - ${APPDATA_PATH}/cua/storage:/home/cua/storage
+      - ${APPDATA_PATH}/cua/shared:/home/cua/shared
+    networks:
+      - cua_internal_net
+      - shared_cua_net
+
+networks:
+  cua_internal_net:
+    internal: true
+  shared_cua_net:
+    external: true
