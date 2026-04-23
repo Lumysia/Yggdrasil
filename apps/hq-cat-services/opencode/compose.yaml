@@ -17,7 +17,6 @@ services:
     env_file:
       - stack.env
     environment:
-      HOME: /home/opencode
       XDG_CONFIG_HOME: /data/config
       XDG_DATA_HOME: /data/data
       XDG_CACHE_HOME: /data/cache
@@ -25,7 +24,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/opencode:/data
       - ${APPDATA_PATH}/opencode-workspace:/workspace
-      - ${APPDATA_PATH}/opencode-home:/home/opencode
+      - ${APPDATA_PATH}/opencode-home:/root
     networks:
       - shared_opencode_net
 
@@ -47,7 +46,6 @@ services:
       - stack.env
     environment:
       OPENCODE_SERVER_PASSWORD: ${OPENCODE_SERVER_PASSWORD}
-      HOME: /home/opencode
       XDG_CONFIG_HOME: /data/config
       XDG_DATA_HOME: /data/data
       XDG_CACHE_HOME: /data/cache
@@ -55,7 +53,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/opencode:/data
       - ${APPDATA_PATH}/opencode-workspace:/workspace
-      - ${APPDATA_PATH}/opencode-home:/home/opencode
+      - ${APPDATA_PATH}/opencode-home:/root
     networks:
       - shared_opencode_net
 
