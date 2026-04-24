@@ -13,13 +13,9 @@ services:
       JWT_API_TOKENS_SECRET: ${JWT_API_TOKENS_SECRET}
       METRICS_PASS: ${METRICS_PASS}
     labels:
-      caddy_0: remnawave.${COMMON_DOMAIN_A}
-      caddy_0.import: common_tls
-      caddy_0.reverse_proxy: "{{upstreams 3000}}"
-      caddy_1: sub.${COMMON_DOMAIN_B}
-      caddy_1.import: common_tls
-      caddy_1.rewrite: "* /api/sub{uri}"
-      caddy_1.reverse_proxy: "{{upstreams 3000}}"
+      caddy: remnawave.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
     networks:
       - remnawave_net
       - shared_remnawave_net
@@ -34,6 +30,24 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+
+  remnawave-subscription-page:
+    image: remnawave/subscription-page:latest
+    restart: always
+    environment:
+      APP_PORT: 3010
+      REMNAWAVE_PANEL_URL: http://remnawave:3000
+      REMNAWAVE_API_TOKEN: ${SUBSCRIPTION_PAGE_API_TOKEN}
+    labels:
+      caddy: sub.${COMMON_DOMAIN_B}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3010}}"
+    networks:
+      - remnawave_net
+      - shared_remnawave_net
+    depends_on:
+      remnawave:
+        condition: service_healthy
 
   remnawave-db:
     image: postgres:17
