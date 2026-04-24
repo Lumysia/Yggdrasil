@@ -57,3 +57,22 @@ COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 """
 
 ##
+
+[[stack]]
+name = "cator-oracle-01-remnawave-node"
+tags = ["auto-deploy"]
+[stack.config]
+server = "cator-oracle-01"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/cator-oracle-01/remnawave-node"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+REMNANODE_SECRET_KEY=[[CATOR_ORACLE_01_REMNANODE_SECRET_KEY]]
+"""
+
+##
