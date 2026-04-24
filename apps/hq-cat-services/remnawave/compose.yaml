@@ -8,14 +8,18 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@remnawave-db:5432/postgres
       FRONT_END_DOMAIN: remnawave.${COMMON_DOMAIN_A}
       PANEL_DOMAIN: remnawave.${COMMON_DOMAIN_A}
-      SUB_PUBLIC_DOMAIN: remnawave.${COMMON_DOMAIN_A}/api/sub
+      SUB_PUBLIC_DOMAIN: sub.${COMMON_DOMAIN_B}
       JWT_AUTH_SECRET: ${JWT_AUTH_SECRET}
       JWT_API_TOKENS_SECRET: ${JWT_API_TOKENS_SECRET}
       METRICS_PASS: ${METRICS_PASS}
     labels:
-      caddy: remnawave.${COMMON_DOMAIN_A}
-      caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 3000}}"
+      caddy_0: remnawave.${COMMON_DOMAIN_A}
+      caddy_0.import: common_tls
+      caddy_0.reverse_proxy: "{{upstreams 3000}}"
+      caddy_1: sub.${COMMON_DOMAIN_B}
+      caddy_1.import: common_tls
+      caddy_1.rewrite: "* /api/sub{uri}"
+      caddy_1.reverse_proxy: "{{upstreams 3000}}"
     networks:
       - remnawave_net
       - shared_remnawave_net
