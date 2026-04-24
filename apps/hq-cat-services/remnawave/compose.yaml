@@ -19,8 +19,6 @@ services:
     networks:
       - remnawave_net
       - shared_remnawave_net
-    volumes:
-      - /tmp/remnawave-valkey:/var/run/valkey
     depends_on:
       remnawave-db:
         condition: service_healthy
@@ -64,13 +62,9 @@ services:
       --appendonly no
       --maxmemory-policy noeviction
       --loglevel warning
-      --unixsocket /var/run/valkey/valkey.sock
-      --unixsocketperm 777
-      --port 0
-    volumes:
-      - /tmp/remnawave-valkey:/var/run/valkey
+      --port 6379
     healthcheck:
-      test: ["CMD", "valkey-cli", "-s", "/var/run/valkey/valkey.sock", "ping"]
+      test: ["CMD", "valkey-cli", "-p", "6379", "ping"]
       interval: 3s
       timeout: 3s
       retries: 3
