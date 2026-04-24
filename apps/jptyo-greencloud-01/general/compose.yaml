@@ -3,8 +3,8 @@ services:
     image: teddysun/xray:latest
     restart: always
     ports:
-      - 443:443/tcp
-      - 443:443/udp
+      - 8443:443/tcp
+      - 8443:443/udp
     volumes:
       - ${APPDATA_PATH}/xray:/etc/xray:ro
     tmpfs:

@@ -1,0 +1,81 @@
+services:
+  remnawave:
+    image: remnawave/backend:2
+    restart: always
+    env_file:
+      - stack.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@remnawave-db:5432/postgres
+      FRONT_END_DOMAIN: remnawave.${COMMON_DOMAIN_A}
+      PANEL_DOMAIN: remnawave.${COMMON_DOMAIN_A}
+      SUB_PUBLIC_DOMAIN: remnawave.${COMMON_DOMAIN_A}/api/sub
+      JWT_AUTH_SECRET: ${JWT_AUTH_SECRET}
+      JWT_API_TOKENS_SECRET: ${JWT_API_TOKENS_SECRET}
+      METRICS_PASS: ${METRICS_PASS}
+    labels:
+      caddy: remnawave.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    networks:
+      - remnawave_net
+      - shared_remnawave_net
+    volumes:
+      - /tmp/remnawave-valkey:/var/run/valkey
+    depends_on:
+      remnawave-db:
+        condition: service_healthy
+      remnawave-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${METRICS_PORT}/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  remnawave-db:
+    image: postgres:17
+    restart: always
+    env_file:
+      - stack.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      TZ: UTC
+    networks:
+      - remnawave_net
+    volumes:
+      - ${DB_PATH}/remnawave-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 3s
+      timeout: 10s
+      retries: 3
+
+  remnawave-redis:
+    image: valkey/valkey:9-alpine
+    restart: always
+    networks:
+      - remnawave_net
+    command: >
+      valkey-server
+      --save ""
+      --appendonly no
+      --maxmemory-policy noeviction
+      --loglevel warning
+      --unixsocket /var/run/valkey/valkey.sock
+      --unixsocketperm 777
+      --port 0
+    volumes:
+      - /tmp/remnawave-valkey:/var/run/valkey
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-s", "/var/run/valkey/valkey.sock", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+
+networks:
+  remnawave_net:
+  shared_remnawave_net:
+    external: true
