@@ -29,63 +29,40 @@ Yggdrasil is a **declarative infrastructure monorepo** that manages the complete
 graph TB
     subgraph "GitHub"
         GH_REPO["Lumysia/Yggdrasil<br/><i>Single Source of Truth</i>"]
-        GH_CI["GitHub Actions<br/><i>NixOS Check · Flake Update</i>"]
+        GH_CI["CI Pipeline"]
     end
 
     GH_REPO --> GH_CI
     GH_REPO --> KOMODO_CORE
 
-    subgraph "HQ — ca-central (On-Premises)"
-        subgraph "hq-cat-core"
-            KOMODO_CORE["Komodo Core<br/><i>Orchestrator + MongoDB</i>"]
-            POCKETID["Pocket ID<br/><i>OIDC Provider</i>"]
-            OAUTH2["OAuth2 Proxy<br/><i>SSO Gateway</i>"]
-            ADGUARD["AdGuard Home<br/><i>DNS</i>"]
-            CADDY_CORE["Caddy<br/><i>Reverse Proxy</i>"]
-        end
-
-        subgraph "hq-cat-services"
-            CADDY_SVC["Caddy + Cloudflared"]
-            FORGEJO["Forgejo"]
-            IMMICH["Immich"]
-            SEAFILE["Seafile + OnlyOffice"]
-            LOBECHAT["LobeChat"]
-            COPILOT["Copilot API"]
-            TREK["Trek"]
-            SURE["Sure"]
-        end
-
-        subgraph "hq-cat-games"
-            MC["Minecraft"]
-            PAL["Palworld"]
-            EASYTIER["EasyTier · PlayIt · Localtonet"]
-        end
-
-        HQ_OTHER["hq-cat-sandbox<br/>hq-nya-services"]
+    subgraph "Control Plane"
+        KOMODO_CORE["Orchestrator"]
+        IDENTITY["Identity & DNS"]
+        EDGE["Edge Proxy"]
     end
 
-    subgraph "Cloud Regions"
-        subgraph "ca-central (OVH / Oracle)"
-            CAMTR["camtr-ovh-01-*"]
-            CATOR["cator-oracle-01<br/><i>Dokploy PaaS</i>"]
-        end
-        subgraph "us-west (DMIT)"
-            USLAX["uslax-dmit-01/02<br/><i>Xray · Hysteria</i>"]
-        end
-        subgraph "ap-northeast (GreenCloud)"
-            JPTYO["jptyo-greencloud-01<br/><i>Xray</i>"]
-        end
+    subgraph "Service Plane"
+        SERVICES["Application Stacks"]
+        GAMES["Game Stacks"]
+        SANDBOX["Sandbox & Experiments"]
     end
 
-    KOMODO_CORE -- "Tailscale Mesh (100.x.y.z)" --> CADDY_SVC
-    KOMODO_CORE -- "Tailscale Mesh" --> HQ_OTHER
-    KOMODO_CORE -- "Tailscale Mesh" --> CAMTR
-    KOMODO_CORE -- "Tailscale Mesh" --> CATOR
-    KOMODO_CORE -- "Tailscale Mesh" --> USLAX
-    KOMODO_CORE -- "Tailscale Mesh" --> JPTYO
+    subgraph "Regional Nodes"
+        CA["Canada Nodes"]
+        US["US Nodes"]
+        JP["Japan Nodes"]
+    end
 
-    CADDY_CORE -- "Cloudflare Tunnel" --> CF["Cloudflare Edge"]
-    CADDY_SVC -- "Cloudflare Tunnel" --> CF
+    KOMODO_CORE -- "Deploys over mesh" --> SERVICES
+    KOMODO_CORE -- "Deploys over mesh" --> GAMES
+    KOMODO_CORE -- "Deploys over mesh" --> SANDBOX
+    KOMODO_CORE -- "Deploys over mesh" --> CA
+    KOMODO_CORE -- "Deploys over mesh" --> US
+    KOMODO_CORE -- "Deploys over mesh" --> JP
+
+    IDENTITY --> EDGE
+    SERVICES --> EDGE
+    EDGE -- "Public ingress" --> CF["Cloudflare Edge"]
 ```
 
 ### Data Flow
