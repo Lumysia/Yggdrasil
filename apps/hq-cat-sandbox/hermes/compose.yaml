@@ -6,6 +6,8 @@ services:
     env_file:
       - stack.env
     environment:
+      SEAFILE_REPO_TOKEN: ${SEAFILE_REPO_TOKEN}
+      SEAFILE_SERVER_URL: https://seafile.${COMMON_DOMAIN_A}
       TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
     volumes:
       - ${APPDATA_PATH}/hermes:/opt/data
