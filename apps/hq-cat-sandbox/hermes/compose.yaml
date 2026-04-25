@@ -9,7 +9,7 @@ services:
       - ${APPDATA_PATH}/hermes:/opt/data
     shm_size: 1g
     networks:
-      - hermes_internal_net
+      - hermes_app_net
 
   dashboard:
     image: nousresearch/hermes-agent:latest
@@ -27,11 +27,10 @@ services:
       caddy.import_1: protected_forward_auth
       caddy.reverse_proxy: "{{upstreams 9119}}"
     networks:
-      - hermes_internal_net
+      - hermes_app_net
       - shared_hermes_net
 
 networks:
-  hermes_internal_net:
-    internal: true
+  hermes_app_net:
   shared_hermes_net:
     external: true
