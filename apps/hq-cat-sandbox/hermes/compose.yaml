@@ -5,6 +5,8 @@ services:
     command: ["gateway", "run"]
     env_file:
       - stack.env
+    environment:
+      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
     volumes:
       - ${APPDATA_PATH}/hermes:/opt/data
     shm_size: 1g
