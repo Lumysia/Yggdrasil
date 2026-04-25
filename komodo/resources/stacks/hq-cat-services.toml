@@ -46,7 +46,6 @@ COPILOT_API_KEY=[[HQCAT_SERVICES_AIAPI_CAAK]]
 
 [[stack]]
 name = "hq-cat-services-opencode"
-tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
