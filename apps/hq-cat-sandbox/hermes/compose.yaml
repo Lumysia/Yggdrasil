@@ -1,0 +1,39 @@
+services:
+  hermes:
+    image: nousresearch/hermes-agent:latest
+    restart: unless-stopped
+    command: ["gateway", "run"]
+    env_file:
+      - stack.env
+    volumes:
+      - ${APPDATA_PATH}/hermes:/opt/data
+    init: true
+    shm_size: 1g
+    networks:
+      - hermes_internal_net
+
+  dashboard:
+    image: nousresearch/hermes-agent:latest
+    restart: unless-stopped
+    command: ["dashboard", "--host", "0.0.0.0", "--no-open"]
+    depends_on:
+      - hermes
+    env_file:
+      - stack.env
+    volumes:
+      - ${APPDATA_PATH}/hermes:/opt/data
+    init: true
+    labels:
+      caddy: hermes.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_forward_auth
+      caddy.reverse_proxy: "{{upstreams 9119}}"
+    networks:
+      - hermes_internal_net
+      - shared_hermes_net
+
+networks:
+  hermes_internal_net:
+    internal: true
+  shared_hermes_net:
+    external: true

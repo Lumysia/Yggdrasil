@@ -10,9 +10,6 @@ run_directory = "apps/hq-cat-sandbox/networking"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-docker network create shared_goclaw_net || true
-"""
 extra_args = ["--remove-orphans"]
 environment = """
 CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
@@ -59,6 +56,28 @@ additional_env_files = [
 extra_args = ["--remove-orphans"]
 environment = """
 REMNANODE_SECRET_KEY=[[HQCAT_SANDBOX_REMNANODE_SECRET_KEY]]
+"""
+
+##
+
+[[stack]]
+name = "hq-cat-sandbox-hermes"
+tags = ["auto-deploy"]
+[stack.config]
+server = "hq-cat-sandbox"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-sandbox/hermes"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+docker network create shared_hermes_net || true
+"""
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 """
 
 ##
