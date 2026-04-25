@@ -14,7 +14,7 @@ services:
   dashboard:
     image: nousresearch/hermes-agent:latest
     restart: unless-stopped
-    command: ["dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"]
+    command: ["dashboard", "--host", "0.0.0.0", "--no-open", "--insecure", "--tui"]
     depends_on:
       - hermes
     env_file:
