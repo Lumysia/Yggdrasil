@@ -22,7 +22,6 @@ HQCAT_SANDBOX_CFD_TOKEN=[[HQCAT_SANDBOX_CFD_TOKEN]]
 
 [[stack]]
 name = "hq-cat-sandbox-goclaw"
-tags = ["auto-deploy"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true
