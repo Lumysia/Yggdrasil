@@ -8,6 +8,7 @@ services:
     environment:
       SEAFILE_REPO_TOKEN: ${HERMES1_SEAFILE_REPO_TOKEN}
       TELEGRAM_ALLOWED_USERS: ${HERMES1_TELEGRAM_ALLOWED_USERS}
+      TELEGRAM_BOT_TOKEN: ${HERMES1_TELEGRAM_BOT_TOKEN}
     volumes:
       - ${APPDATA_PATH}/hermes:/opt/data
     shm_size: 1g
@@ -23,6 +24,7 @@ services:
     environment:
       SEAFILE_REPO_TOKEN: ${HERMES2_SEAFILE_REPO_TOKEN}
       TELEGRAM_ALLOWED_USERS: ${HERMES2_TELEGRAM_ALLOWED_USERS}
+      TELEGRAM_BOT_TOKEN: ${HERMES2_TELEGRAM_BOT_TOKEN}
     volumes:
       - ${APPDATA_PATH}/hermes2:/opt/data
     shm_size: 1g
