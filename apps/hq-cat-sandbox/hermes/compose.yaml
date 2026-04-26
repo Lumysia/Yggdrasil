@@ -37,6 +37,8 @@ services:
       - hermes
     env_file:
       - stack.env
+    environment:
+      GATEWAY_HEALTH_URL: http://hermes:8642
     volumes:
       - ${APPDATA_PATH}/hermes:/opt/data
     labels:
