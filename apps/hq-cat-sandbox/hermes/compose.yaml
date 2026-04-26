@@ -6,13 +6,28 @@ services:
     env_file:
       - stack.env
     environment:
-      SEAFILE_REPO_TOKEN: ${SEAFILE_REPO_TOKEN}
-      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
+      SEAFILE_REPO_TOKEN: ${HERMES1_SEAFILE_REPO_TOKEN}
+      TELEGRAM_ALLOWED_USERS: ${HERMES1_TELEGRAM_ALLOWED_USERS}
     volumes:
       - ${APPDATA_PATH}/hermes:/opt/data
     shm_size: 1g
     networks:
-      - hermes_app_net
+      - hermes1_app_net
+
+  hermes2:
+    image: nousresearch/hermes-agent:latest
+    restart: unless-stopped
+    command: ["gateway", "run"]
+    env_file:
+      - stack.env
+    environment:
+      SEAFILE_REPO_TOKEN: ${HERMES2_SEAFILE_REPO_TOKEN}
+      TELEGRAM_ALLOWED_USERS: ${HERMES2_TELEGRAM_ALLOWED_USERS}
+    volumes:
+      - ${APPDATA_PATH}/hermes2:/opt/data
+    shm_size: 1g
+    networks:
+      - hermes2_app_net
 
   dashboard:
     image: nousresearch/hermes-agent:latest
@@ -30,10 +45,32 @@ services:
       caddy.import_1: protected_forward_auth
       caddy.reverse_proxy: "{{upstreams 9119}}"
     networks:
-      - hermes_app_net
+      - hermes1_app_net
+      - shared_hermes_net
+
+  dashboard2:
+    image: nousresearch/hermes-agent:latest
+    restart: unless-stopped
+    command: ["dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"]
+    depends_on:
+      - hermes2
+    env_file:
+      - stack.env
+    environment:
+      GATEWAY_HEALTH_URL: http://hermes2:8642
+    volumes:
+      - ${APPDATA_PATH}/hermes2:/opt/data
+    labels:
+      caddy: hermes2.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_forward_auth
+      caddy.reverse_proxy: "{{upstreams 9119}}"
+    networks:
+      - hermes2_app_net
       - shared_hermes_net
 
 networks:
-  hermes_app_net:
+  hermes1_app_net:
+  hermes2_app_net:
   shared_hermes_net:
     external: true
