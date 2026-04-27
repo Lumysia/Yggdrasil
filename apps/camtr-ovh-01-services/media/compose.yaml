@@ -171,53 +171,6 @@ services:
     env_file:
       - stack.env
 
-  lidarr:
-    image: lscr.io/linuxserver/lidarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
-    labels:
-      caddy: lidarr.${COMMON_DOMAIN_A}
-      caddy.import_0: common_tls
-      caddy.1_@protected: not path /api/* /ping
-      caddy.2_forward_auth: "@protected https://sso.${COMMON_DOMAIN_A}"
-      caddy.2_forward_auth.1_uri: /oauth2/auth
-      caddy.2_forward_auth.2_@error: status 401
-      caddy.2_forward_auth.3_handle_response: "@error"
-      caddy.2_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
-      caddy.reverse_proxy: "{{upstreams 8686}}"
-    # ports:
-    #   - 8686:8686
-    volumes:
-      - ${APPDATA_PATH}/lidarr:/config
-      - ${MEDIA_PATH}/musics:/musics
-      - ${DOWNLOADS_PATH}/qbittorrent:/downloads
-    env_file:
-      - stack.env
-
-  bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
-    labels:
-      caddy: bazarr.${COMMON_DOMAIN_A}
-      caddy.import_0: common_tls
-      caddy.1_forward_auth: https://sso.${COMMON_DOMAIN_A}
-      caddy.1_forward_auth.1_uri: /oauth2/auth
-      caddy.1_forward_auth.2_@error: status 401
-      caddy.1_forward_auth.3_handle_response: "@error"
-      caddy.1_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
-      caddy.reverse_proxy: "{{upstreams 6767}}"
-    volumes:
-      - ${APPDATA_PATH}/bazarr:/config
-      - ${MEDIA_PATH}/movies:/movies
-      - ${MEDIA_PATH}/tvshows:/tvshows
-    # ports:
-    #   - 6767:6767
-    env_file:
-      - stack.env
-
   flaresolverr:
     image: flaresolverr/flaresolverr:latest
     restart: unless-stopped
