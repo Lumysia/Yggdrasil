@@ -23,6 +23,26 @@ CATOR_ORACLE_01_CFD_TOKEN=[[CATOR_ORACLE_01_CFD_TOKEN]]
 ##
 
 [[stack]]
+name = "cator-oracle-01-runner"
+tags = ["auto-deploy"]
+[stack.config]
+server = "cator-oracle-01"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/cator-oracle-01/runner"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+FORGEJO_DOMAIN=code.[[COMMON_DOMAIN_A]]
+FORGEJO_RUNNER_REGISTRATION_TOKEN=[[CATOR_ORACLE_01_RUNNER_FORGEJO_REGISTRATION_TOKEN]]
+"""
+
+##
+
+[[stack]]
 name = "cator-oracle-01-dokpoly"
 [stack.config]
 server = "cator-oracle-01"
