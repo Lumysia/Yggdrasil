@@ -40,6 +40,8 @@ environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
 GH_TOKEN=[[HQCAT_SERVICES_AIAPI_GH_TOKEN]]
 COPILOT_API_KEY=[[HQCAT_SERVICES_AIAPI_CAAK]]
+JWT_SECRET=[[HQCAT_SERVICES_SUB2API_JWT_SECRET]]
+TOTP_ENCRYPTION_KEY=[[HQCAT_SERVICES_SUB2API_TOTP_ENCRYPTION_KEY]]
 """
 
 ##
@@ -71,29 +73,6 @@ AUTH_GENERIC_OIDC_SECRET=[[HQCAT_SERVICES_LOBE_OIDC_SECRET]]
 QSTASH_TOKEN=[[HQCAT_SERVICES_LOBE_QSTASH_TOKEN]]
 COHERE_API_KEY=[[HQCAT_SERVICES_LOBE_COHERE_API_KEY]]
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-"""
-
-##
-
-[[stack]]
-name = "hq-cat-services-sub2api"
-[stack.config]
-server = "hq-cat-services"
-poll_for_updates = true
-auto_update = true
-linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/sub2api"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
-pre_deploy.command = """
-docker network create shared_sub2api_net || true
-"""
-extra_args = ["--remove-orphans"]
-environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-JWT_SECRET=[[HQCAT_SERVICES_SUB2API_JWT_SECRET]]
-TOTP_ENCRYPTION_KEY=[[HQCAT_SERVICES_SUB2API_TOTP_ENCRYPTION_KEY]]
 """
 
 ##
