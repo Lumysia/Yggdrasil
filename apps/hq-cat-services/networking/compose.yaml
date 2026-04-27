@@ -10,7 +10,6 @@ services:
       - 443:443
       - 443:443/udp
     networks:
-      - shared_opencode_net
       - shared_sub2api_net
       - shared_aiapi_net
       - shared_seafile_net
@@ -62,8 +61,6 @@ services:
 networks:
   cloudflare_net:
     enable_ipv6: true
-  shared_opencode_net:
-    external: true
   shared_sub2api_net:
     external: true
   shared_aiapi_net:
