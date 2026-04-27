@@ -79,9 +79,6 @@
           hostname = "camtr-ovh-01-services";
         };
 
-        camtr-ovh-01-sandbox = mkSystem {
-          hostname = "camtr-ovh-01-sandbox";
-        };
       };
     };
 }

@@ -1,13 +1,4 @@
 [[server]]
-name = "camtr-ovh-01-sandbox"
-[server.config]
-address = "https://100.66.120.116:8120"
-region = "ca-central"
-enabled = true
-
-##
-
-[[server]]
 name = "camtr-ovh-01-services"
 [server.config]
 address = "https://100.86.12.41:8120"

@@ -4,7 +4,10 @@ This file collects reusable project guidance.
 
 ## NixOS Conventions
 
-TODO
+- Host definitions live under `nixos/hosts/<hostname>/` and are registered in `nixos/flake.nix`.
+- When adding a NixOS host, add both the host directory and the matching `nixosConfigurations` entry.
+- When removing a NixOS host, remove both the `nixosConfigurations` entry and the matching `nixos/hosts/<hostname>/` directory.
+- Keep hostnames consistent across the host directory, `networking.hostName`, Komodo server names, and related app paths unless there is an explicit migration reason.
 
 ## App Stack Conventions
 
