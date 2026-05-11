@@ -44,8 +44,7 @@ services:
     labels:
       caddy: hermes.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.import_1: protected_forward_auth
-      caddy.reverse_proxy: "{{upstreams 9119}}"
+      caddy.import_1: protected_reverse_proxy "{{upstreams 9119}}"
     networks:
       - hermes1_app_net
       - shared_hermes_net
@@ -65,8 +64,7 @@ services:
     labels:
       caddy: hermes2.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.import_1: protected_forward_auth
-      caddy.reverse_proxy: "{{upstreams 9119}}"
+      caddy.import_1: protected_reverse_proxy "{{upstreams 9119}}"
     networks:
       - hermes2_app_net
       - shared_hermes_net

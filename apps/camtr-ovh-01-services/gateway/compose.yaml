@@ -11,6 +11,7 @@ services:
       - 443:443/udp
     networks:
       - shared_media_net
+      - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
       - ${APPDATA_PATH}/caddyservices/data:/data/caddy
@@ -27,20 +28,39 @@ services:
       caddy_3: (common_tls)
       caddy_3.tls.dns: cloudflare ${CLOUDFLARE_API_TOKEN}
       caddy_3.tls.resolvers: 8.8.8.8 8.8.4.4 1.1.1.1
-      caddy_4: (protected_forward_auth)
-      caddy_4.forward_auth: https://sso.${COMMON_DOMAIN_A}
-      caddy_4.forward_auth.1_uri: /oauth2/auth
-      caddy_4.forward_auth.2_@error: status 401
-      caddy_4.forward_auth.3_handle_response: "@error"
-      caddy_4.forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
-      caddy_5: (protected_forward_auth_except)
+      caddy_4: (protected_reverse_proxy)
+      caddy_4.handle_0: /oauth2/*
+      caddy_4.handle_0.reverse_proxy: oauth2-proxy:4180
+      caddy_4.handle_1: /*
+      caddy_4.handle_1.forward_auth: http://oauth2-proxy:4180
+      caddy_4.handle_1.forward_auth.1_uri: /oauth2/auth
+      caddy_4.handle_1.forward_auth.2_@error: status 401
+      caddy_4.handle_1.forward_auth.3_handle_response: "@error"
+      caddy_4.handle_1.forward_auth.3_handle_response.1_redir: "* /oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy_4.handle_1.reverse_proxy: "{args[0]}"
+      caddy_5: (protected_reverse_proxy_except)
       caddy_5.@protected_paths: |-
-        not path {args[0:]}
-      caddy_5.forward_auth: "@protected_paths https://sso.${COMMON_DOMAIN_A}"
-      caddy_5.forward_auth.1_uri: /oauth2/auth
-      caddy_5.forward_auth.2_@error: status 401
-      caddy_5.forward_auth.3_handle_response: "@error"
-      caddy_5.forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+        not path {args[1:]}
+      caddy_5.handle_0: /oauth2/*
+      caddy_5.handle_0.reverse_proxy: oauth2-proxy:4180
+      caddy_5.handle_1: /*
+      caddy_5.handle_1.forward_auth: "@protected_paths http://oauth2-proxy:4180"
+      caddy_5.handle_1.forward_auth.1_uri: /oauth2/auth
+      caddy_5.handle_1.forward_auth.2_@error: status 401
+      caddy_5.handle_1.forward_auth.3_handle_response: "@error"
+      caddy_5.handle_1.forward_auth.3_handle_response.1_redir: "* /oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy_5.handle_1.reverse_proxy: "{args[0]}"
+      caddy_6: (protected_reverse_proxy_strip_referer)
+      caddy_6.handle_0: /oauth2/*
+      caddy_6.handle_0.reverse_proxy: oauth2-proxy:4180
+      caddy_6.handle_1: /*
+      caddy_6.handle_1.forward_auth: http://oauth2-proxy:4180
+      caddy_6.handle_1.forward_auth.1_uri: /oauth2/auth
+      caddy_6.handle_1.forward_auth.2_@error: status 401
+      caddy_6.handle_1.forward_auth.3_handle_response: "@error"
+      caddy_6.handle_1.forward_auth.3_handle_response.1_redir: "* /oauth2/sign_in?rd={scheme}://{host}{uri} 302"
+      caddy_6.handle_1.reverse_proxy: "{args[0]}"
+      caddy_6.handle_1.reverse_proxy.header_up: -Referer
   
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -58,7 +78,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/oauth2-proxy-redis:/data
     networks:
-      - oauth2-proxy-intranet
+      - oauth2_proxy_intranet
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -70,8 +90,8 @@ services:
     image: quay.io/oauth2-proxy/oauth2-proxy:latest
     restart: unless-stopped
     networks:
-      - shared_media_net
-      - oauth2-proxy-intranet
+      - oauth2_proxy_intranet
+      - oauth2_proxy_net
     env_file:
       - stack.env
     environment:
@@ -91,7 +111,6 @@ services:
       OAUTH2_PROXY_REDIS_CONNECTION_URL: redis://oauth2-proxy-redis:6379
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://id.${COMMON_DOMAIN_A}
-      OAUTH2_PROXY_REDIRECT_URL: https://qbt.${COMMON_DOMAIN_A}/oauth2/callback
       OAUTH2_PROXY_WHITELIST_DOMAINS: .${COMMON_DOMAIN_A}
       OAUTH2_PROXY_SCOPE: openid email profile
       OAUTH2_PROXY_REVERSE_PROXY: true
@@ -107,5 +126,6 @@ networks:
     enable_ipv6: true
   shared_media_net:
     external: true
-  oauth2-proxy-intranet:
+  oauth2_proxy_intranet:
     internal: true
+  oauth2_proxy_net:

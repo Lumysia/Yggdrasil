@@ -33,16 +33,7 @@ services:
     labels:
       caddy: qbt.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.1_handle: /oauth2/*
-      caddy.1_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.2_handle: /*
-      caddy.2_handle.forward_auth: http://oauth2-proxy:4180
-      caddy.2_handle.forward_auth.1_uri: /oauth2/auth
-      caddy.2_handle.forward_auth.2_@error: status 401
-      caddy.2_handle.forward_auth.3_handle_response: "@error"
-      caddy.2_handle.forward_auth.3_handle_response.1_redir: "* /oauth2/sign_in?rd={scheme}://{host}{uri} 302"
-      caddy.2_handle.reverse_proxy: "{{upstreams 8080}}"
-      caddy.2_handle.reverse_proxy.header_up_0: -Referer
+      caddy.import_1: protected_reverse_proxy_strip_referer "{{upstreams 8080}}"
     #ports:
     #  - 8080:8080
     volumes:
@@ -113,12 +104,7 @@ services:
     labels:
       caddy: prowlarr.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.1_forward_auth: https://sso.${COMMON_DOMAIN_A}
-      caddy.1_forward_auth.1_uri: /oauth2/auth
-      caddy.1_forward_auth.2_@error: status 401
-      caddy.1_forward_auth.3_handle_response: "@error"
-      caddy.1_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
-      caddy.reverse_proxy: "{{upstreams 9696}}"
+      caddy.import_1: protected_reverse_proxy "{{upstreams 9696}}"
     # ports:
     #   - 9696:9696
     volumes:
@@ -134,13 +120,7 @@ services:
     labels:
       caddy: radarr.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.1_@protected: not path /api/* /ping
-      caddy.2_forward_auth: "@protected https://sso.${COMMON_DOMAIN_A}"
-      caddy.2_forward_auth.1_uri: /oauth2/auth
-      caddy.2_forward_auth.2_@error: status 401
-      caddy.2_forward_auth.3_handle_response: "@error"
-      caddy.2_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
-      caddy.reverse_proxy: "{{upstreams 7878}}"
+      caddy.import_1: protected_reverse_proxy_except "{{upstreams 7878}}" /api/* /ping
     # ports:
     #   - 7878:7878
     volumes:
@@ -158,13 +138,7 @@ services:
     labels:
       caddy: sonarr.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.1_@protected: not path /api/* /ping
-      caddy.2_forward_auth: "@protected https://sso.${COMMON_DOMAIN_A}"
-      caddy.2_forward_auth.1_uri: /oauth2/auth
-      caddy.2_forward_auth.2_@error: status 401
-      caddy.2_forward_auth.3_handle_response: "@error"
-      caddy.2_forward_auth.3_handle_response.1_redir: "* https://sso.${COMMON_DOMAIN_A}/oauth2/sign_in?rd={scheme}://{host}{uri} 302"
-      caddy.reverse_proxy: "{{upstreams 8989}}"
+      caddy.import_1: protected_reverse_proxy_except "{{upstreams 8989}}" /api/* /ping
     # ports:
     #   - 8989:8989
     volumes:

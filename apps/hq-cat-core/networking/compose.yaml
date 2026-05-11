@@ -11,6 +11,7 @@ services:
       - 443:443/udp
     networks:
       - default
+      - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
       - ${APPDATA_PATH}/caddycore/data:/data/caddy
@@ -90,7 +91,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/oauth2-proxy-redis:/data
     networks:
-      - oauth2-proxy-intranet
+      - oauth2_proxy_intranet
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -108,8 +109,8 @@ services:
     #ports:
     #  - 4180:4180
     networks:
-      - default
-      - oauth2-proxy-intranet
+      - oauth2_proxy_intranet
+      - oauth2_proxy_net
     env_file:
       - stack.env
     environment:
@@ -127,7 +128,8 @@ services:
 
 networks:
   default:
-  oauth2-proxy-intranet:
+  oauth2_proxy_intranet:
     internal: true
+  oauth2_proxy_net:
   cloudflare_net:
     enable_ipv6: true
