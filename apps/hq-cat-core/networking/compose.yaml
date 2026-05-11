@@ -83,6 +83,21 @@ services:
       retries: 2
       start_period: 10s
 
+  oauth2-proxy-redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1000 --appendonly yes
+    volumes:
+      - ${APPDATA_PATH}/oauth2-proxy-redis:/data
+    networks:
+      - oauth2-proxy-intranet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:latest
     restart: unless-stopped
@@ -92,6 +107,9 @@ services:
       caddy.reverse_proxy: "{{upstreams 4180}}"
     #ports:
     #  - 4180:4180
+    networks:
+      - default
+      - oauth2-proxy-intranet
     env_file:
       - stack.env
     environment:
@@ -101,11 +119,15 @@ services:
       OAUTH2_PROXY_COOKIE_DOMAINS: .${COMMON_DOMAIN_A}
       OAUTH2_PROXY_WHITELIST_DOMAINS: .${COMMON_DOMAIN_A}
     depends_on:
+      oauth2-proxy-redis:
+        condition: service_healthy
       pocketid:
         condition: service_healthy
         restart: true
 
 networks:
   default:
+  oauth2-proxy-intranet:
+    internal: true
   cloudflare_net:
     enable_ipv6: true
