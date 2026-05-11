@@ -2,6 +2,10 @@
 
 This file collects reusable project guidance.
 
+## General Principles
+
+- Do not defend against problems that do not exist in the current system.
+
 ## NixOS Conventions
 
 - Host definitions live under `nixos/hosts/<hostname>/` and are registered in `nixos/flake.nix`.
@@ -69,6 +73,13 @@ If a service is exposed through Caddy:
 - attach the service to a dedicated shared external network
 - add the same network to the host `networking/compose.yaml`
 - create that network in the Komodo stack `pre_deploy.command`
+
+### OAuth-Protected Services
+
+- prefer one local `oauth2-proxy` per host gateway/networking stack
+- keep `oauth2-proxy` in the gateway/networking stack, not the app stack; app stacks should only import Caddy snippets
+- use `COMMON_OAUTH2_CLIENT_SECRET` and `COMMON_OAUTH2_COOKIE_SECRET` for shared OAuth secrets
+- follow the existing gateway/networking stacks for oauth2-proxy networks, Redis, Caddy snippets, and callback routing
 
 ### Constraint
 
