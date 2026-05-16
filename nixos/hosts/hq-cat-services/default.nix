@@ -40,7 +40,7 @@
     enable = true;
     systemCronJobs = [
       # Seafile GC
-      "0 5 * * * root ${pkgs.docker}/bin/docker exec $(${pkgs.docker}/bin/docker ps -q --filter \"name=^seafile$\") /opt/seafile/seafile-server-latest/seaf-gc.sh"
+      "0 5 * * * root ${pkgs.docker}/bin/docker exec $(${pkgs.docker}/bin/docker ps -q --filter \"label=com.docker.compose.project=hq-cat-services-seafile\" --filter \"label=com.docker.compose.service=seafile\") /opt/seafile/seafile-server-latest/seaf-gc.sh"
       # Gitea Renovate
       "15 * * * * root ${pkgs.docker}/bin/docker start $(${pkgs.docker}/bin/docker ps -a -q --filter \"name=^renovate$\")"
     ];
