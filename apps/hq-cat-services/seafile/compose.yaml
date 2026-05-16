@@ -58,6 +58,9 @@ services:
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
       SEAFILE_SERVER_HOSTNAME: seafile.${COMMON_DOMAIN_A}
       SEADOC_SERVER_URL: https://seafile.${COMMON_DOMAIN_A}/sdoc-server
+      ENABLE_SEAFILE_AI: ${ENABLE_SEAFILE_AI}
+      SEAFILE_AI_SERVER_URL: ${SEAFILE_AI_SERVER_URL}
+      SEAFILE_AI_SECRET_KEY: ${JWT_PRIVATE_KEY}
     depends_on:
       db:
         condition: service_healthy
@@ -172,6 +175,26 @@ services:
     depends_on:
       seafile:
         condition: service_healthy
+
+  seafile-ai:
+    image: seafileltd/seafile-ai:13.0-latest
+    restart: unless-stopped
+    volumes:
+      - ${BLOBSTORE_PATH}/seafile:/shared
+    env_file:
+      - stack.env
+    environment:
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SEAFILE_AI_LLM_TYPE: ${SEAFILE_AI_LLM_TYPE}
+      SEAFILE_AI_LLM_URL: ${SEAFILE_AI_LLM_URL}
+      SEAFILE_AI_LLM_KEY: ${SEAFILE_AI_LLM_KEY}
+      SEAFILE_AI_LLM_MODEL: ${SEAFILE_AI_LLM_MODEL}
+    depends_on:
+      seafile:
+        condition: service_healthy
+    networks:
+      - seafile_net
 
   av:
     image: clamav/clamav:latest
