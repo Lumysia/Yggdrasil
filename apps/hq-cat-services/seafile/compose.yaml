@@ -190,6 +190,7 @@ services:
       SEAFILE_AI_LLM_URL: ${SEAFILE_AI_LLM_URL}
       SEAFILE_AI_LLM_KEY: ${SEAFILE_AI_LLM_KEY}
       SEAFILE_AI_LLM_MODEL: ${SEAFILE_AI_LLM_MODEL}
+      SEAFILE_SERVER_URL: ${SEAFILE_SERVER_URL}
     depends_on:
       seafile:
         condition: service_healthy
