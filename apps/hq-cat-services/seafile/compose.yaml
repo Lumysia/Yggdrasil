@@ -10,7 +10,7 @@ services:
     volumes:
       - ${DB_PATH}/seafile:/var/lib/mysql
     networks:
-      - seafile_net
+      - seafile_internal_net
     healthcheck:
       test: ["CMD", "/usr/local/bin/healthcheck.sh", "--connect", "--mariadbupgrade", "--innodb_initialized"]
       interval: 20s
@@ -29,7 +29,7 @@ services:
     volumes:
       - /tmp/redisseafile:/data
     networks:
-      - seafile_net
+      - seafile_internal_net
 
   seafile:
     image: creamed/seafile-server:13-nightly
@@ -67,7 +67,7 @@ services:
       redis:
         condition: service_started
     networks:
-      - seafile_net
+      - seafile_internal_net
       - shared_seafile_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/"]
@@ -93,7 +93,7 @@ services:
       seafile:
         condition: service_healthy
     networks:
-      - seafile_net
+      - seafile_internal_net
       - shared_seafile_net
 
   notification-server:
@@ -112,7 +112,7 @@ services:
       seafile:
         condition: service_healthy
     networks:
-      - seafile_net
+      - seafile_internal_net
       - shared_seafile_net
 
   onlyoffice:
@@ -157,7 +157,7 @@ services:
       seafile:
         condition: service_healthy
     networks:
-      - seafile_net
+      - seafile_internal_net
       - shared_seafile_net
 
   seasearch:
@@ -171,7 +171,7 @@ services:
       INIT_SS_ADMIN_USER: ${INIT_SS_ADMIN_USER}
       INIT_SS_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
     networks:
-      - seafile_net
+      - seafile_internal_net
     depends_on:
       seafile:
         condition: service_healthy
@@ -195,16 +195,17 @@ services:
       seafile:
         condition: service_healthy
     networks:
-      - seafile_net
+      - seafile_internal_net
+      - shared_seafile_net
 
   av:
     image: clamav/clamav:latest
     restart: unless-stopped
     networks:
-      - seafile_net
+      - seafile_internal_net
 
 networks:
   shared_seafile_net:
     external: true
-  seafile_net:
+  seafile_internal_net:
     internal: true
