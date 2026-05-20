@@ -11,7 +11,7 @@ services:
       - -ec
     command:
       - |
-        cat > /usr/local/etc/haproxy/haproxy.cfg <<EOF
+        cat > /tmp/haproxy.cfg <<EOF
         global
           log stdout format raw local0
 
@@ -30,4 +30,4 @@ services:
         backend tcp_relay_backend
           server upstream ${TCP_RELAY_BACKEND_ADDR}:${TCP_RELAY_BACKEND_PORT} check inter 10s
         EOF
-        exec haproxy -f /usr/local/etc/haproxy/haproxy.cfg
+        exec haproxy -f /tmp/haproxy.cfg
