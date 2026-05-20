@@ -29,7 +29,7 @@ name = "hq-cat-games"
 [server.config]
 address = "https://100.110.4.6:8120"
 region = "ca-central"
-enabled = false
+enabled = true
 
 ##
 

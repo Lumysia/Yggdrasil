@@ -15,12 +15,6 @@ services:
     volumes:
       - ${GAMES_PATH}/easytier:/root
 
-  localtonet:
-    image: localtonet/localtonet:latest
-    network_mode: host
-    restart: unless-stopped
-    command: '--authtoken ${LOCALTONET_TOKEN}'
-
   playit:
     image: ghcr.io/playit-cloud/playit-agent:latest
     network_mode: host

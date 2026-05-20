@@ -12,7 +12,6 @@ additional_env_files = [
 extra_args = ["--remove-orphans"]
 environment = """
 ET_NETWORK_SECRET=[[HQCAT_GAMES_ET_NETWORK_SECRET]]
-LOCALTONET_TOKEN=[[HQCAT_GAMES_LOCALTONET_TOKEN]]
 PLAYIT_TOKEN=[[HQCAT_GAMES_PLAYIT_TOKEN]]
 """
 
