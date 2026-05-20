@@ -19,19 +19,37 @@ PLAYIT_TOKEN=[[HQCAT_GAMES_PLAYIT_TOKEN]]
 ##
 
 [[stack]]
-name = "hq-cat-games-minecraft"
+name = "hq-cat-games-mc-prominence-2"
 [stack.config]
 server = "hq-cat-games"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-games/minecraft"
+run_directory = "apps/hq-cat-games/mc-prominence-2"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
 extra_args = ["--remove-orphans"]
 environment = """
 RCON_PASSWORD=[[HQCAT_GAMES_MC_ROCNPWD]]
+"""
+
+##
+
+[[stack]]
+name = "hq-cat-games-mc-craft-to-exile-2"
+[stack.config]
+server = "hq-cat-games"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-games/mc-craft-to-exile-2"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
 """
 
 ##
