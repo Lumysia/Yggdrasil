@@ -35,7 +35,7 @@ Before editing or dispatching subagents, read `references/translation-workflow.m
 
 1. Inventory candidate user-facing files in the source pack.
 2. Create or update an overwrite folder that mirrors the source pack's relative paths for files that replace generated server files.
-3. Translate user-facing text while preserving technical tokens and syntax.
+3. Keep direct work limited to small tasks; delegate work that may consume substantial context or time to subagents when the environment supports them.
 4. Track recurring terminology decisions when they affect consistency across files or future updates.
 5. For multi-file work, assign translation batches and then run an independent validator.
 6. Fix validator findings or clearly report intentionally untranslated terms and residual risks.

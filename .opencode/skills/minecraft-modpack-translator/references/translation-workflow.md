@@ -8,7 +8,9 @@ The source pack may be a ZIP archive or an extracted folder.
 
 Create or update an overwrite folder, not a full rewritten modpack. Mirror the source pack's relative paths only for files that need to replace generated server files.
 
-When the source pack or bundled mods already provide official localization files for the target language, leave those official files out of the overwrite folder. Use them as terminology references and coverage evidence, then generate overwrite files only for user-facing text that is not already covered by official target-language localization. If an official target-language file has obvious missing translations, generate overwrite entries only for the missing user-facing text and preserve existing official translations.
+When the source pack or bundled mods already provide official localization files for the target language, use those files as terminology references and coverage evidence. Generate overwrite output for user-facing text that remains uncovered by official target-language localization.
+
+Coverage is part of the translation task. If an official target-language localization file is incomplete, fill the missing user-facing entries instead of reporting them as residual risk. Preserve existing official translations exactly. If the runtime merges partial localization files, generate only the missing entries. If the runtime replaces the whole file, generate a complete overwrite file by carrying existing official target-language entries forward unchanged and adding translated entries for the missing keys.
 
 ## Translation Scope
 
@@ -21,6 +23,8 @@ Translate user-facing text only:
 - Language-file values when the file is intended for display text.
 
 Default to translating natural-language terms that players are meant to read. Translate readable dimension, location, creature, faction, structure, boss, material, mechanic, quest, and lore terms when they have an official, community-standard, or clear target-language rendering.
+
+For language files, compare source-language keys against target-language keys when both exist. Missing target-language values for user-facing source keys are translation work, even when the target-language file already exists.
 
 ## Technical Token Preservation
 
@@ -55,18 +59,24 @@ Keep syntax stable. Preserve indentation, line endings where practical, comments
 
 ## Search And Names
 
-Some modpack terms have established names in the target language. If unsure, search current docs, wiki pages, existing localization files, or community translations. Prefer consistency with:
+Some modpack terms have established names in the target language. When terminology is uncertain, look for authoritative target-language sources in this order:
 
-- The mod's existing localization files for the target language.
-- The modpack's own wiki or docs.
+- Target-language localization files bundled in the source pack or related mod archives.
+- Official project documentation, websites, release pages, and wikis.
+- Modpack documentation or wiki pages.
+- Established community translations.
 - Existing old translation folder supplied by the user.
 - Common Minecraft terminology in the target language.
+
+Search within the provided source pack, extracted files, bundled archives, and user-approved paths first. Expand to web search when local sources do not provide enough evidence.
 
 Treat proper nouns as translatable when they are visible story, place, creature, boss, faction, quest, or dimension names and a good target-language name exists or can be rendered naturally. Preserve a proper noun when translation would make gameplay harder to match with item names, in-game lookup tools, commands, registry IDs, or wiki references. Use target-language descriptions around preserved names when helpful.
 
 ## Subagent Workflow
 
-Use subagents for real translation work when the environment supports subagents and there is more than one small file. If subagents are unavailable, run the same workflow sequentially.
+The main agent is the orchestrator. It owns intake, inventory, batching, terminology tracking, review, validation, and final reporting.
+
+Direct work by the main agent is appropriate only for small tasks. When the work may consume substantial context or time, delegate batches to subagents when the environment supports subagents. If subagents are unavailable, run the same batched workflow sequentially and keep the orchestrator role focused on coordination and review.
 
 1. Inventory candidate files and group them by chapter or file type.
 2. Give each translator exact file paths and strict preservation rules.
@@ -99,6 +109,7 @@ The overwrite folder should match the new modpack's current file set for transla
 Before reporting completion:
 
 - Check that every intended source file has a corresponding overwrite file or a reason it was skipped.
+- Check official target-language localization coverage; fill obvious missing user-facing entries.
 - Scan display fields for remaining source-language prose and readable terms that should have been translated.
 - Check recurring readable terms for consistent translations across files.
 - Confirm technical tokens were preserved, especially commands, IDs, tags, resource paths, and formatting codes.
@@ -127,9 +138,10 @@ Validator prompt:
 
 ```text
 Independently validate the translated overwrite folder against the source
-server pack. Validate in read-only mode. Find remaining user-facing source-language
-text, inconsistent recurring terminology, translated technical tokens that
-should have been preserved, missing new files, stale removed files, and syntax
-risks. Return findings with file paths and line references. If clean, state
-that explicitly and list residual risks.
+server pack. Validate in read-only mode. Find uncovered user-facing source
+keys, remaining user-facing source-language text, inconsistent recurring
+terminology, translated technical tokens that should have been preserved,
+missing new files, stale removed files, and syntax risks. Return findings with
+file paths and line references. If clean, state that explicitly and list
+residual risks.
 ```
