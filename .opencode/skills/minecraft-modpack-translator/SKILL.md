@@ -19,11 +19,13 @@ metadata:
 
 ## When To Use
 
-Use this skill when the user wants Minecraft modpack quest/config text translated, especially FTB Quests `.snbt`, Patchouli books, KubeJS/lang text, or similar user-facing config files from a server pack ZIP or folder.
+Use this skill when the user wants Minecraft modpack quest/config text translated, including quest files, in-game books, scripted language text, or similar user-facing config files from a server pack ZIP or folder.
+
+Do not use this skill for server deployment, Docker/Compose, or runtime testing work unless translation or translated overwrite folders are part of the task.
 
 Use this skill when the user says things like:
 
-- Translate FTB quest files.
+- Translate Minecraft quest files.
 - Translate a Minecraft modpack/server pack.
 - Create an overwrite folder for translated quests.
 - Update an old translation ZIP/folder for a new modpack version.
@@ -35,17 +37,22 @@ The main agent is the orchestrator. It should gather inputs, split work, dispatc
 
 ## Bootstrap
 
-Ask the user for the target language first if it is not already explicit.
+First ask the user for the target language if it is not already explicit. Do not ask for paths, scope, or update details until the target language is known.
 
-Ask for the server pack source:
+Use guided intake when the environment supports interactive choices, forms, or input boxes. Ask for one missing decision at a time instead of asking the user to provide a long free-form bundle. Use the user's current conversation language for prompts, option labels, option descriptions, and input hints; keep technical identifiers unchanged.
+
+After the target language is known, ask whether this is a new translation or an update/upgrade of an existing translated overwrite folder or translation pack. If interactive choices are available, present two choices in the user's current conversation language: one for a first translation and one for upgrading an existing translation. Keep the option labels and descriptions natural for that language rather than hard-coding a specific language.
+
+If the user is updating/upgrading an existing translation, ask for the old translation ZIP/folder path before asking for other inputs.
+
+Then ask for the server pack source:
 
 - ZIP path or folder path for the new modpack/server pack.
 - Desired overwrite/output folder path.
-- Optional old translation ZIP/folder when updating an existing translation.
-- Optional deployment target convention, such as an overwrite folder copied into a Docker bind mount.
+- Optional deployment target convention for applying the overwrite folder.
 - Whether to translate only quests or also books, menus, lang files, and other config text.
 
-Do not guess language or output location when unclear. Ask one short question.
+Do not guess language or output location when unclear. Ask one short guided question for the next missing required input.
 
 ## Inputs And Outputs
 
@@ -54,20 +61,9 @@ The user provides a server pack as either:
 - A ZIP archive.
 - An already extracted folder.
 
-Create or update an overwrite folder, not a full rewritten modpack. The overwrite folder should mirror the paths that need to replace files on the server. For FTB Quests this usually means paths like:
+Create or update an overwrite folder, not a full rewritten modpack. The overwrite folder should mirror the source pack's relative paths for files that need to replace generated server files.
 
-```text
-config/ftbquests/quests/
-```
-
-When used with `itzg/minecraft-server`, one common deployment pattern is to copy the overwrite folder into a host config directory, mount it at `/config`, and set:
-
-```text
-COPY_CONFIG_DEST=/data/config
-SYNC_SKIP_NEWER_IN_DESTINATION=false
-```
-
-The exact deployment wiring is environment-specific. Inspect the user's existing Docker, Compose, Kubernetes, or server-launcher setup before suggesting paths.
+Deployment wiring is environment-specific. Inspect the user's existing server-launcher, container, mount, or copy workflow before suggesting deployment paths.
 
 ## Translation Scope
 
@@ -76,11 +72,11 @@ Translate user-facing text only:
 - Quest `title`, `subtitle`, and `description` text.
 - Task and reward display titles.
 - Chapter/group names.
-- Patchouli book names, categories, entries, and page text.
+- In-game book names, categories, entries, and page text.
 - Menu/help/tutorial text stored in config files.
 - Language JSON values when the file is intended for display text.
 
-Default to translating natural-language terms that players are meant to read. Do not leave English in the translated output just because a word is a Minecraft/modpack concept. Translate dimensions, locations, mobs, factions, structures, bosses, materials, mechanics, and lore terms when they have an official, community-standard, or clear target-language rendering. Examples of translatable readable terms include dimension names like `Overworld`, `Nether`, `End`, `The Otherside`, `Underdark`, `Everbright`, and `Everdawn`; mob or group names like `Primal Titans`; and gameplay/lore phrases embedded in prose.
+Default to translating natural-language terms that players are meant to read. Do not leave source-language text in the translated output just because a word is a Minecraft/modpack concept. Translate readable dimension, location, creature, faction, structure, boss, material, mechanic, quest, and lore terms when they have an official, community-standard, or clear target-language rendering.
 
 Preserve technical content exactly:
 
@@ -88,10 +84,10 @@ Preserve technical content exactly:
 - Filenames, resource paths, texture paths, image directives, and namespaces.
 - Item IDs, entity IDs, stat IDs, registry names, tags, and NBT selectors.
 - Commands, selectors, permissions, URLs, and config keys.
-- Minecraft formatting codes like `&e`, `&r`, `&9`, escaped quotes, and placeholders.
-- Tags such as `#botania:runes`; translate surrounding readable words only, for example `Any #botania:runes` to `任意 #botania:runes`.
+- Minecraft formatting codes, escaped quotes, and placeholders.
+- Tags and tag-like selectors; translate surrounding readable words only and preserve the technical token exactly.
 
-If a string mixes readable prose and special tokens, translate the prose and any translatable readable terms, but leave the technical tokens intact. A remaining English word in translated display text should be intentional, not the default.
+If a string mixes readable prose and special tokens, translate the prose and any translatable readable terms, but leave the technical tokens intact. Any remaining source-language word in translated display text should be intentional, not the default.
 
 ## Editing Rules
 
@@ -120,10 +116,11 @@ Use subagents for the real translation work when the current assistant environme
 3. Each translation subagent edits only its assigned files using native patch/edit tooling.
 4. Each subagent reports files changed, strings intentionally left untranslated, and verification performed.
 5. Main agent reviews the reports and runs cross-file verification.
-6. Main agent dispatches a separate validator subagent after all translators claim completion.
-7. Validator subagent checks whether translation is really complete and reports missed user-facing English text, broken syntax, stale files, or unsafe translated technical tokens.
-8. If validator finds issues, main agent assigns fixes to translation subagents or asks a focused follow-up.
-9. Only after validator passes should main agent call the translation finished.
+6. Main agent tracks term decisions that need consistency across files, especially recurring readable names and concepts.
+7. Main agent dispatches a separate validator subagent after all translators claim completion.
+8. Validator subagent checks whether translation is really complete and reports missed user-facing source-language text, inconsistent terminology, broken syntax, stale files, or unsafe translated technical tokens.
+9. If validator finds issues, main agent assigns fixes to translation subagents or asks a focused follow-up.
+10. Only after validator passes should main agent call the translation finished.
 
 The validator must be independent from the translation subagents. Do not accept “finished” based only on translator self-reporting.
 
@@ -146,14 +143,14 @@ The important update invariant: the overwrite folder should match the new modpac
 
 ## Search And Names
 
-Some modpack terms have established Chinese names. If unsure, search current docs, wiki pages, existing localization files, or community translations. Prefer consistency with:
+Some modpack terms have established names in the target language. If unsure, search current docs, wiki pages, existing localization files, or community translations. Prefer consistency with:
 
-- The mod's existing `zh_cn` lang files.
+- The mod's existing localization files for the target language.
 - The modpack's own wiki or docs.
 - Existing old translation folder supplied by the user.
-- Common Minecraft Simplified Chinese terminology.
+- Common Minecraft terminology in the target language.
 
-Do not treat proper nouns as automatically untranslatable. Translate proper nouns when they are visible story, place, creature, boss, faction, quest, or dimension names and a good target-language name exists or can be rendered naturally. Keep a proper noun untranslated only when translating it would make gameplay harder to match with item names, JEI, commands, registry IDs, or wiki references. Use Chinese descriptions around preserved names when helpful.
+Do not treat proper nouns as automatically untranslatable. Translate proper nouns when they are visible story, place, creature, boss, faction, quest, or dimension names and a good target-language name exists or can be rendered naturally. Keep a proper noun untranslated only when translating it would make gameplay harder to match with item names, in-game lookup tools, commands, registry IDs, or wiki references. Use target-language descriptions around preserved names when helpful.
 
 ## Verification Checklist
 
@@ -161,6 +158,7 @@ Before reporting completion:
 
 - Check that every intended source file has a corresponding overwrite file or a reason it was skipped.
 - Scan display fields for remaining source-language prose and readable terms that should have been translated.
+- Check recurring readable terms for consistent translations across files.
 - Confirm technical tokens were preserved, especially commands, IDs, tags, resource paths, and formatting codes.
 - Validate syntax with available tools where possible.
 - Compare old-vs-new translation trees for update tasks.
@@ -176,6 +174,7 @@ Report concisely:
 - File categories translated.
 - Files intentionally skipped.
 - Terms intentionally left untranslated.
+- Recurring terminology decisions when they affect consistency or future updates.
 - Validation result, including the independent validator subagent result.
 - Deployment note, if the overwrite folder should be copied or mounted somewhere.
 
@@ -184,7 +183,7 @@ Report concisely:
 Use a prompt like this for translation subagents:
 
 ```text
-Translate user-facing text in these files to Simplified Chinese: <paths>.
+Translate user-facing text in these files to <target language>: <paths>.
 Use native patch/edit tooling only. Preserve SNBT/JSON syntax exactly.
 Translate player-facing prose and readable game/lore terms by default,
 including dimensions, mobs, bosses, places, factions, mechanics, and quest
@@ -192,7 +191,8 @@ names. Do not translate IDs, commands, registry names, resource paths, tags,
 URLs, formatting codes, placeholders, selectors, or config keys. If a string
 mixes readable text and a technical token, translate the readable text and
 preserve only the technical token.
-Report changed files, intentionally untranslated terms, and checks performed.
+Keep recurring readable terms consistent across files. Report changed files,
+intentionally untranslated terms, terminology decisions, and checks performed.
 ```
 
 Use a prompt like this for the validator subagent:
@@ -200,7 +200,8 @@ Use a prompt like this for the validator subagent:
 ```text
 Independently validate the translated overwrite folder against the source
 server pack. Do not edit files. Find remaining user-facing source-language
-text, translated technical tokens that should have been preserved, missing new
-files, stale removed files, and syntax risks. Return findings with file paths
-and line references. If clean, state that explicitly and list residual risks.
+text, inconsistent recurring terminology, translated technical tokens that
+should have been preserved, missing new files, stale removed files, and syntax
+risks. Return findings with file paths and line references. If clean, state
+that explicitly and list residual risks.
 ```
