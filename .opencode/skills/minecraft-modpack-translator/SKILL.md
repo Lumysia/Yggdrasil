@@ -25,7 +25,7 @@ When context strongly implies a likely answer, ask the user to confirm or correc
 1. First determine the target language. If the user stated it explicitly, use it. If context strongly implies a likely target language, ask a short confirmation that includes the predicted language and lets the user correct it. If the target language is unclear, ask with free-form input. Keep target-language intake open-ended rather than using a preset language list. After the target language is confirmed, use the user's latest conversation language for the next intake step, with any explicit conversation-language preference taking precedence.
 2. After the target language is known, ask whether this is a first translation or an upgrade of an existing translation. If choices are available, present those two choices in the user's current conversation language.
 3. If upgrading, ask for the old translation path before asking for other inputs.
-4. Then collect the new source pack path, output folder path for the overwrite files, and translation scope.
+4. Then collect the new source pack path, output location for the packaged result, and translation scope.
 
 Ask one short guided question for the next missing required input whenever the target language or output location is unclear.
 
@@ -40,13 +40,13 @@ Before editing or dispatching subagents, read `references/translation-workflow.m
 5. For multi-file work, assign translation batches and then run an independent validator.
 6. Fix validator findings or clearly report intentionally untranslated terms and residual risks.
 
-Default to generating the overwrite folder only. Ask about deployment wiring only when the user explicitly asks to apply the translation to a server or wire it into a runtime setup.
+Default to delivering a ZIP archive containing the overwrite folder contents. Keep the folder as a working artifact for validation, then package it after validation passes. Ask about deployment wiring only when the user explicitly asks to apply the translation to a server or wire it into a runtime setup.
 
 ## Completion Summary
 
 Report concisely:
 
-- Source pack path and overwrite folder path.
+- Source pack path, working overwrite folder path, and output ZIP path.
 - Target language.
 - Whether this was a first translation or an upgrade.
 - File categories translated.

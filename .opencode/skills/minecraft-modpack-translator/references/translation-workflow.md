@@ -6,7 +6,9 @@ Read this file before editing translated modpack files or validating translated 
 
 The source pack may be a ZIP archive or an extracted folder.
 
-Create or update an overwrite folder, not a full rewritten modpack. Mirror the source pack's relative paths only for files that need to replace generated server files.
+Create or update a working overwrite folder, not a full rewritten modpack. Mirror the source pack's relative paths only for files that need to replace generated server files. After validation passes, package the overwrite contents into a ZIP archive for final delivery.
+
+Choose a concise ZIP filename from the source pack name, target language, and translation type. Use the user's requested output name when they provide one; otherwise choose a clear name. Keep the archive root directly usable as an overwrite package rather than adding an extra wrapper directory.
 
 When the source pack or bundled mods already provide official localization files for the target language, use those files as terminology references and coverage evidence. Generate overwrite output for user-facing text that remains uncovered by official target-language localization.
 
@@ -117,6 +119,7 @@ Before reporting completion:
 - Compare old-vs-new translation trees for update tasks.
 - Run a final independent validator for multi-file work.
 - Fix validator findings or clearly report intentionally untranslated terms.
+- Package the validated overwrite contents into a ZIP archive and report the ZIP path.
 
 ## Subagent Prompts
 
