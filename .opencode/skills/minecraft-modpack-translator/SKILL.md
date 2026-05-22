@@ -80,6 +80,8 @@ Translate user-facing text only:
 - Menu/help/tutorial text stored in config files.
 - Language JSON values when the file is intended for display text.
 
+Default to translating natural-language terms that players are meant to read. Do not leave English in the translated output just because a word is a Minecraft/modpack concept. Translate dimensions, locations, mobs, factions, structures, bosses, materials, mechanics, and lore terms when they have an official, community-standard, or clear target-language rendering. Examples of translatable readable terms include dimension names like `Overworld`, `Nether`, `End`, `The Otherside`, `Underdark`, `Everbright`, and `Everdawn`; mob or group names like `Primal Titans`; and gameplay/lore phrases embedded in prose.
+
 Preserve technical content exactly:
 
 - IDs, UUID-like strings, quest IDs, dependency IDs, group IDs.
@@ -89,7 +91,7 @@ Preserve technical content exactly:
 - Minecraft formatting codes like `&e`, `&r`, `&9`, escaped quotes, and placeholders.
 - Tags such as `#botania:runes`; translate surrounding readable words only, for example `Any #botania:runes` to `任意 #botania:runes`.
 
-If a string mixes readable prose and special tokens, translate only the prose and leave the token intact.
+If a string mixes readable prose and special tokens, translate the prose and any translatable readable terms, but leave the technical tokens intact. A remaining English word in translated display text should be intentional, not the default.
 
 ## Editing Rules
 
@@ -151,14 +153,14 @@ Some modpack terms have established Chinese names. If unsure, search current doc
 - Existing old translation folder supplied by the user.
 - Common Minecraft Simplified Chinese terminology.
 
-Keep proper nouns untranslated when translating them would make gameplay harder to match with item names, JEI, commands, or wiki references. Use Chinese descriptions around them when helpful.
+Do not treat proper nouns as automatically untranslatable. Translate proper nouns when they are visible story, place, creature, boss, faction, quest, or dimension names and a good target-language name exists or can be rendered naturally. Keep a proper noun untranslated only when translating it would make gameplay harder to match with item names, JEI, commands, registry IDs, or wiki references. Use Chinese descriptions around preserved names when helpful.
 
 ## Verification Checklist
 
 Before reporting completion:
 
 - Check that every intended source file has a corresponding overwrite file or a reason it was skipped.
-- Scan display fields for remaining obvious source-language prose.
+- Scan display fields for remaining source-language prose and readable terms that should have been translated.
 - Confirm technical tokens were preserved, especially commands, IDs, tags, resource paths, and formatting codes.
 - Validate syntax with available tools where possible.
 - Compare old-vs-new translation trees for update tasks.
@@ -184,9 +186,12 @@ Use a prompt like this for translation subagents:
 ```text
 Translate user-facing text in these files to Simplified Chinese: <paths>.
 Use native patch/edit tooling only. Preserve SNBT/JSON syntax exactly.
-Do not translate IDs, commands, registry names, resource paths, tags, URLs,
-formatting codes, placeholders, selectors, or config keys. If a string mixes
-readable text and a technical token, translate only the readable text.
+Translate player-facing prose and readable game/lore terms by default,
+including dimensions, mobs, bosses, places, factions, mechanics, and quest
+names. Do not translate IDs, commands, registry names, resource paths, tags,
+URLs, formatting codes, placeholders, selectors, or config keys. If a string
+mixes readable text and a technical token, translate the readable text and
+preserve only the technical token.
 Report changed files, intentionally untranslated terms, and checks performed.
 ```
 
