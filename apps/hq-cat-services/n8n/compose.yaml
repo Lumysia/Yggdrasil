@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    volumes:
+      - ${DB_PATH}/n8n-postgres:/var/lib/postgresql/data
+    networks:
+      - n8n_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: ghcr.io/deluxebear/n8n:latest
+    restart: unless-stopped
+    labels:
+      caddy: n8n.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 5678}}"
+    env_file:
+      - stack.env
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_HOST: n8n.${COMMON_DOMAIN_A}
+      WEBHOOK_URL: https://n8n.${COMMON_DOMAIN_A}/
+    volumes:
+      - ${APPDATA_PATH}/n8n:/home/node/.n8n
+      - ${APPDATA_PATH}/n8n-files:/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - n8n_net
+      - shared_n8n_net
+
+networks:
+  n8n_net:
+    internal: true
+  shared_n8n_net:
+    external: true
