@@ -15,7 +15,7 @@ services:
       retries: 10
 
   n8n:
-    image: ghcr.io/deluxebear/n8n:chs
+    image: ghcr.io/deluxebear/n8n:latest
     restart: unless-stopped
     labels:
       caddy: n8n.${COMMON_DOMAIN_A}
