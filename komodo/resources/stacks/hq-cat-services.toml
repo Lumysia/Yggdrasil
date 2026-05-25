@@ -199,6 +199,8 @@ additional_env_files = [
 ]
 pre_deploy.command = """
 docker network create shared_n8n_net || true
+mkdir -p /data/appdata/n8n /data/appdata/n8n-files
+chown -R 1000:1000 /data/appdata/n8n /data/appdata/n8n-files
 """
 extra_args = ["--remove-orphans"]
 environment = """
