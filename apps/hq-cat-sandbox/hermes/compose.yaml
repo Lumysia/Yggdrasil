@@ -21,6 +21,8 @@ services:
     env_file:
       - stack.env
     environment:
+      HOME: /opt/data
+      XDG_STATE_HOME: /opt/data/.local/state
       TELEGRAM_ALLOWED_USERS: ${HERMES2_TELEGRAM_ALLOWED_USERS}
       TELEGRAM_BOT_TOKEN: ${HERMES2_TELEGRAM_BOT_TOKEN}
     volumes:
