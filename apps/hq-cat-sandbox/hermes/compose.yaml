@@ -15,7 +15,7 @@ services:
       - hermes1_app_net
 
   hermes2:
-    image: essaypu/hermes-agent:1e267c4859a9
+    image: essaypu/hermes-agent:1e5a6b290f7b
     restart: unless-stopped
     command: ["gateway", "run"]
     env_file:
