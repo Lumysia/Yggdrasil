@@ -69,6 +69,15 @@ enabled = true
 ##
 
 [[server]]
+name = "jptyo-greencloud-02"
+[server.config]
+address = "https://100.77.56.36:8120"
+region = "ap-northeast"
+enabled = true
+
+##
+
+[[server]]
 name = "uslax-dmit-01"
 [server.config]
 address = "https://100.113.240.1:8120"
