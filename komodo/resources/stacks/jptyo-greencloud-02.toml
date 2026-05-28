@@ -1,0 +1,16 @@
+[[stack]]
+name = "jptyo-greencloud-02-remnawave-node"
+tags = ["auto-deploy"]
+[stack.config]
+server = "jptyo-greencloud-02"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/jptyo-greencloud-02/remnawave-node"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+REMNANODE_SECRET_KEY=[[JPTYO_GREENCLOUD_02_REMNANODE_SECRET_KEY]]
+"""
