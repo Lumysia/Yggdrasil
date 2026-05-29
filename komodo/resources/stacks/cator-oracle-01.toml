@@ -4,6 +4,7 @@ tags = ["auto-deploy"]
 [stack.config]
 server = "cator-oracle-01"
 poll_for_updates = true
+auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/cator-oracle-01/networking"
 additional_env_files = [
