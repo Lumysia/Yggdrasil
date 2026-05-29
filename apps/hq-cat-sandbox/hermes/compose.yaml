@@ -15,14 +15,12 @@ services:
       - hermes1_app_net
 
   hermes2:
-    image: essaypu/hermes-agent:1e5a6b290f7b
+    image: nousresearch/hermes-agent:latest
     restart: unless-stopped
     command: ["gateway", "run"]
     env_file:
       - stack.env
     environment:
-      HOME: /opt/data
-      XDG_STATE_HOME: /opt/data/.local/state
       TELEGRAM_ALLOWED_USERS: ${HERMES2_TELEGRAM_ALLOWED_USERS}
       TELEGRAM_BOT_TOKEN: ${HERMES2_TELEGRAM_BOT_TOKEN}
     volumes:
