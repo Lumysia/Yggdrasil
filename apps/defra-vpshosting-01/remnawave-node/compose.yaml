@@ -1,0 +1,13 @@
+services:
+  remnanode:
+    image: remnawave/node:latest
+    restart: always
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - stack.env
+    environment:
+      SECRET_KEY: ${REMNANODE_SECRET_KEY}
+    volumes:
+      - ${APPDATA_PATH}/remnanode/logs:/var/log/remnanode

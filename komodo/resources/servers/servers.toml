@@ -17,6 +17,15 @@ enabled = true
 ##
 
 [[server]]
+name = "defra-vpshosting-01"
+[server.config]
+address = "https://100.86.19.70:8120"
+region = "eu-central"
+enabled = true
+
+##
+
+[[server]]
 name = "hq-cat-core"
 [server.config]
 region = "ca-central"

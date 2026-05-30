@@ -1,0 +1,16 @@
+[[stack]]
+name = "defra-vpshosting-01-remnawave-node"
+tags = ["auto-deploy"]
+[stack.config]
+server = "defra-vpshosting-01"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/defra-vpshosting-01/remnawave-node"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+REMNANODE_SECRET_KEY=[[DEFRA_VPSHOSTING_01_REMNANODE_SECRET_KEY]]
+"""
