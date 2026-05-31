@@ -1,0 +1,23 @@
+services:
+  openlist:
+    image: openlistteam/openlist:latest
+    restart: unless-stopped
+    user: "1000:1000"
+    labels:
+      caddy: olist.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 5244}}"
+    env_file:
+      - stack.env
+    environment:
+      OPENLIST_ADMIN_PASSWORD: ${OPENLIST_ADMIN_PASSWORD}
+      SITE_URL: https://olist.${COMMON_DOMAIN_A}
+    volumes:
+      - ${APPDATA_PATH}/openlist:/opt/openlist/data
+      - /tmp/openlist:/tmp/openlist
+    networks:
+      - shared_openlist_net
+
+networks:
+  shared_openlist_net:
+    external: true

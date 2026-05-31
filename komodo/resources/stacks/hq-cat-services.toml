@@ -15,6 +15,7 @@ environment = """
 CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
 COMMON_CADDY_ADMIN_EMAIL=[[COMMON_CADDY_ADMIN_EMAIL]]
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 HQCAT_SERVICES_CFD_TOKEN=[[HQCAT_SERVICES_CFD_TOKEN]]
 OAUTH2_PROXY_CLIENT_SECRET=[[COMMON_OAUTH2_CLIENT_SECRET]]
 OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
@@ -75,6 +76,7 @@ AUTH_GENERIC_OIDC_SECRET=[[HQCAT_SERVICES_LOBE_OIDC_SECRET]]
 QSTASH_TOKEN=[[HQCAT_SERVICES_LOBE_QSTASH_TOKEN]]
 COHERE_API_KEY=[[HQCAT_SERVICES_LOBE_COHERE_API_KEY]]
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 """
 
 ##
@@ -205,6 +207,32 @@ chown -R 1000:1000 /data/appdata/n8n /data/appdata/n8n-files
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 N8N_ENCRYPTION_KEY=[[HQCAT_SERVICES_N8N_ENCRYPTION_KEY]]
 N8N_SSO_OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_N8N_OIDC_CLIENT_SECRET]]
+"""
+
+##
+
+[[stack]]
+name = "hq-cat-services-openlist"
+tags = ["auto-deploy"]
+[stack.config]
+server = "hq-cat-services"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-services/openlist"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+docker network create shared_openlist_net || true
+mkdir -p /data/appdata/openlist /tmp/openlist
+chown -R 1000:1000 /data/appdata/openlist /tmp/openlist
+"""
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+OPENLIST_ADMIN_PASSWORD=[[HQCAT_SERVICES_OPENLIST_ADMIN_PASSWORD]]
 """

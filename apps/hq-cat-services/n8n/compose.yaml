@@ -28,7 +28,7 @@ services:
       N8N_SSO_OIDC_CLIENT_SECRET: ${N8N_SSO_OIDC_CLIENT_SECRET}
       N8N_HOST: n8n.${COMMON_DOMAIN_A}
       N8N_EDITOR_BASE_URL: https://n8n.${COMMON_DOMAIN_A}
-      N8N_SSO_OIDC_DISCOVERY_ENDPOINT: https://id.${COMMON_DOMAIN_A}/.well-known/openid-configuration
+      N8N_SSO_OIDC_DISCOVERY_ENDPOINT: https://${COMMON_DOMAIN_AUTH}/.well-known/openid-configuration
       WEBHOOK_URL: https://n8n.${COMMON_DOMAIN_A}/
     volumes:
       - ${APPDATA_PATH}/n8n:/home/node/.n8n
