@@ -8,6 +8,12 @@ This file is the project guidance index. Load the relevant skill for detailed wo
 - Keep naming and layout consistent with nearby files.
 - Use Angular-style commit messages.
 
+## Tailscale ACLs
+
+- Keep Tailnet ACL templates under `tailscale/`.
+- Prefer tag-based grants over fixed Tailscale IPs for reusable forwarding rules.
+- Treat ACL files as infrastructure policy: they are not secrets, but they do reveal access intent.
+
 ## Skill Index
 
 - For app Docker/Compose stack work, Komodo stack wiring, Caddy exposure, OAuth proxy wiring, or app env/path mapping, load the `app-stack` skill.
