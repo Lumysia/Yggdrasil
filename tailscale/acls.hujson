@@ -1,0 +1,110 @@
+// Tailscale ACL with generic forwarding tags.
+{
+	// Declare static groups of users. Use autogroups for all users or users with a specific role.
+	// "groups": {
+	//   "group:example": ["alice@example.com", "bob@example.com"],
+	// },
+
+	// Define the tags which can be applied to devices and by which users.
+	"tagOwners": {
+		"tag:placeholder":       ["autogroup:admin"],
+		"tag:pve-nodes":         ["autogroup:admin"],
+		"tag:komodo-core":       ["autogroup:admin"],
+		"tag:komodo-nodes":      ["autogroup:admin"],
+		"tag:remnawave-core":    ["autogroup:admin"],
+		"tag:remnawave-nodes":   ["autogroup:admin"],
+		"tag:remnawave-bridge":  ["autogroup:admin"],
+		"tag:remnawave-entry":   ["autogroup:admin"],
+		"tag:forwarding-source": ["autogroup:admin"],
+		"tag:forwarding-target": ["autogroup:admin"],
+	},
+
+	// Define grants that govern access for users, groups, autogroups, tags,
+	// Tailscale IP addresses, and subnet ranges.
+	"grants": [
+		{
+			"src": ["autogroup:admin"],
+			"dst": ["tag:pve-nodes", "tag:komodo-core", "tag:komodo-nodes"],
+			"ip":  ["tcp:22"],
+		},
+		{
+			"src": ["autogroup:admin"],
+			"dst": ["tag:komodo-core", "tag:komodo-nodes"],
+			"ip":  ["*:*"],
+		},
+		{
+			"src": ["autogroup:admin"],
+			"dst": ["tag:pve-nodes"],
+			"ip":  ["tcp:8006"],
+		},
+		{
+			"src": ["tag:komodo-core"],
+			"dst": ["tag:komodo-nodes"],
+			"ip":  ["tcp:443", "tcp:8120"],
+		},
+		{
+			"src": ["tag:komodo-nodes"],
+			"dst": ["tag:komodo-nodes"],
+			"ip":  ["tcp:443"],
+		},
+		{
+			"src": ["tag:remnawave-core"],
+			"dst": ["tag:remnawave-nodes"],
+			"ip":  ["tcp:2222"],
+		},
+		{
+			"src": ["tag:remnawave-entry"],
+			"dst": ["tag:remnawave-bridge"],
+			"ip":  ["tcp:9443"],
+		},
+		{
+			"src": ["tag:forwarding-source"],
+			"dst": ["tag:forwarding-target"],
+			"ip":  ["tcp:25565", "tcp:443"],
+		},
+	],
+
+	// Define postures that will be applied to all rules without any specific
+	// srcPosture definition.
+	// "defaultSrcPosture": [
+	//      "posture:anyMac",
+	// ],
+
+	// Define device posture rules requiring devices to meet
+	// certain criteria to access parts of your system.
+	// "postures": {
+	//      // Require devices running macOS, a stable Tailscale
+	//      // version and auto update enabled for Tailscale.
+	//  "posture:autoUpdateMac": [
+	//      "node:os == 'macos'",
+	//      "node:tsReleaseTrack == 'stable'",
+	//      "node:tsAutoUpdate",
+	//  ],
+	//      // Require devices running macOS and a stable
+	//      // Tailscale version.
+	//  "posture:anyMac": [
+	//      "node:os == 'macos'",
+	//      "node:tsReleaseTrack == 'stable'",
+	//  ],
+	// },
+
+	"nodeAttrs": [
+		{
+			// Funnel policy, which lets tailnet members control Funnel
+			// for their own devices.
+			// Learn more at https://tailscale.com/kb/1223/tailscale-funnel/
+			"target": ["autogroup:member"],
+
+			"attr": ["funnel"],
+		},
+	],
+
+	// Test access rules every time they're saved.
+	// "tests": [
+	//   {
+	//       "src": "alice@example.com",
+	//       "accept": ["tag:example"],
+	//       "deny": ["100.101.102.103:443"],
+	//   },
+	// ],
+}
