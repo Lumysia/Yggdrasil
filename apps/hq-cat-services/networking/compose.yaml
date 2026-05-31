@@ -17,6 +17,7 @@ services:
       - shared_lobechat_net
       - shared_remnawave_net
       - shared_n8n_net
+      - shared_openlist_net
       - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
@@ -133,6 +134,8 @@ networks:
   shared_remnawave_net:
     external: true
   shared_n8n_net:
+    external: true
+  shared_openlist_net:
     external: true
   oauth2_proxy_intranet:
     internal: true

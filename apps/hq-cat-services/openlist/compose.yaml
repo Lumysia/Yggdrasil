@@ -1,0 +1,19 @@
+services:
+  openlist:
+    image: docker.io/openlistteam/openlist:latest
+    restart: unless-stopped
+    user: "0:0"
+    labels:
+      caddy: file.${COMMON_DOMAIN_B}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 5244}}"
+    env_file:
+      - stack.env
+    volumes:
+      - ${APPDATA_PATH}/openlist/data:/opt/openlist/data
+    networks:
+      - shared_openlist_net
+
+networks:
+  shared_openlist_net:
+    external: true
