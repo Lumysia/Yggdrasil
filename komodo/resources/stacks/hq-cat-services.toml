@@ -211,27 +211,3 @@ COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 N8N_ENCRYPTION_KEY=[[HQCAT_SERVICES_N8N_ENCRYPTION_KEY]]
 N8N_SSO_OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_N8N_OIDC_CLIENT_SECRET]]
 """
-
-##
-
-[[stack]]
-name = "hq-cat-services-openlist"
-tags = ["auto-deploy"]
-[stack.config]
-server = "hq-cat-services"
-poll_for_updates = true
-auto_update = true
-linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/openlist"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
-pre_deploy.command = """
-docker network create shared_openlist_net || true
-mkdir -p /data/appdata/openlist /tmp/openlist
-chown -R 1000:1000 /data/appdata/openlist /tmp/openlist
-"""
-extra_args = ["--remove-orphans"]
-environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-"""
