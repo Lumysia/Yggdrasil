@@ -1,4 +1,26 @@
 [[stack]]
+name = "uslax-dmit-02-gateway"
+tags = ["auto-deploy"]
+[stack.config]
+server = "uslax-dmit-02"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/uslax-dmit-02/gateway"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+docker network create shared_gateway_net || true
+"""
+extra_args = ["--remove-orphans"]
+environment = """
+GATEWAY_TLS_ROUTES=[[COMMON_ENTRY_GATEWAY_TLS_ROUTES]]
+"""
+
+##
+
+[[stack]]
 name = "uslax-dmit-02-remnawave-node"
 tags = ["auto-deploy"]
 [stack.config]
