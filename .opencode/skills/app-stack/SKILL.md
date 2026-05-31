@@ -80,6 +80,20 @@ If a service is exposed through Caddy:
 - add the same network to the host `networking/compose.yaml`
 - create that network in the Komodo stack `pre_deploy.command`
 
+## Entry Gateway Services
+
+For public services on entry hosts that already have a shared gateway stack:
+
+- keep one public owner for `80` and `443`; do not add direct public `80:...` or `443:...` port mappings to app stacks
+- route ordinary HTTP/HTTPS applications through Caddy behind the gateway, and let Caddy terminate TLS and reverse proxy to the app
+- expose web apps by adding Caddy labels to the app service and attaching the app to the shared gateway network used by that host
+- keep app containers listening on internal container ports or localhost/private host ports unless a protocol specifically requires public exposure
+- use gateway TLS passthrough routes only for protocols or applications that must receive the original TLS stream; do not consume SNI passthrough entries for normal web apps that Caddy can terminate
+- use gateway TCP routes for non-HTTP TCP services that need public ports; keep those routes in Komodo-injected variables instead of hard-coding per-host forwarding logic in `compose.yaml`
+- keep UDP services separate from the TCP/TLS gateway unless the existing gateway stack already has explicit UDP support
+- when changing gateway-backed exposure, inspect the app stack, the host gateway stack, and the matching Komodo `*.toml` together so Caddy labels, shared networks, env variables, and route injections stay consistent
+- when debugging gateway traffic, distinguish unmatched fallback traffic from intended routes by checking the generated gateway config and backend names in logs before changing app or route configuration
+
 ## OAuth-Protected Services
 
 - prefer one local `oauth2-proxy` per host gateway/networking stack
