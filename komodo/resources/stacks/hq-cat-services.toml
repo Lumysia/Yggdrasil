@@ -234,5 +234,4 @@ chown -R 1000:1000 /data/appdata/openlist /tmp/openlist
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-OPENLIST_ADMIN_PASSWORD=[[HQCAT_SERVICES_OPENLIST_ADMIN_PASSWORD]]
 """

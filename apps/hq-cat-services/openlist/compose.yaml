@@ -10,7 +10,6 @@ services:
     env_file:
       - stack.env
     environment:
-      OPENLIST_ADMIN_PASSWORD: ${OPENLIST_ADMIN_PASSWORD}
       SITE_URL: https://olist.${COMMON_DOMAIN_A}
     volumes:
       - ${APPDATA_PATH}/openlist:/opt/openlist/data
