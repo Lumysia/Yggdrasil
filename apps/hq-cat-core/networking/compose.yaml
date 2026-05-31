@@ -83,28 +83,6 @@ services:
       retries: 2
       start_period: 10s
 
-  pocketid-legacy:
-    image: ghcr.io/pocket-id/pocket-id:v2
-    restart: unless-stopped
-    labels:
-      caddy: id.${COMMON_DOMAIN_A}
-      caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 1411}}"
-    volumes:
-      - ${APPDATA_PATH}/pocketid-legacy:/app/data
-    env_file:
-      - stack.env
-    environment:
-      MAXMIND_LICENSE_KEY: ${HQCAT_CORE_MAXMIND_LICENSE_KEY}
-      APP_URL: https://id.${COMMON_DOMAIN_A}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-    healthcheck:
-      test: [ "CMD", "/app/pocket-id", "healthcheck" ]
-      interval: 1m30s
-      timeout: 5s
-      retries: 2
-      start_period: 10s
-
 networks:
   default:
   cloudflare_net:
