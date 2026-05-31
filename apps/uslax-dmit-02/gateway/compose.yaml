@@ -110,9 +110,9 @@ services:
 
         frontend gateway_tcp_route_$${idx}
           bind *:$${listen}
-          default_backend gateway_tcp_route_$${idx}
+          default_backend gateway_tcp_route_backend_$${idx}
 
-        backend gateway_tcp_route_$${idx}
+        backend gateway_tcp_route_backend_$${idx}
           server upstream $${target}
         EOF
           fi
