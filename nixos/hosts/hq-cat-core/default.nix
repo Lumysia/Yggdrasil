@@ -31,6 +31,12 @@
   services.qemuGuest.enable = true;
 
   # Mounts
+  fileSystems."/home" = {
+    device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi2";
+    fsType = "ext4";
+    options = [ "defaults" "nofail" "noatime" ];
+  };
+
   fileSystems."/data" = {
     device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1";
     fsType = "ext4";
