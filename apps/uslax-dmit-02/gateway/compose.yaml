@@ -47,11 +47,11 @@ services:
           timeout server 6h
 
         frontend gateway_http
-          bind *:${GATEWAY_HTTP_PORT}
+          bind [::]:${GATEWAY_HTTP_PORT} v4v6
           default_backend gateway_web_http
 
         frontend gateway_tls
-          bind *:${GATEWAY_HTTPS_PORT}
+          bind [::]:${GATEWAY_HTTPS_PORT} v4v6
           tcp-request inspect-delay 5s
           tcp-request content accept if { req.ssl_hello_type 1 }
         EOF
@@ -109,7 +109,7 @@ services:
             cat >> /tmp/haproxy.cfg <<EOF
 
         frontend gateway_tcp_route_$${idx}
-          bind *:$${listen}
+          bind [::]:$${listen} v4v6
           default_backend gateway_tcp_route_backend_$${idx}
 
         backend gateway_tcp_route_backend_$${idx}
