@@ -24,7 +24,7 @@
 
   # Bootloader
   boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda";
+  boot.loader.grub.device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0";
   boot.loader.grub.useOSProber = true;
   boot.kernelParams = [ "console=ttyS0,115200" "console=tty1" ];
 
