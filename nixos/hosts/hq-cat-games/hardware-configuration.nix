@@ -11,7 +11,7 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" =
-    { device = "/dev/disk/by-uuid/4b04ce32-a8ff-4636-a995-5c334fb99fe6";
+    { device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0";
       fsType = "ext4";
     };
 
