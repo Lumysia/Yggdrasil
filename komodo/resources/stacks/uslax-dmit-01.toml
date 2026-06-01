@@ -37,3 +37,19 @@ extra_args = ["--remove-orphans"]
 environment = """
 REMNANODE_SECRET_KEY=[[USLAX_DMIT_01_REMNANODE_SECRET_KEY]]
 """
+
+##
+
+[[stack]]
+name = "uslax-dmit-01-teamspeak"
+tags = ["auto-deploy"]
+[stack.config]
+server = "uslax-dmit-01"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/uslax-dmit-01/teamspeak"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
