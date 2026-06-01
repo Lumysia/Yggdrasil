@@ -16,6 +16,7 @@
   features.security.sops.enable = true;
   features.server.openssh.enable = true;
   features.virtualisation.docker.enable = true;
+  virtualisation.docker.daemon.settings."data-root" = "/srv/docker";
   virtualisation.docker.daemon.settings.no-new-privileges = lib.mkForce false;
   features.services.tailscale.enable = true;
   features.user.suser.enable = true;
