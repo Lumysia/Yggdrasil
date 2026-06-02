@@ -17,8 +17,7 @@ services:
       caddy.import: common_tls
       caddy.reverse_proxy: "{{upstreams 8642}}"
     networks:
-      - hermes1_app_net
-      - shared_hermes_net
+      - shared_hermes1_net
 
   hermes2:
     image: nousresearch/hermes-agent:latest
@@ -38,11 +37,10 @@ services:
       caddy.import: common_tls
       caddy.reverse_proxy: "{{upstreams 8642}}"
     networks:
-      - hermes2_app_net
-      - shared_hermes_net
+      - shared_hermes2_net
 
 networks:
-  hermes1_app_net:
-  hermes2_app_net:
-  shared_hermes_net:
+  shared_hermes1_net:
+    external: true
+  shared_hermes2_net:
     external: true

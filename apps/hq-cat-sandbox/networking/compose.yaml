@@ -11,7 +11,8 @@ services:
       - 443:443/udp
     networks:
       - shared_goclaw_net
-      - shared_hermes_net
+      - shared_hermes1_net
+      - shared_hermes2_net
       - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
@@ -106,7 +107,9 @@ networks:
     enable_ipv6: true
   shared_goclaw_net:
     external: true
-  shared_hermes_net:
+  shared_hermes1_net:
+    external: true
+  shared_hermes2_net:
     external: true
   oauth2_proxy_intranet:
     internal: true

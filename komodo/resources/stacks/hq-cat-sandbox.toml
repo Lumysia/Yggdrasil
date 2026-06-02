@@ -75,7 +75,8 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_hermes_net || true
+docker network create shared_hermes1_net || true
+docker network create shared_hermes2_net || true
 """
 extra_args = ["--remove-orphans"]
 environment = """
