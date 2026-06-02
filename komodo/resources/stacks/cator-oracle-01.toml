@@ -61,7 +61,7 @@ additional_env_files = [
 pre_deploy.command = """
 set -eu
 
-DOKKU_GLOBAL_DOMAIN="tmp.${COMMON_DOMAIN_A}"
+DOKKU_GLOBAL_DOMAIN="${COMMON_DOMAIN_A}"
 
 docker network create shared_dokku_net || true
 
