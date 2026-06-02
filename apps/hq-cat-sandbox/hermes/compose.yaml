@@ -1,5 +1,5 @@
 services:
-  hermes:
+  hermes1:
     image: nousresearch/hermes-agent:latest
     restart: unless-stopped
     command: ["gateway", "run"]
