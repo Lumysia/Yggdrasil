@@ -11,7 +11,7 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_dokpoly_net || true
+docker network create shared_dokku_net || true
 """
 extra_args = ["--remove-orphans"]
 environment = """
@@ -47,20 +47,59 @@ FORGEJO_RUNNER_REGISTRATION_TOKEN=[[CATOR_ORACLE_01_RUNNER_FORGEJO_REGISTRATION_
 ##
 
 [[stack]]
-name = "cator-oracle-01-dokpoly"
+name = "cator-oracle-01-dokku"
+tags = ["auto-deploy"]
 [stack.config]
 server = "cator-oracle-01"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/cator-oracle-01/dokpoly"
+run_directory = "apps/cator-oracle-01/dokku"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
+pre_deploy.command = """
+set -eu
+
+DOKKU_GLOBAL_DOMAIN="tmp.${COMMON_DOMAIN_A}"
+
+docker network create shared_dokku_net || true
+
+if ! command -v dokku >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+
+  echo "dokku dokku/vhost_enable boolean true" | debconf-set-selections
+  echo "dokku dokku/hostname string ${DOKKU_GLOBAL_DOMAIN}" | debconf-set-selections
+  echo "dokku dokku/nginx_enable boolean false" | debconf-set-selections
+  echo "dokku dokku/skip_key_file boolean true" | debconf-set-selections
+
+  if [ ! -f /etc/apt/trusted.gpg.d/dokku.asc ]; then
+    wget -qO- https://packagecloud.io/dokku/dokku/gpgkey > /etc/apt/trusted.gpg.d/dokku.asc
+  fi
+
+  DISTRO="$(awk -F= '$1=="ID" { print tolower($2) }' /etc/os-release)"
+  OS_ID="$(awk -F= '$1=="VERSION_CODENAME" { print tolower($2) }' /etc/os-release)"
+  echo "deb https://packagecloud.io/dokku/dokku/${DISTRO}/ ${OS_ID} main" > /etc/apt/sources.list.d/dokku.list
+
+  apt-get update -qq >/dev/null
+  apt-get install -qq -y dokku docker-compose-plugin
+  dokku plugin:install-dependencies --core
+fi
+
+if [ -s /root/.ssh/authorized_keys ]; then
+  dokku ssh-keys:add admin < /root/.ssh/authorized_keys || true
+fi
+
+dokku domains:set-global "${DOKKU_GLOBAL_DOMAIN}"
+dokku proxy:set --global type caddy
+dokku caddy:set --global letsencrypt-email "${COMMON_CADDY_ADMIN_EMAIL}"
+dokku network:set --global attach-post-create shared_dokku_net
+dokku nginx:stop || true
+"""
 extra_args = ["--remove-orphans"]
 environment = """
+COMMON_CADDY_ADMIN_EMAIL=[[COMMON_CADDY_ADMIN_EMAIL]]
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-DOKPLOY_POSTGRES_PASSWORD=[[CATOR_ORACLE_01_DOKPOLY_POSTGRES_PASSWORD]]
 """
 
 ##

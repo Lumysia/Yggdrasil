@@ -10,7 +10,7 @@ services:
       - 443:443
       - 443:443/udp
     networks:
-      - shared_dokpoly_net
+      - shared_dokku_net
       - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
@@ -103,7 +103,7 @@ services:
 networks:
   cloudflare_net:
     enable_ipv6: true
-  shared_dokpoly_net:
+  shared_dokku_net:
     external: true
   oauth2_proxy_intranet:
     internal: true
