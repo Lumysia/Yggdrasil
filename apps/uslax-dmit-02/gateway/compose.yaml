@@ -44,8 +44,9 @@ services:
           timeout server 6h
 
         frontend gateway_http
+          mode http
           bind [::]:${GATEWAY_HTTP_PORT} v4v6
-          default_backend gateway_web_http
+          http-request return status 400 hdr Server AkamaiGHost hdr Mime-Version 1.0 content-type text/html string "<HTML><HEAD><TITLE>Invalid URL</TITLE></HEAD><BODY><H1>Invalid URL</H1>The requested URL is invalid.</BODY></HTML>"
 
         frontend gateway_tls
           bind [::]:${GATEWAY_HTTPS_PORT} v4v6
