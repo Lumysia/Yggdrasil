@@ -19,6 +19,7 @@ services:
     env_file:
       - stack.env
     environment:
+      CADDY_DOCKER_POLLING_INTERVAL: 30m
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
     labels:
       caddy_0.email: ${COMMON_CADDY_ADMIN_EMAIL}

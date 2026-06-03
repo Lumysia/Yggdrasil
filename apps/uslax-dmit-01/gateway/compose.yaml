@@ -4,6 +4,8 @@ services:
     command:
       - caddy
       - docker-proxy
+    environment:
+      CADDY_DOCKER_POLLING_INTERVAL: 30m
     restart: unless-stopped
     ports:
       - 127.0.0.1:${GATEWAY_WEB_HTTP_PORT}:80
