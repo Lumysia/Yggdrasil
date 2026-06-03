@@ -27,8 +27,7 @@ services:
     env_file:
       - stack.env
     environment:
-      GATEWAY_TLS_ROUTES: ${GATEWAY_TLS_ROUTES:-}
-      GATEWAY_TCP_ROUTES: ${GATEWAY_TCP_ROUTES:-}
+      GATEWAY_EXTRA_TLS_ROUTES: file.${COMMON_DOMAIN_B}=100.126.143.61:443
     entrypoint:
       - /bin/sh
       - -ec
@@ -56,10 +55,19 @@ services:
           tcp-request content accept if { req.ssl_hello_type 1 }
         EOF
 
+        tls_routes="$${GATEWAY_TLS_ROUTES:-}"
+        if [ -n "$${GATEWAY_EXTRA_TLS_ROUTES:-}" ]; then
+          if [ -n "$$tls_routes" ]; then
+            tls_routes="$${tls_routes},$${GATEWAY_EXTRA_TLS_ROUTES}"
+          else
+            tls_routes="$${GATEWAY_EXTRA_TLS_ROUTES}"
+          fi
+        fi
+
         idx=1
         old_ifs="$$IFS"
         IFS=','
-        for route in $${GATEWAY_TLS_ROUTES:-}; do
+        for route in $$tls_routes; do
           sni="$${route%%=*}"
           target="$${route#*=}"
           if [ -n "$$sni" ] && [ "$$target" != "$$route" ]; then
@@ -73,19 +81,22 @@ services:
         IFS="$$old_ifs"
 
         cat >> /tmp/haproxy.cfg <<EOF
-          default_backend gateway_web_https
+          default_backend gateway_tls_fallback
 
         backend gateway_web_http
           server web ${GATEWAY_WEB_HTTP_HOST}:${GATEWAY_WEB_HTTP_PORT}
 
         backend gateway_web_https
           server web ${GATEWAY_WEB_HTTPS_HOST}:${GATEWAY_WEB_HTTPS_PORT}
+
+        backend gateway_tls_fallback
+          server upstream ${GATEWAY_TLS_FALLBACK_TARGET}
         EOF
 
         idx=1
         old_ifs="$$IFS"
         IFS=','
-        for route in $${GATEWAY_TLS_ROUTES:-}; do
+        for route in $$tls_routes; do
           sni="$${route%%=*}"
           target="$${route#*=}"
           if [ -n "$$sni" ] && [ "$$target" != "$$route" ]; then

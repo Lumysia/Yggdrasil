@@ -15,8 +15,7 @@ docker network create shared_gateway_net || true
 """
 extra_args = ["--remove-orphans"]
 environment = """
-GATEWAY_TLS_ROUTES=[[COMMON_ENTRY_GATEWAY_TLS_ROUTES]],file.[[COMMON_DOMAIN_B]]=100.126.143.61:443
-GATEWAY_TCP_ROUTES=[[USLAX_DMIT_01_GATEWAY_TCP_ROUTES]]
+COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
 """
 
 ##
