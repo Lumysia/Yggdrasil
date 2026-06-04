@@ -1,6 +1,6 @@
 services:
   openlist:
-    image: docker.io/openlistteam/openlist:latest
+    image: docker.io/openlistteam/openlist:latest-aio
     restart: unless-stopped
     user: "0:0"
     labels:
