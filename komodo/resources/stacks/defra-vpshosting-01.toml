@@ -1,6 +1,6 @@
 [[stack]]
 name = "defra-vpshosting-01-gateway"
-tags = ["auto-deploy", "edge"]
+tags = ["deploy", "edge", "ingress"]
 [stack.config]
 server = "defra-vpshosting-01"
 poll_for_updates = true
@@ -19,7 +19,7 @@ extra_args = ["--remove-orphans"]
 
 [[stack]]
 name = "defra-vpshosting-01-remnawave-node"
-tags = ["auto-deploy", "service"]
+tags = ["deploy", "edge", "service"]
 [stack.config]
 server = "defra-vpshosting-01"
 poll_for_updates = true

@@ -15,7 +15,7 @@ executions = [
 name = "Stage 2"
 enabled = true
 executions = [
-  { execution.type = "RunAction", execution.params.action = "Deploy Auto-Deploy Tagged Stacks", enabled = true }
+  { execution.type = "RunAction", execution.params.action = "Deploy Tagged Stacks", enabled = true }
 ]
 
 ##

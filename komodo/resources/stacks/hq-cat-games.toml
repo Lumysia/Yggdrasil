@@ -1,6 +1,6 @@
 [[stack]]
 name = "hq-cat-games-gateway"
-tags = ["origin"]
+tags = ["origin", "ingress"]
 [stack.config]
 server = "hq-cat-games"
 poll_for_updates = true
@@ -20,7 +20,7 @@ PLAYIT_TOKEN=[[HQCAT_GAMES_PLAYIT_TOKEN]]
 
 [[stack]]
 name = "hq-cat-games-mc-prominence-2"
-tags = ["service"]
+tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-games"
 poll_for_updates = true
@@ -39,7 +39,7 @@ RCON_PASSWORD=[[HQCAT_GAMES_MC_ROCNPWD]]
 
 [[stack]]
 name = "hq-cat-games-mc-craft-to-exile-2"
-tags = ["service"]
+tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-games"
 poll_for_updates = true
@@ -58,7 +58,7 @@ RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
 
 [[stack]]
 name = "hq-cat-games-palworld"
-tags = ["service"]
+tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-games"
 poll_for_updates = true

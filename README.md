@@ -75,7 +75,7 @@ graph TB
 ## Key Features
 
 - **Fully Declarative OS Layer** — NixOS flakes with a modular feature-flag system (`features.*.enable`). Add Docker, Tailscale, or GNOME to any host by toggling a boolean.
-- **GitOps for Docker Stacks** — Komodo syncs resource definitions from `komodo/resources/` and auto-deploys stacks tagged `auto-deploy`. No `kubectl`, no Helm — just Compose files and TOML.
+- **GitOps for Docker Stacks** — Komodo syncs resource definitions from `komodo/resources/` and auto-deploys stacks tagged `deploy`. No `kubectl`, no Helm — just Compose files and TOML.
 - **Zero-Trust Networking** — All inter-node communication traverses a Tailscale WireGuard mesh. SSH is key-only. Docker daemon runs with `no-new-privileges`. Periphery endpoints require mutual TLS.
 - **Secrets Never Leave the Repo Unencrypted** — SOPS with age encryption for NixOS secrets; Komodo variable interpolation (`[[VAR]]` syntax) for Docker stack secrets injected at deploy time.
 - **Automated Maintenance Pipeline** — Daily Komodo procedures handle database backups, global container image updates, and server key rotation. Weekly GitHub Actions update the Nix flake lock and Docker Compose images via Dependabot.

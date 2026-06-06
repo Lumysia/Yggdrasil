@@ -1,6 +1,6 @@
 [[stack]]
 name = "hq-nya-services-gateway"
-tags = ["origin"]
+tags = ["origin", "ingress"]
 [stack.config]
 server = "hq-nya-services"
 poll_for_updates = true
@@ -22,7 +22,7 @@ HQNYA_SERVICES_CFD_TOKEN=[[HQNYA_SERVICES_CFD_TOKEN]]
 
 [[stack]]
 name = "hq-nya-services-xiaoya"
-tags = ["service"]
+tags = ["origin", "service"]
 [stack.config]
 server = "hq-nya-services"
 poll_for_updates = true

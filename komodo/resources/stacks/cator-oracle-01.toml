@@ -1,6 +1,6 @@
 [[stack]]
 name = "cator-oracle-01-gateway"
-tags = ["auto-deploy", "origin"]
+tags = ["deploy", "origin", "ingress"]
 [stack.config]
 server = "cator-oracle-01"
 poll_for_updates = true
@@ -25,7 +25,7 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 
 [[stack]]
 name = "cator-oracle-01-runner"
-tags = ["auto-deploy", "service"]
+tags = ["deploy", "origin", "service"]
 [stack.config]
 server = "cator-oracle-01"
 poll_for_updates = true
@@ -45,7 +45,7 @@ FORGEJO_RUNNER_REGISTRATION_TOKEN=[[CATOR_ORACLE_01_RUNNER_FORGEJO_REGISTRATION_
 
 [[stack]]
 name = "cator-oracle-01-remnawave-node"
-tags = ["auto-deploy", "service"]
+tags = ["deploy", "origin", "service"]
 [stack.config]
 server = "cator-oracle-01"
 poll_for_updates = true
