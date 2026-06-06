@@ -1,12 +1,12 @@
 [[stack]]
-name = "hq-cat-services-networking"
-tags = ["auto-deploy"]
+name = "hq-cat-services-gateway"
+tags = ["auto-deploy", "ingress"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/networking"
+run_directory = "apps/hq-cat-services/gateway"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]

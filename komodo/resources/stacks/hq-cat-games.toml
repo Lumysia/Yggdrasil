@@ -1,11 +1,12 @@
 [[stack]]
-name = "hq-cat-games-networking"
+name = "hq-cat-games-gateway"
+tags = ["ingress"]
 [stack.config]
 server = "hq-cat-games"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-games/networking"
+run_directory = "apps/hq-cat-games/gateway"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]

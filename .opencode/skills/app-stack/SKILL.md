@@ -77,7 +77,7 @@ If a service is exposed through Caddy:
 
 - add Caddy labels in `compose.yaml`
 - attach the service to a dedicated shared external network
-- add the same network to the host `networking/compose.yaml`
+- add the same network to the host `gateway/compose.yaml`
 - create that network in the Komodo stack `pre_deploy.command`
 
 ## Entry Gateway Services
@@ -96,10 +96,10 @@ For public services on entry hosts that already have a shared gateway stack:
 
 ## OAuth-Protected Services
 
-- prefer one local `oauth2-proxy` per host gateway/networking stack
-- keep `oauth2-proxy` in the gateway/networking stack, not the app stack; app stacks should only import Caddy snippets
+- prefer one local `oauth2-proxy` per host gateway stack
+- keep `oauth2-proxy` in the gateway stack, not the app stack; app stacks should only import Caddy snippets
 - use `COMMON_OAUTH2_CLIENT_SECRET` and `COMMON_OAUTH2_COOKIE_SECRET` for shared OAuth secrets
-- inspect existing gateway/networking stacks for oauth2-proxy networks, Redis, Caddy snippets, and callback routing, then keep new wiring consistent with those observed files
+- inspect existing gateway stacks for oauth2-proxy networks, Redis, Caddy snippets, and callback routing, then keep new wiring consistent with those observed files
 
 ## Constraints
 

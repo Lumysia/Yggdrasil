@@ -1,11 +1,12 @@
 [[stack]]
-name = "hq-nya-services-networking"
+name = "hq-nya-services-gateway"
+tags = ["ingress"]
 [stack.config]
 server = "hq-nya-services"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-nya-services/networking"
+run_directory = "apps/hq-nya-services/gateway"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]

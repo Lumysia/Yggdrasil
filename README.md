@@ -210,7 +210,7 @@ In the Komodo UI, populate all `[[VARIABLE]]` references used in stack environme
 ### Viewing Logs
 
 ```
-docker compose -f apps/hq-cat-services/networking/compose.yaml logs -f caddy
+docker compose -f apps/hq-cat-services/gateway/compose.yaml logs -f caddy
 ```
 
 ### Verifying Komodo Sync Status

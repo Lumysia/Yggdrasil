@@ -14,14 +14,14 @@ extra_args = ["--remove-orphans"]
 ##
 
 [[stack]]
-name = "hq-cat-core-networking"
-tags = ["auto-deploy"]
+name = "hq-cat-core-gateway"
+tags = ["auto-deploy", "ingress"]
 [stack.config]
 server = "hq-cat-core"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-core/networking"
+run_directory = "apps/hq-cat-core/gateway"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
