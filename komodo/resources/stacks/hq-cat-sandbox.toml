@@ -1,6 +1,6 @@
 [[stack]]
 name = "hq-cat-sandbox-gateway"
-tags = ["auto-deploy", "ingress"]
+tags = ["auto-deploy", "origin"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true

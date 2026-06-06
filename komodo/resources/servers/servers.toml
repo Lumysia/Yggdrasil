@@ -1,5 +1,6 @@
 [[server]]
 name = "camtr-ovh-01-services"
+tags = ["origin"]
 [server.config]
 address = "https://100.86.12.41:8120"
 region = "ca-central"
@@ -9,6 +10,7 @@ enabled = true
 
 [[server]]
 name = "cator-oracle-01"
+tags = ["origin"]
 [server.config]
 address = "https://100.80.22.102:8120"
 region = "ca-central"
@@ -18,6 +20,7 @@ enabled = true
 
 [[server]]
 name = "defra-vpshosting-01"
+tags = ["edge"]
 [server.config]
 address = "https://100.86.19.70:8120"
 region = "eu-central"
@@ -27,6 +30,7 @@ enabled = true
 
 [[server]]
 name = "hq-cat-core"
+tags = ["origin"]
 [server.config]
 region = "ca-central"
 enabled = true
@@ -35,6 +39,7 @@ enabled = true
 
 [[server]]
 name = "hq-cat-games"
+tags = ["origin"]
 [server.config]
 address = "https://100.110.4.6:8120"
 region = "ca-central"
@@ -44,6 +49,7 @@ enabled = true
 
 [[server]]
 name = "hq-cat-services"
+tags = ["origin"]
 [server.config]
 address = "https://100.126.143.61:8120"
 region = "ca-central"
@@ -53,6 +59,7 @@ enabled = true
 
 [[server]]
 name = "hq-cat-sandbox"
+tags = ["origin"]
 [server.config]
 address = "https://100.103.135.32:8120"
 region = "ca-central"
@@ -62,6 +69,7 @@ enabled = true
 
 [[server]]
 name = "hq-nya-services"
+tags = ["origin"]
 [server.config]
 address = "https://100.106.116.9:8120"
 region = "cn-north"
@@ -70,6 +78,7 @@ region = "cn-north"
 
 [[server]]
 name = "jptyo-greencloud-01"
+tags = ["edge"]
 [server.config]
 address = "https://100.64.226.106:8120"
 region = "ap-northeast"
@@ -79,6 +88,7 @@ enabled = true
 
 [[server]]
 name = "jptyo-greencloud-02"
+tags = ["edge"]
 [server.config]
 address = "https://100.77.56.36:8120"
 region = "ap-northeast"
@@ -88,6 +98,7 @@ enabled = true
 
 [[server]]
 name = "jptyo-rfchost-01"
+tags = ["edge"]
 [server.config]
 address = "https://100.90.208.19:8120"
 region = "ap-northeast"
@@ -97,6 +108,7 @@ enabled = true
 
 [[server]]
 name = "uslax-dmit-01"
+tags = ["edge"]
 [server.config]
 address = "https://100.113.240.1:8120"
 region = "us-west"
@@ -106,6 +118,7 @@ enabled = true
 
 [[server]]
 name = "uslax-dmit-02"
+tags = ["edge"]
 [server.config]
 address = "https://100.107.159.16:8120"
 region = "us-west"

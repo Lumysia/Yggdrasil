@@ -1,6 +1,6 @@
 [[stack]]
 name = "hq-cat-games-gateway"
-tags = ["ingress"]
+tags = ["origin"]
 [stack.config]
 server = "hq-cat-games"
 poll_for_updates = true

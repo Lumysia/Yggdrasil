@@ -1,6 +1,6 @@
 [[stack]]
 name = "camtr-ovh-01-services-gateway"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "origin"]
 [stack.config]
 server = "camtr-ovh-01-services"
 poll_for_updates = true

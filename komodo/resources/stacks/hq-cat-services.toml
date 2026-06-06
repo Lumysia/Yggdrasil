@@ -1,6 +1,6 @@
 [[stack]]
 name = "hq-cat-services-gateway"
-tags = ["auto-deploy", "ingress"]
+tags = ["auto-deploy", "origin"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true

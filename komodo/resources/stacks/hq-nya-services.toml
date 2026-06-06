@@ -1,6 +1,6 @@
 [[stack]]
 name = "hq-nya-services-gateway"
-tags = ["ingress"]
+tags = ["origin"]
 [stack.config]
 server = "hq-nya-services"
 poll_for_updates = true
