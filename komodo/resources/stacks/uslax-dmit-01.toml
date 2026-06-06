@@ -22,7 +22,7 @@ COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
 
 [[stack]]
 name = "uslax-dmit-01-remnawave-node"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "uslax-dmit-01"
 poll_for_updates = true

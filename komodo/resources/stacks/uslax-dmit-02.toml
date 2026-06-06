@@ -19,7 +19,7 @@ extra_args = ["--remove-orphans"]
 
 [[stack]]
 name = "uslax-dmit-02-remnawave-node"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "uslax-dmit-02"
 poll_for_updates = true

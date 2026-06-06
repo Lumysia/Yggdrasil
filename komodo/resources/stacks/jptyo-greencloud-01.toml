@@ -19,7 +19,7 @@ extra_args = ["--remove-orphans"]
 
 [[stack]]
 name = "jptyo-greencloud-01-remnawave-node"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "jptyo-greencloud-01"
 poll_for_updates = true

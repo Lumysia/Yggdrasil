@@ -22,6 +22,7 @@ HQNYA_SERVICES_CFD_TOKEN=[[HQNYA_SERVICES_CFD_TOKEN]]
 
 [[stack]]
 name = "hq-nya-services-xiaoya"
+tags = ["service"]
 [stack.config]
 server = "hq-nya-services"
 poll_for_updates = true

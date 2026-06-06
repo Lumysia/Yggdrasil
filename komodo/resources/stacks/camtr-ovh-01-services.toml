@@ -25,7 +25,7 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 
 [[stack]]
 name = "camtr-ovh-01-services-media"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "camtr-ovh-01-services"
 poll_for_updates = true

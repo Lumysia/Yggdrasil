@@ -28,7 +28,7 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 
 [[stack]]
 name = "hq-cat-services-aiapi"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -54,6 +54,7 @@ TOTP_ENCRYPTION_KEY=[[HQCAT_SERVICES_SUB2API_TOTP_ENCRYPTION_KEY]]
 
 [[stack]]
 name = "hq-cat-services-lobechat"
+tags = ["service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -86,7 +87,7 @@ COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 
 [[stack]]
 name = "hq-cat-services-forgejo"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -115,7 +116,7 @@ RENOVATE_TOKEN=[[HQCAT_SERVICES_FORGEJO_RENOVATE_TOKEN]]
 
 [[stack]]
 name = "hq-cat-services-immich"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -136,7 +137,7 @@ DB_PASSWORD=[[HQCAT_SERVICES_IMMICH_DBPWD]]
 
 [[stack]]
 name = "hq-cat-services-seafile"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -166,7 +167,7 @@ SEAFILE_AI_LLM_MODEL=[[HQCAT_SERVICES_SFAI_LLM_MODEL]]
 
 [[stack]]
 name = "hq-cat-services-remnawave"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -192,7 +193,7 @@ SUBSCRIPTION_PAGE_API_TOKEN=[[HQCAT_SERVICES_REMNAWAVE_SUBSCRIPTION_PAGE_API_TOK
 
 [[stack]]
 name = "hq-cat-services-n8n"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
@@ -219,7 +220,7 @@ N8N_SSO_OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_N8N_OIDC_CLIENT_SECRET]]
 
 [[stack]]
 name = "hq-cat-services-openlist"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true

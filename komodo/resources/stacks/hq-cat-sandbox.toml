@@ -25,6 +25,7 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 
 [[stack]]
 name = "hq-cat-sandbox-goclaw"
+tags = ["service"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true
@@ -45,7 +46,7 @@ GOCLAW_ENCRYPTION_KEY=[[HQCAT_SANDBOX_GOCLAW_ENCRYPTION_KEY]]
 
 [[stack]]
 name = "hq-cat-sandbox-remnawave-node"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true
@@ -64,7 +65,7 @@ REMNANODE_SECRET_KEY=[[HQCAT_SANDBOX_REMNANODE_SECRET_KEY]]
 
 [[stack]]
 name = "hq-cat-sandbox-hermes"
-tags = ["auto-deploy"]
+tags = ["auto-deploy", "service"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true
