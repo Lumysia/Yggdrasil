@@ -1,6 +1,6 @@
 [[stack]]
 name = "uslax-dmit-01-gateway"
-tags = ["deploy", "edge", "ingress"]
+tags = ["edge", "ingress", "deploy"]
 [stack.config]
 server = "uslax-dmit-01"
 poll_for_updates = true
@@ -22,7 +22,7 @@ COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
 
 [[stack]]
 name = "uslax-dmit-01-remnawave-node"
-tags = ["deploy", "edge", "service"]
+tags = ["edge", "service", "deploy"]
 [stack.config]
 server = "uslax-dmit-01"
 poll_for_updates = true

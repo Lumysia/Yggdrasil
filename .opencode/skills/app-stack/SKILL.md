@@ -31,6 +31,14 @@ For each app stack:
 - keep shared non-secret values in `stack.env`
 - register the stack in the matching Komodo `*.toml`
 
+## Komodo Tags
+
+- order Komodo resource tags from placement to role to action
+- use placement tags first, such as `origin` or `edge`
+- use role tags after placement, such as `ingress`, `service`, or `system`
+- put action tags last; `deploy` must be the final tag when present
+- preserve existing non-action tag order unless the stack's role or placement changes
+
 ## Rules
 
 - prefer putting non-secret app configuration in `stack.env`

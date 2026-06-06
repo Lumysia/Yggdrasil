@@ -1,6 +1,6 @@
 [[stack]]
 name = "jptyo-greencloud-01-gateway"
-tags = ["deploy", "edge", "ingress"]
+tags = ["edge", "ingress", "deploy"]
 [stack.config]
 server = "jptyo-greencloud-01"
 poll_for_updates = true
@@ -19,7 +19,7 @@ extra_args = ["--remove-orphans"]
 
 [[stack]]
 name = "jptyo-greencloud-01-remnawave-node"
-tags = ["deploy", "edge", "service"]
+tags = ["edge", "service", "deploy"]
 [stack.config]
 server = "jptyo-greencloud-01"
 poll_for_updates = true

@@ -16,7 +16,7 @@ extra_args = ["--remove-orphans"]
 
 [[stack]]
 name = "hq-cat-core-gateway"
-tags = ["deploy", "origin", "ingress"]
+tags = ["origin", "ingress", "deploy"]
 [stack.config]
 server = "hq-cat-core"
 poll_for_updates = true

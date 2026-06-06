@@ -1,6 +1,6 @@
 [[stack]]
 name = "hq-cat-sandbox-gateway"
-tags = ["deploy", "origin", "ingress"]
+tags = ["origin", "ingress", "deploy"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true
@@ -46,7 +46,7 @@ GOCLAW_ENCRYPTION_KEY=[[HQCAT_SANDBOX_GOCLAW_ENCRYPTION_KEY]]
 
 [[stack]]
 name = "hq-cat-sandbox-remnawave-node"
-tags = ["deploy", "origin", "service"]
+tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true
@@ -65,7 +65,7 @@ REMNANODE_SECRET_KEY=[[HQCAT_SANDBOX_REMNANODE_SECRET_KEY]]
 
 [[stack]]
 name = "hq-cat-sandbox-hermes"
-tags = ["deploy", "origin", "service"]
+tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-sandbox"
 poll_for_updates = true
