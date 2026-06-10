@@ -7,6 +7,8 @@ This file is the project guidance index. Load the relevant skill for detailed wo
 - Address problems that exist in the current system.
 - Keep naming and layout consistent with nearby files.
 - Use Angular-style commit messages.
+- Base operational guidance on inspected files, settings, and runtime topology; do not give generic fallback advice when the repository has enough context to reason precisely.
+- Do not recommend weakening validation, disabling verification, bypassing authentication, or otherwise reducing safety unless inspected configuration proves it is required; state the exact cause and scope when it is required.
 
 ## Tailscale ACLs
 
