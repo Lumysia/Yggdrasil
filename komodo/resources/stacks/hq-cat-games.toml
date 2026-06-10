@@ -10,9 +10,15 @@ run_directory = "apps/hq-cat-games/gateway"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
+pre_deploy.command = """
+docker network create shared_cte2_bluemap_net || true
+"""
 extra_args = ["--remove-orphans"]
 environment = """
+CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
+COMMON_CADDY_ADMIN_EMAIL=[[COMMON_CADDY_ADMIN_EMAIL]]
 ET_NETWORK_SECRET=[[HQCAT_GAMES_ET_NETWORK_SECRET]]
+HQCAT_GAMES_CFD_TOKEN=[[HQCAT_GAMES_CFD_TOKEN]]
 PLAYIT_TOKEN=[[HQCAT_GAMES_PLAYIT_TOKEN]]
 """
 
@@ -49,8 +55,19 @@ run_directory = "apps/hq-cat-games/mc-craft-to-exile-2"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
+pre_deploy.command = """
+docker network create shared_cte2_bluemap_net || true
+mkdir -p /data/games/mc-craft-to-exile-2_config/bluemap
+touch /data/games/mc-craft-to-exile-2_config/bluemap/core.conf
+if grep -q '^accept-download:' /data/games/mc-craft-to-exile-2_config/bluemap/core.conf; then
+  sed -i 's/^accept-download:.*/accept-download: true/' /data/games/mc-craft-to-exile-2_config/bluemap/core.conf
+else
+  printf '\naccept-download: true\n' >> /data/games/mc-craft-to-exile-2_config/bluemap/core.conf
+fi
+"""
 extra_args = ["--remove-orphans"]
 environment = """
+COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
 RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
 """
 

@@ -6,6 +6,10 @@ services:
     stdin_open: true
     ports:
       - ${MC_PORT}:25565/tcp
+    labels:
+      caddy: cte2-map.${COMMON_DOMAIN_B}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 8100}}"
     env_file:
       - stack.env
     environment:
@@ -14,7 +18,15 @@ services:
       - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_downloads:/downloads
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_config:/config:ro
+    networks:
+      - default
+      - shared_cte2_bluemap_net
     deploy:
       resources:
         limits:
           memory: ${MEMORY}
+
+networks:
+  default:
+  shared_cte2_bluemap_net:
+    external: true
