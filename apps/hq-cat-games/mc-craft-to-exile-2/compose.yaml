@@ -15,7 +15,6 @@ services:
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_downloads:/downloads
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_config:/config:ro
     networks:
-      - default
       - shared_cte2_net
     deploy:
       resources:
@@ -23,6 +22,5 @@ services:
           memory: ${MEMORY}
 
 networks:
-  default:
   shared_cte2_net:
     external: true
