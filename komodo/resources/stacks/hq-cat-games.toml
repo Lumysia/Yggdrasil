@@ -13,6 +13,7 @@ additional_env_files = [
 pre_deploy.command = """
 docker network create shared_cte2_net || true
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 ET_NETWORK_SECRET=[[HQCAT_GAMES_ET_NETWORK_SECRET]]
@@ -63,6 +64,7 @@ else
   printf '\naccept-download: true\n' >> /data/games/mc-craft-to-exile-2_config/bluemap/core.conf
 fi
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
