@@ -15,8 +15,6 @@ docker network create shared_cte2_bluemap_net || true
 """
 extra_args = ["--remove-orphans"]
 environment = """
-CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
-COMMON_CADDY_ADMIN_EMAIL=[[COMMON_CADDY_ADMIN_EMAIL]]
 ET_NETWORK_SECRET=[[HQCAT_GAMES_ET_NETWORK_SECRET]]
 HQCAT_GAMES_CFD_TOKEN=[[HQCAT_GAMES_CFD_TOKEN]]
 PLAYIT_TOKEN=[[HQCAT_GAMES_PLAYIT_TOKEN]]
@@ -67,7 +65,6 @@ fi
 """
 extra_args = ["--remove-orphans"]
 environment = """
-COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
 RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
 """
 

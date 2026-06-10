@@ -6,10 +6,6 @@ services:
     stdin_open: true
     ports:
       - ${MC_PORT}:25565/tcp
-    labels:
-      caddy: cte2-map.${COMMON_DOMAIN_B}
-      caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 8100}}"
     env_file:
       - stack.env
     environment:
