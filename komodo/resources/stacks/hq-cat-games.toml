@@ -11,7 +11,9 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_cte2_net || true
+if ! docker network inspect shared_cte2_net >/dev/null 2>&1; then
+  docker network create shared_cte2_net
+fi
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -55,7 +57,9 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_cte2_net || true
+if ! docker network inspect shared_cte2_net >/dev/null 2>&1; then
+  docker network create shared_cte2_net
+fi
 mkdir -p /data/games/mc-craft-to-exile-2_config/bluemap
 touch /data/games/mc-craft-to-exile-2_config/bluemap/core.conf
 if grep -q '^accept-download:' /data/games/mc-craft-to-exile-2_config/bluemap/core.conf; then

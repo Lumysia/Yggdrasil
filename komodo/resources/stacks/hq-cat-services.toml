@@ -11,8 +11,11 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_openlist_net || true
+if ! docker network inspect shared_openlist_net >/dev/null 2>&1; then
+  docker network create shared_openlist_net
+fi
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
@@ -39,8 +42,11 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_aiapi_net || true
+if ! docker network inspect shared_aiapi_net >/dev/null 2>&1; then
+  docker network create shared_aiapi_net
+fi
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -65,8 +71,11 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_lobechat_net || true
+if ! docker network inspect shared_lobechat_net >/dev/null 2>&1; then
+  docker network create shared_lobechat_net
+fi
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 POSTGRES_PASSWORD=[[HQCAT_SERVICES_LOBE_DBPWD]]
@@ -98,8 +107,11 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_forgejo_net || true
+if ! docker network inspect shared_forgejo_net >/dev/null 2>&1; then
+  docker network create shared_forgejo_net
+fi
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 ignore_services = ["renovate"]
 environment = """
@@ -178,8 +190,11 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_remnawave_net || true
+if ! docker network inspect shared_remnawave_net >/dev/null 2>&1; then
+  docker network create shared_remnawave_net
+fi
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -204,10 +219,13 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_n8n_net || true
+if ! docker network inspect shared_n8n_net >/dev/null 2>&1; then
+  docker network create shared_n8n_net
+fi
 mkdir -p /data/appdata/n8n /data/appdata/n8n-files
 chown -R 1000:1000 /data/appdata/n8n /data/appdata/n8n-files
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -231,8 +249,11 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-docker network create shared_openlist_net || true
+if ! docker network inspect shared_openlist_net >/dev/null 2>&1; then
+  docker network create shared_openlist_net
+fi
 """
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
