@@ -16,7 +16,7 @@ services:
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_config:/config:ro
     networks:
       - default
-      - shared_cte2_bluemap_net
+      - shared_cte2_net
     deploy:
       resources:
         limits:
@@ -24,5 +24,5 @@ services:
 
 networks:
   default:
-  shared_cte2_bluemap_net:
+  shared_cte2_net:
     external: true
