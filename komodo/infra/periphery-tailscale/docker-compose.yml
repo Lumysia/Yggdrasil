@@ -43,15 +43,11 @@ services:
       TS_USERSPACE: false
       TS_AUTHKEY: ${TAILSCALE_AUTH_KEY:-}
       TS_HOSTNAME: ${TAILSCALE_HOSTNAME}
-      TS_EXTRA_ARGS: --snat-subnet-routes=false --advertise-tags=${TAILSCALE_TAGS}
+      TS_EXTRA_ARGS: --snat-subnet-routes=false --advertise-tags=${TAILSCALE_TAGS} --advertise-exit-node=false
       TS_AUTH_ONCE: true
       TS_STATE_DIR: /var/lib/tailscale/state
     post_start:
-      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --hostname="$$TAILSCALE_HOSTNAME" --advertise-tags="$$TAILSCALE_TAGS"; if [ -n "$$TS_RELAY_SERVER_PORT" ]; then tailscale set --relay-server-port="$$TS_RELAY_SERVER_PORT"; else tailscale set --relay-server-port=""; fi'
-        environment:
-          TAILSCALE_HOSTNAME: ${TAILSCALE_HOSTNAME}
-          TAILSCALE_TAGS: ${TAILSCALE_TAGS}
-          TS_RELAY_SERVER_PORT: ${TS_RELAY_SERVER_PORT:-}
+      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --hostname="${TAILSCALE_HOSTNAME}" --advertise-tags="${TAILSCALE_TAGS}" --advertise-exit-node=false; if [ -n "${TS_RELAY_SERVER_PORT:-}" ]; then tailscale set --relay-server-port="${TS_RELAY_SERVER_PORT:-}"; else tailscale set --relay-server-port=""; fi'
 
   watchtower:
     image: nickfedor/watchtower:latest
