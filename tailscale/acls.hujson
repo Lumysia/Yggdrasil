@@ -11,6 +11,7 @@
 		"tag:pve-nodes":         ["autogroup:admin"],
 		"tag:komodo-core":       ["autogroup:admin"],
 		"tag:komodo-nodes":      ["autogroup:admin"],
+		"tag:edge-relay":        ["autogroup:admin"],
 		"tag:remnawave-core":    ["autogroup:admin"],
 		"tag:remnawave-nodes":   ["autogroup:admin"],
 		"tag:remnawave-bridge":  ["autogroup:admin"],
@@ -46,6 +47,13 @@
 			"src": ["tag:komodo-nodes"],
 			"dst": ["tag:komodo-nodes"],
 			"ip":  ["tcp:443"],
+		},
+		{
+			"src": ["tag:komodo-nodes"],
+			"dst": ["tag:edge-relay"],
+			"app": {
+				"tailscale.com/cap/relay": [],
+			},
 		},
 		{
 			"src": ["tag:remnawave-core"],
