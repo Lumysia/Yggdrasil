@@ -11,7 +11,6 @@
 		"tag:pve-nodes":         ["autogroup:admin"],
 		"tag:komodo-core":       ["autogroup:admin"],
 		"tag:komodo-nodes":      ["autogroup:admin"],
-		"tag:edge-relay":        ["autogroup:admin"],
 		"tag:remnawave-core":    ["autogroup:admin"],
 		"tag:remnawave-nodes":   ["autogroup:admin"],
 		"tag:remnawave-bridge":  ["autogroup:admin"],
@@ -50,7 +49,15 @@
 		},
 		{
 			"src": ["tag:komodo-nodes"],
-			"dst": ["tag:edge-relay"],
+			"dst": [
+				"cator-oracle-01",
+				"defra-vpshosting-01",
+				"jptyo-greencloud-01",
+				"jptyo-greencloud-02",
+				"jptyo-rfchost-01",
+				"uslax-dmit-01",
+				"uslax-dmit-02",
+			],
 			"app": {
 				"tailscale.com/cap/relay": [],
 			},
