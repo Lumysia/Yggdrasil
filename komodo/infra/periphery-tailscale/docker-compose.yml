@@ -47,7 +47,7 @@ services:
       TS_AUTH_ONCE: true
       TS_STATE_DIR: /var/lib/tailscale/state
     post_start:
-      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --hostname="${TAILSCALE_HOSTNAME}" --advertise-tags="${TAILSCALE_TAGS}" --advertise-exit-node=false; if [ -n "${TS_RELAY_SERVER_PORT:-}" ]; then tailscale set --relay-server-port="${TS_RELAY_SERVER_PORT:-}"; else tailscale set --relay-server-port=""; fi'
+      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --hostname="${TAILSCALE_HOSTNAME}" --advertise-exit-node=false --advertise-routes= --snat-subnet-routes=false; if [ -n "${TS_RELAY_SERVER_PORT:-}" ]; then tailscale set --relay-server-port="${TS_RELAY_SERVER_PORT:-}"; else tailscale set --relay-server-port=""; fi'
 
   watchtower:
     image: nickfedor/watchtower:latest

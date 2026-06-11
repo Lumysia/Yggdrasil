@@ -122,7 +122,7 @@ apply_host_tailscale_identity() {
   fi
 
   if command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1; then
-    tailscale set --hostname="${TAILSCALE_HOSTNAME:-$TARGET_HOST}" --advertise-tags="${TAILSCALE_TAGS:-}" --advertise-exit-node=false
+    tailscale set --hostname="${TAILSCALE_HOSTNAME:-$TARGET_HOST}" --advertise-exit-node=false --advertise-routes= --snat-subnet-routes=false
   else
     echo "Tailscale CLI unavailable or not logged in; skipped host identity advertisement."
   fi
