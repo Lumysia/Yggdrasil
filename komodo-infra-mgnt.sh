@@ -112,22 +112,6 @@ print_context() {
   fi
 }
 
-apply_host_tailscale_identity() {
-  if [ "$COMMAND" != "up" ] || [ "$STACK" = "periphery-tailscale" ]; then
-    return
-  fi
-
-  if [ -z "${TAILSCALE_HOSTNAME:-}" ] && [ -z "${TAILSCALE_TAGS:-}" ]; then
-    return
-  fi
-
-  if command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1; then
-    tailscale set --hostname="${TAILSCALE_HOSTNAME:-$TARGET_HOST}" --advertise-exit-node=false --advertise-routes= --snat-subnet-routes=false
-  else
-    echo "Tailscale CLI unavailable or not logged in; skipped host identity advertisement."
-  fi
-}
-
 has_tailscale_state() {
   local state_dir="$KOMODO_INFRA_DATA_DIR/tailscale"
 
@@ -215,6 +199,5 @@ ENV_FILE="$(resolve_host_env "$STACK_DIR" "$TARGET_HOST")"
 
 load_env
 print_context
-apply_host_tailscale_identity
 ensure_tailscale_auth_key
 run_compose "$@"
