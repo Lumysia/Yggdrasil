@@ -6,7 +6,7 @@ INFRA_DIR="$SCRIPT_DIR/komodo/infra"
 
 usage() {
   cat <<'USAGE'
-Usage: ./komodo-infra-mgnt.sh <command> <variant> [hostname] [-- compose args...]
+Usage: ./komodo-infra-mgnt.sh [-m [registry]] <command> <variant> [hostname] [-- compose args...]
 
 Commands: up, down, restart, ps, logs, config, pull
 Variants: core|c, periphery-only|peripheryonly|po, periphery-tailscale|peripherytailscale|pt
@@ -14,6 +14,8 @@ Hostname defaults to current host.
 
 Examples:
   ./komodo-infra-mgnt.sh up core
+  ./komodo-infra-mgnt.sh -m up po
+  ./komodo-infra-mgnt.sh -m registry.example.com up po
   ./komodo-infra-mgnt.sh down po
   ./komodo-infra-mgnt.sh up pt
   ./komodo-infra-mgnt.sh logs pt cator-oracle-01 -- --tail=100
@@ -50,6 +52,17 @@ normalize_stack() {
       ;;
     *)
       die "unknown variant '$1'."
+      ;;
+  esac
+}
+
+is_command() {
+  case "${1:-}" in
+    up|down|restart|ps|logs|config|pull)
+      return 0
+      ;;
+    *)
+      return 1
       ;;
   esac
 }
@@ -92,6 +105,7 @@ load_env() {
   set +a
 
   export KOMODO_INFRA_DATA_DIR="${KOMODO_INFRA_DATA_DIR:-$HOME/komodo-data}"
+  export KOMODO_INFRA_IMAGE_PREFIX="${KOMODO_INFRA_IMAGE_PREFIX:-}"
 }
 
 print_context() {
@@ -100,6 +114,9 @@ print_context() {
   echo "Host:    ${KOMODO_INFRA_HOSTNAME:-$TARGET_HOST}"
   echo "Env:     $ENV_FILE"
   echo "Data:    $KOMODO_INFRA_DATA_DIR"
+  if [ -n "$KOMODO_INFRA_IMAGE_PREFIX" ]; then
+    echo "Images:  ${KOMODO_INFRA_IMAGE_PREFIX%/}"
+  fi
 
   if [ -n "${TAILSCALE_HOSTNAME:-}" ]; then
     echo "TS:      $TAILSCALE_HOSTNAME"
@@ -170,7 +187,28 @@ run_compose() {
   esac
 }
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] || [ "$#" -lt 2 ]; then
+while [ "$#" -gt 0 ]; do
+  case "${1:-}" in
+    -m|--mirror)
+      mirror_registry="docker.libcuda.so"
+      if [ -n "${2:-}" ] && ! is_command "$2"; then
+        mirror_registry="$2"
+        shift
+      fi
+      KOMODO_INFRA_IMAGE_PREFIX="${mirror_registry%/}/"
+      export KOMODO_INFRA_IMAGE_PREFIX
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [ "$#" -lt 2 ]; then
   usage
 fi
 

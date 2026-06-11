@@ -194,7 +194,7 @@ cd /data/infra
 ```
 
 Variants: `core|c`, `periphery-only|po`, `periphery-tailscale|pt`. Commands: `up`, `down`, `restart`, `ps`, `logs`, `config`, `pull`.
-Host env: `komodo/infra/<variant>/host-env/<hostname>.env`. Data: `${HOME}/komodo-data` unless `KOMODO_INFRA_DATA_DIR` is set. First `pt up` prompts for `TAILSCALE_AUTH_KEY` if no Tailscale state exists.
+Host env: `komodo/infra/<variant>/host-env/<hostname>.env`. Data: `${HOME}/komodo-data` unless `KOMODO_INFRA_DATA_DIR` is set. Use `-m` for `docker.libcuda.so`; use `-m <registry>` for another mirror. First `pt up` prompts for `TAILSCALE_AUTH_KEY` if no Tailscale state exists.
 
 ### 7. Trigger Initial Sync
 
