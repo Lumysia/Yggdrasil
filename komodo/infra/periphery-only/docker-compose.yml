@@ -6,10 +6,10 @@ services:
     ports:
       - 8120:8120
     volumes:
-      - ./komodo-keys:/config/keys
+      - ${KOMODO_INFRA_DATA_DIR}/komodo-keys:/config/keys
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
-      - ./komodo-periphery:/etc/komodo
+      - ${KOMODO_INFRA_DATA_DIR}/komodo-periphery:/etc/komodo
       - /data:/data
     environment:
       PERIPHERY_CORE_PUBLIC_KEYS: MCowBQYDK2VuAyEAMnQVnJN2WVoWyyWbaA8R8wzvon/XJ2cYQzvpb7S14TU=

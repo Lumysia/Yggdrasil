@@ -183,19 +183,18 @@ docker compose up -d
 
 ### 6. Deploy Periphery Agents
 
-On every other managed node, start the periphery agent:
+Use the top-level infra wrapper. Hostname is optional and defaults to `hostname`:
 
 ```
-cd /data/infra/komodo/periphery
-docker compose up -d
+cd /data/infra
+./komodo-infra-mgnt.sh up core
+./komodo-infra-mgnt.sh up periphery-only
+./komodo-infra-mgnt.sh up periphery-tailscale
+./komodo-infra-mgnt.sh down periphery-tailscale
 ```
 
-For non-NixOS nodes that need Tailscale in a container, use the `periphery-tailscale` variant:
-
-```
-cd /data/infra/komodo/periphery-tailscale
-TAILSCALE_AUTH_KEY=tskey-auth-XXXXX docker compose up -d
-```
+Variants: `core|c`, `periphery-only|po`, `periphery-tailscale|pt`. Commands: `up`, `down`, `restart`, `ps`, `logs`, `config`, `pull`.
+Host env: `komodo/infra/<variant>/host-env/<hostname>.env`. Data: `${HOME}/komodo-data` unless `KOMODO_INFRA_DATA_DIR` is set. First `pt up` prompts for `TAILSCALE_AUTH_KEY` if no Tailscale state exists.
 
 ### 7. Trigger Initial Sync
 

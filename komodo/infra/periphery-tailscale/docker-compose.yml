@@ -6,10 +6,10 @@ services:
     ports:
       - 8120:8120
     volumes:
-      - ./komodo-keys:/config/keys
+      - ${KOMODO_INFRA_DATA_DIR}/komodo-keys:/config/keys
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
-      - ./komodo-periphery:/etc/komodo
+      - ${KOMODO_INFRA_DATA_DIR}/komodo-periphery:/etc/komodo
       - /data:/data
       - /root:/root
     environment:
@@ -37,18 +37,21 @@ services:
     network_mode: host
     volumes:
       - /etc/resolv.conf:/etc/resolv.conf
-      - ./tailscale:/var/lib/tailscale
+      - ${KOMODO_INFRA_DATA_DIR}/tailscale:/var/lib/tailscale
     environment:
       TS_ACCEPT_DNS: false
       TS_USERSPACE: false
-      TS_AUTHKEY: ${TAILSCALE_AUTH_KEY}
-      TS_EXTRA_ARGS: --snat-subnet-routes=false
+      TS_AUTHKEY: ${TAILSCALE_AUTH_KEY:-}
+      TS_HOSTNAME: ${TAILSCALE_HOSTNAME}
+      TS_EXTRA_ARGS: --snat-subnet-routes=false --advertise-tags=${TAILSCALE_TAGS}
       TS_AUTH_ONCE: true
       TS_STATE_DIR: /var/lib/tailscale/state
     post_start:
-      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --relay-server-port="$$TS_RELAY_SERVER_PORT"'
+      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --hostname="$$TAILSCALE_HOSTNAME" --advertise-tags="$$TAILSCALE_TAGS"; if [ -n "$$TS_RELAY_SERVER_PORT" ]; then tailscale set --relay-server-port="$$TS_RELAY_SERVER_PORT"; else tailscale set --relay-server-port=""; fi'
         environment:
-          TS_RELAY_SERVER_PORT: ${TS_RELAY_SERVER_PORT:-40000}
+          TAILSCALE_HOSTNAME: ${TAILSCALE_HOSTNAME}
+          TAILSCALE_TAGS: ${TAILSCALE_TAGS}
+          TS_RELAY_SERVER_PORT: ${TS_RELAY_SERVER_PORT:-}
 
   watchtower:
     image: nickfedor/watchtower:latest
