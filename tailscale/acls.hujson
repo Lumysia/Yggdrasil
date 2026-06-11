@@ -11,22 +11,13 @@
 		"tag:pve-nodes":         ["autogroup:admin"],
 		"tag:komodo-core":       ["autogroup:admin"],
 		"tag:komodo-nodes":      ["autogroup:admin"],
+		"tag:edge-relay":        ["autogroup:admin"],
 		"tag:remnawave-core":    ["autogroup:admin"],
 		"tag:remnawave-nodes":   ["autogroup:admin"],
 		"tag:remnawave-bridge":  ["autogroup:admin"],
 		"tag:remnawave-entry":   ["autogroup:admin"],
 		"tag:forwarding-source": ["autogroup:admin"],
 		"tag:forwarding-target": ["autogroup:admin"],
-	},
-
-	"hosts": {
-		"cator-oracle-01":      "100.80.22.102",
-		"defra-vpshosting-01":  "100.86.19.70",
-		"jptyo-greencloud-01":  "100.64.226.106",
-		"jptyo-greencloud-02":  "100.77.56.36",
-		"jptyo-rfchost-01":     "100.90.208.19",
-		"uslax-dmit-01":        "100.113.240.1",
-		"uslax-dmit-02":        "100.107.159.16",
 	},
 
 	// Define grants that govern access for users, groups, autogroups, tags,
@@ -59,15 +50,7 @@
 		},
 		{
 			"src": ["autogroup:member", "tag:komodo-nodes"],
-			"dst": [
-				"cator-oracle-01",
-				"defra-vpshosting-01",
-				"jptyo-greencloud-01",
-				"jptyo-greencloud-02",
-				"jptyo-rfchost-01",
-				"uslax-dmit-01",
-				"uslax-dmit-02",
-			],
+			"dst": ["tag:edge-relay"],
 			"app": {
 				"tailscale.com/cap/relay": [],
 			},
