@@ -131,7 +131,7 @@ apply_host_tailscale_identity() {
 has_tailscale_state() {
   local state_dir="$KOMODO_INFRA_DATA_DIR/tailscale"
 
-  [ -d "$state_dir" ] && [ -n "$(find "$state_dir" -type f -print -quit)" ]
+  [ -d "$state_dir/state" ] || { [ -r "$state_dir" ] && [ -n "$(find "$state_dir" -maxdepth 1 -mindepth 1 -print -quit)" ]; }
 }
 
 ensure_tailscale_auth_key() {
