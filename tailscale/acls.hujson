@@ -19,6 +19,16 @@
 		"tag:forwarding-target": ["autogroup:admin"],
 	},
 
+	"hosts": {
+		"cator-oracle-01":      "100.80.22.102",
+		"defra-vpshosting-01":  "100.86.19.70",
+		"jptyo-greencloud-01":  "100.64.226.106",
+		"jptyo-greencloud-02":  "100.77.56.36",
+		"jptyo-rfchost-01":     "100.90.208.19",
+		"uslax-dmit-01":        "100.113.240.1",
+		"uslax-dmit-02":        "100.107.159.16",
+	},
+
 	// Define grants that govern access for users, groups, autogroups, tags,
 	// Tailscale IP addresses, and subnet ranges.
 	"grants": [
@@ -48,7 +58,7 @@
 			"ip":  ["tcp:443"],
 		},
 		{
-			"src": ["tag:komodo-nodes"],
+			"src": ["autogroup:member", "tag:komodo-nodes"],
 			"dst": [
 				"cator-oracle-01",
 				"defra-vpshosting-01",
