@@ -1,6 +1,6 @@
 services:
   periphery:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}ghcr.io/moghtech/komodo-periphery:2
+    image: ghcr.io/moghtech/komodo-periphery:2
     init: true
     restart: always
     ports:
@@ -25,7 +25,7 @@ services:
       com.centurylinklabs.watchtower.enable: "true"
 
   tailscale:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}tailscale/tailscale:latest
+    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}tailscale/tailscale:latest
     restart: always
     labels:
       com.centurylinklabs.watchtower.enable: "true"
@@ -50,7 +50,7 @@ services:
       - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --hostname="${TAILSCALE_HOSTNAME}" --advertise-exit-node=false --advertise-routes= --snat-subnet-routes=false; if [ -n "${TS_RELAY_SERVER_PORT:-}" ]; then tailscale set --relay-server-port="${TS_RELAY_SERVER_PORT:-}"; else tailscale set --relay-server-port=""; fi'
 
   watchtower:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}nickfedor/watchtower:latest
+    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}nickfedor/watchtower:latest
     labels:
       komodo.skip:
       com.centurylinklabs.watchtower.enable: "true"

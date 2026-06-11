@@ -1,6 +1,6 @@
 services:
   periphery:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}ghcr.io/moghtech/komodo-periphery:2
+    image: ghcr.io/moghtech/komodo-periphery:2
     init: true
     restart: always
     ports:
@@ -24,7 +24,7 @@ services:
       com.centurylinklabs.watchtower.enable: "true"
 
   watchtower:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}nickfedor/watchtower:latest
+    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}nickfedor/watchtower:latest
     labels:
       komodo.skip:
       com.centurylinklabs.watchtower.enable: "true"

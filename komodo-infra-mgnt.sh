@@ -105,7 +105,7 @@ load_env() {
   set +a
 
   export KOMODO_INFRA_DATA_DIR="${KOMODO_INFRA_DATA_DIR:-$HOME/komodo-data}"
-  export KOMODO_INFRA_IMAGE_PREFIX="${KOMODO_INFRA_IMAGE_PREFIX:-}"
+  export KOMODO_INFRA_DOCKER_IMAGE_PREFIX="${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}"
 }
 
 print_context() {
@@ -114,8 +114,8 @@ print_context() {
   echo "Host:    ${KOMODO_INFRA_HOSTNAME:-$TARGET_HOST}"
   echo "Env:     $ENV_FILE"
   echo "Data:    $KOMODO_INFRA_DATA_DIR"
-  if [ -n "$KOMODO_INFRA_IMAGE_PREFIX" ]; then
-    echo "Images:  ${KOMODO_INFRA_IMAGE_PREFIX%/}"
+  if [ -n "$KOMODO_INFRA_DOCKER_IMAGE_PREFIX" ]; then
+    echo "Images:  Docker Hub via ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX%/}"
   fi
 
   if [ -n "${TAILSCALE_HOSTNAME:-}" ]; then
@@ -195,8 +195,8 @@ while [ "$#" -gt 0 ]; do
         mirror_registry="$2"
         shift
       fi
-      KOMODO_INFRA_IMAGE_PREFIX="${mirror_registry%/}/"
-      export KOMODO_INFRA_IMAGE_PREFIX
+      KOMODO_INFRA_DOCKER_IMAGE_PREFIX="${mirror_registry%/}/"
+      export KOMODO_INFRA_DOCKER_IMAGE_PREFIX
       shift
       ;;
     -h|--help)
@@ -215,6 +215,12 @@ fi
 COMMAND="$(normalize_command "$1")"
 STACK="$(normalize_stack "$2")"
 shift 2
+
+if [ "${1:-}" = "-m" ] || [ "${1:-}" = "--mirror" ]; then
+  KOMODO_INFRA_DOCKER_IMAGE_PREFIX="docker.libcuda.so/"
+  export KOMODO_INFRA_DOCKER_IMAGE_PREFIX
+  shift
+fi
 
 if [ "${1:-}" = "--" ]; then
   TARGET_HOST="$(hostname)"

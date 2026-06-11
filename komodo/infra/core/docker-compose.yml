@@ -1,6 +1,6 @@
 services:
   mongo:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}mongo:latest
+    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}mongo:latest
     labels:
       komodo.skip:
       com.centurylinklabs.watchtower.enable: "true"
@@ -15,7 +15,7 @@ services:
       - ${KOMODO_INFRA_DATA_DIR}/mongo-config:/data/configdb
   
   core:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    image: ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-2}
     init: true
     labels:
       komodo.skip:
@@ -42,7 +42,7 @@ services:
     #   - host.docker.internal:host-gateway
 
   periphery:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
     init: true
     labels:
       komodo.skip:
@@ -60,7 +60,7 @@ services:
       - /data:/data
 
   watchtower:
-    image: ${KOMODO_INFRA_IMAGE_PREFIX:-}nickfedor/watchtower:latest
+    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}nickfedor/watchtower:latest
     labels:
       komodo.skip:
       com.centurylinklabs.watchtower.enable: "true"
