@@ -34,7 +34,7 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 
 [[stack]]
 name = "hq-cat-services-media"
-tags = ["origin", "service", "deploy"]
+tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-services"
 poll_for_updates = true
