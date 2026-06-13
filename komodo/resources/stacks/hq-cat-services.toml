@@ -14,6 +14,9 @@ pre_deploy.command = """
 if ! docker network inspect shared_openlist_net >/dev/null 2>&1; then
   docker network create shared_openlist_net
 fi
+if ! docker network inspect shared_media_net >/dev/null 2>&1; then
+  docker network create shared_media_net
+fi
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -25,6 +28,35 @@ COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 HQCAT_SERVICES_CFD_TOKEN=[[HQCAT_SERVICES_CFD_TOKEN]]
 OAUTH2_PROXY_CLIENT_SECRET=[[COMMON_OAUTH2_CLIENT_SECRET]]
 OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
+"""
+
+##
+
+[[stack]]
+name = "hq-cat-services-media"
+tags = ["origin", "service", "deploy"]
+[stack.config]
+server = "hq-cat-services"
+poll_for_updates = true
+auto_update = true
+auto_update_all_services = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-services/media"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+if ! docker network inspect shared_media_net >/dev/null 2>&1; then
+  docker network create shared_media_net
+fi
+mkdir -p /data/media/torbox /data/appdata/seerr
+chown -R 1000:1000 /data/media/torbox /data/appdata/seerr
+"""
+pre_deploy.shell_mode = true
+extra_args = ["--remove-orphans"]
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+TORBOX_API_KEY=[[HQCAT_SERVICES_MEDIA_TORBOX_API_KEY]]
 """
 
 ##

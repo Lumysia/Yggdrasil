@@ -1,0 +1,138 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: jellyfin.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 8096}}"
+    volumes:
+      - ${APPDATA_PATH}/jellyfin:/config
+      - ${MEDIA_PATH}/movies:/data/movies
+      - ${MEDIA_PATH}/tvshows:/data/tvshows
+      - ${MEDIA_PATH}/others:/data/others
+      - ${MEDIA_PATH}/musics:/data/musics
+      - ${MEDIA_PATH}/torbox:/data/torbox:ro
+    tmpfs:
+      - /cache
+    env_file:
+      - stack.env
+
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    init: true
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: seerr.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 5055}}"
+    volumes:
+      - ${APPDATA_PATH}/seerr:/app/config
+    env_file:
+      - stack.env
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+
+  decypharr:
+    image: cy01/blackhole:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: decypharr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_reverse_proxy "{{upstreams 8282}}"
+    volumes:
+      - ${APPDATA_PATH}/decypharr:/app
+      - ${MEDIA_PATH}:/mnt:rshared
+    devices:
+      - /dev/fuse:/dev/fuse:rwm
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    env_file:
+      - stack.env
+
+  torbox-media-center:
+    image: anonymoussystems/torbox-media-center:latest
+    restart: unless-stopped
+    init: true
+    stdin_open: true
+    tty: true
+    volumes:
+      - ${MEDIA_PATH}/torbox:/torbox
+    env_file:
+      - stack.env
+    environment:
+      TORBOX_API_KEY: ${TORBOX_API_KEY}
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: prowlarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_reverse_proxy "{{upstreams 9696}}"
+    volumes:
+      - ${APPDATA_PATH}/prowlarr:/config
+    env_file:
+      - stack.env
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: radarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_reverse_proxy_except "{{upstreams 7878}}" /api/* /ping
+    volumes:
+      - ${APPDATA_PATH}/radarr:/config
+      - ${MEDIA_PATH}/movies:/movies
+      - ${MEDIA_PATH}/torbox:/torbox
+      - ${DOWNLOADS_PATH}/decypharr:/downloads
+    env_file:
+      - stack.env
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: sonarr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_reverse_proxy_except "{{upstreams 8989}}" /api/* /ping
+    volumes:
+      - ${APPDATA_PATH}/sonarr:/config
+      - ${MEDIA_PATH}/tvshows:/tvshows
+      - ${MEDIA_PATH}/torbox:/torbox
+      - ${DOWNLOADS_PATH}/decypharr:/downloads
+    env_file:
+      - stack.env
+
+  flaresolverr:
+    image: flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    volumes:
+      - ${APPDATA_PATH}/flaresolverr:/config
+    env_file:
+      - stack.env
+
+networks:
+  shared_media_net:
+    external: true
