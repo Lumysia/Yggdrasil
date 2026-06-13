@@ -1,6 +1,6 @@
 [[stack]]
 name = "camtr-ovh-01-services-gateway"
-tags = ["origin", "ingress", "deploy"]
+tags = ["origin", "ingress"]
 [stack.config]
 server = "camtr-ovh-01-services"
 poll_for_updates = true
