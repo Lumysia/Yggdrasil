@@ -18,7 +18,6 @@ services:
       - shared_remnawave_net
       - shared_n8n_net
       - shared_openlist_net
-      - shared_media_net
       - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
@@ -144,8 +143,6 @@ networks:
   shared_n8n_net:
     external: true
   shared_openlist_net:
-    external: true
-  shared_media_net:
     external: true
   oauth2_proxy_intranet:
     internal: true
