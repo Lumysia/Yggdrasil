@@ -10,10 +10,7 @@ services:
       caddy.reverse_proxy: "{{upstreams 8096}}"
     volumes:
       - ${APPDATA_PATH}/jellyfin:/config
-      - ${MEDIA_PATH}/movies:/data/movies
-      - ${MEDIA_PATH}/tvshows:/data/tvshows
       - ${MEDIA_PATH}/others:/data/others
-      - ${MEDIA_PATH}/musics:/data/musics
       - ${MEDIA_PATH}/torbox:/data/torbox:ro
     tmpfs:
       - /cache
@@ -100,9 +97,7 @@ services:
       caddy.import_1: protected_reverse_proxy_except "{{upstreams 7878}}" /api/* /ping
     volumes:
       - ${APPDATA_PATH}/radarr:/config
-      - ${MEDIA_PATH}/movies:/movies
       - ${MEDIA_PATH}/torbox:/torbox
-      - ${DOWNLOADS_PATH}/decypharr:/downloads
     env_file:
       - stack.env
 
@@ -117,9 +112,7 @@ services:
       caddy.import_1: protected_reverse_proxy_except "{{upstreams 8989}}" /api/* /ping
     volumes:
       - ${APPDATA_PATH}/sonarr:/config
-      - ${MEDIA_PATH}/tvshows:/tvshows
       - ${MEDIA_PATH}/torbox:/torbox
-      - ${DOWNLOADS_PATH}/decypharr:/downloads
     env_file:
       - stack.env
 
