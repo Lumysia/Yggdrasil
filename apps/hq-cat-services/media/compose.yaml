@@ -14,10 +14,10 @@ services:
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
       caddy.1_redir: /decypharr /decypharr/ 308
-      caddy.2_handle: "@decypharr"
-      caddy.2_handle.0_import: protected_forward_auth
-      caddy.2_handle.1_reverse_proxy: decypharr:8282
-      caddy.2_handle.1_reverse_proxy.header_down: Location ^/(setup|login|register)?$ /decypharr/$1
+      caddy.2_handle_path: /decypharr/*
+      caddy.2_handle_path.0_import: protected_forward_auth
+      caddy.2_handle_path.1_reverse_proxy: decypharr:8282
+      caddy.2_handle_path.1_reverse_proxy.header_down: Location ^/(setup|login|register)?$ /decypharr/$1
       caddy.3_redir: /prowlarr /prowlarr/ 308
       caddy.4_handle: "@prowlarr"
       caddy.4_handle.0_import: protected_forward_auth
