@@ -30,7 +30,7 @@ services:
       caddy.8_handle.0_import: protected_forward_auth
       caddy.8_handle.1_reverse_proxy: sonarr:8989
       caddy.9_handle: /*
-      caddy.9_handle.reverse_proxy: "{{upstreams 8096}}"
+      caddy.9_handle.reverse_proxy: jellyfin:8096
     volumes:
       - ${APPDATA_PATH}/jellyfin:/config
       - ${MEDIA_PATH}/others:/data/others
