@@ -7,31 +7,25 @@ services:
     labels:
       caddy: media.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
-      caddy.@decypharr.path: /decypharr /decypharr/*
       caddy.@prowlarr.path: /prowlarr /prowlarr/*
       caddy.@radarr.path: /radarr /radarr/*
       caddy.@sonarr.path: /sonarr /sonarr/*
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.1_redir: /decypharr /decypharr/ 308
-      caddy.2_handle_path: /decypharr/*
-      caddy.2_handle_path.0_import: protected_forward_auth
-      caddy.2_handle_path.1_reverse_proxy: decypharr:8282
-      caddy.2_handle_path.1_reverse_proxy.header_down: Location ^/(setup|login|register)?$ /decypharr/$1
-      caddy.3_redir: /prowlarr /prowlarr/ 308
-      caddy.4_handle: "@prowlarr"
+      caddy.1_redir: /prowlarr /prowlarr/ 308
+      caddy.2_handle: "@prowlarr"
+      caddy.2_handle.0_import: protected_forward_auth
+      caddy.2_handle.1_reverse_proxy: prowlarr:9696
+      caddy.3_redir: /radarr /radarr/ 308
+      caddy.4_handle: "@radarr"
       caddy.4_handle.0_import: protected_forward_auth
-      caddy.4_handle.1_reverse_proxy: prowlarr:9696
-      caddy.5_redir: /radarr /radarr/ 308
-      caddy.6_handle: "@radarr"
+      caddy.4_handle.1_reverse_proxy: radarr:7878
+      caddy.5_redir: /sonarr /sonarr/ 308
+      caddy.6_handle: "@sonarr"
       caddy.6_handle.0_import: protected_forward_auth
-      caddy.6_handle.1_reverse_proxy: radarr:7878
-      caddy.7_redir: /sonarr /sonarr/ 308
-      caddy.8_handle: "@sonarr"
-      caddy.8_handle.0_import: protected_forward_auth
-      caddy.8_handle.1_reverse_proxy: sonarr:8989
-      caddy.9_handle: /*
-      caddy.9_handle.reverse_proxy: jellyfin:8096
+      caddy.6_handle.1_reverse_proxy: sonarr:8989
+      caddy.7_handle: /*
+      caddy.7_handle.reverse_proxy: jellyfin:8096
     volumes:
       - ${APPDATA_PATH}/jellyfin:/config
       - ${MEDIA_PATH}/others:/data/others
@@ -67,6 +61,10 @@ services:
     restart: unless-stopped
     networks:
       - shared_media_net
+    labels:
+      caddy: decypharr.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.import_1: protected_reverse_proxy "{{upstreams 8282}}"
     volumes:
       - ${APPDATA_PATH}/decypharr:/app
       - ${MEDIA_PATH}:/mnt:rshared
