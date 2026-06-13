@@ -75,6 +75,7 @@ services:
       - SYS_ADMIN
     security_opt:
       - apparmor:unconfined
+      - seccomp:unconfined
     env_file:
       - stack.env
     environment:
