@@ -36,7 +36,7 @@ services:
       - stack.env
 
   seerr:
-    image: ghcr.io/seerr-team/seerr:latest
+    image: ghcr.io/seerr-team/seerr:preview-new-oidc
     init: true
     restart: unless-stopped
     networks:
