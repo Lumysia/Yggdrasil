@@ -29,7 +29,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/jellyfin:/config
       - ${MEDIA_PATH}/others:/data/others
-      - ${MEDIA_PATH}/decypharr:/data/decypharr:ro
+      - ${MEDIA_PATH}/decypharr:/mnt/decypharr:ro,rslave
     tmpfs:
       - /cache
     env_file:
@@ -76,6 +76,12 @@ services:
       - apparmor:unconfined
     env_file:
       - stack.env
+    environment:
+      DECYPHARR_DOWNLOAD_FOLDER: /mnt/decypharr/downloads
+      DECYPHARR_MOUNT__DFS__CACHE_DIR: /tmp/decypharr-cache
+      DECYPHARR_MOUNT__DFS__GID: ${PGID}
+      DECYPHARR_MOUNT__DFS__UID: ${PUID}
+      DECYPHARR_MOUNT__DFS__UMASK: ${UMASK}
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -96,7 +102,7 @@ services:
       - shared_media_net
     volumes:
       - ${APPDATA_PATH}/radarr:/config
-      - ${MEDIA_PATH}/decypharr:/mnt/decypharr
+      - ${MEDIA_PATH}/decypharr:/mnt/decypharr:rslave
     env_file:
       - stack.env
     environment:
@@ -109,7 +115,7 @@ services:
       - shared_media_net
     volumes:
       - ${APPDATA_PATH}/sonarr:/config
-      - ${MEDIA_PATH}/decypharr:/mnt/decypharr
+      - ${MEDIA_PATH}/decypharr:/mnt/decypharr:rslave
     env_file:
       - stack.env
     environment:
