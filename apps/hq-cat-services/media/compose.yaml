@@ -29,7 +29,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/jellyfin:/config
       - ${MEDIA_PATH}/others:/data/others
-      - ${MEDIA_PATH}/torbox:/data/torbox:ro
+      - ${MEDIA_PATH}/decypharr:/data/decypharr:ro
     tmpfs:
       - /cache
     env_file:
@@ -67,7 +67,7 @@ services:
       caddy.import_1: protected_reverse_proxy "{{upstreams 8282}}"
     volumes:
       - ${APPDATA_PATH}/decypharr:/app
-      - ${MEDIA_PATH}:/mnt:rshared
+      - ${MEDIA_PATH}/decypharr:/mnt/decypharr:rshared
     devices:
       - /dev/fuse:/dev/fuse:rwm
     cap_add:
@@ -76,19 +76,6 @@ services:
       - apparmor:unconfined
     env_file:
       - stack.env
-
-  torbox-media-center:
-    image: anonymoussystems/torbox-media-center:latest
-    restart: unless-stopped
-    init: true
-    stdin_open: true
-    tty: true
-    volumes:
-      - ${MEDIA_PATH}/torbox:/torbox
-    env_file:
-      - stack.env
-    environment:
-      TORBOX_API_KEY: ${TORBOX_API_KEY}
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -109,7 +96,7 @@ services:
       - shared_media_net
     volumes:
       - ${APPDATA_PATH}/radarr:/config
-      - ${MEDIA_PATH}/torbox:/torbox
+      - ${MEDIA_PATH}/decypharr:/mnt/decypharr
     env_file:
       - stack.env
     environment:
@@ -122,7 +109,7 @@ services:
       - shared_media_net
     volumes:
       - ${APPDATA_PATH}/sonarr:/config
-      - ${MEDIA_PATH}/torbox:/torbox
+      - ${MEDIA_PATH}/decypharr:/mnt/decypharr
     env_file:
       - stack.env
     environment:
