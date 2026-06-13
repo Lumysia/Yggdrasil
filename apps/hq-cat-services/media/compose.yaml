@@ -67,6 +67,7 @@ services:
       caddy.import_1: protected_reverse_proxy "{{upstreams 8282}}"
     volumes:
       - ${APPDATA_PATH}/decypharr:/app
+      - ${APPDATA_PATH}/decypharr/fuse.conf:/etc/fuse.conf:ro
       - ${MEDIA_PATH}/decypharr:/mnt/decypharr:rshared
     devices:
       - /dev/fuse:/dev/fuse:rwm

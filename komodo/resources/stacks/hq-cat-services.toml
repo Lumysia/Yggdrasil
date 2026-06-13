@@ -50,6 +50,8 @@ if ! docker network inspect shared_media_net >/dev/null 2>&1; then
   docker network create shared_media_net
 fi
 mkdir -p /data/media/decypharr/downloads /data/media/decypharr/mount /data/media/decypharr/movies /data/media/decypharr/tv /data/appdata/seerr
+mkdir -p /data/appdata/decypharr
+printf 'user_allow_other\n' > /data/appdata/decypharr/fuse.conf
 chown -R 1000:1000 /data/media/decypharr /data/appdata/seerr
 """
 pre_deploy.shell_mode = true
