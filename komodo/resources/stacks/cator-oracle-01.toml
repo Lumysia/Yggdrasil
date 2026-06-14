@@ -78,10 +78,10 @@ pre_deploy.command = """
 if ! docker network inspect shared_media_net >/dev/null 2>&1; then
   docker network create shared_media_net
 fi
-mkdir -p /data/appdata/decypharr /data/appdata/flaresolverr /data/appdata/jellyfin /data/appdata/prowlarr /data/appdata/radarr /data/appdata/seerr /data/appdata/sonarr
+mkdir -p /data/appdata/decypharr /data/appdata/flaresolverr /data/appdata/jellyfin /data/appdata/prowlarr /data/appdata/radarr /data/appdata/sonarr
 mkdir -p /data/media/decypharr/downloads/radarr /data/media/decypharr/downloads/tv-sonarr /data/media/decypharr/mount /data/media/decypharr/movies /data/media/decypharr/tv /data/media/others
 printf 'user_allow_other\n' > /data/appdata/decypharr/fuse.conf
-chown -R 1000:1000 /data/appdata/decypharr /data/appdata/flaresolverr /data/appdata/jellyfin /data/appdata/prowlarr /data/appdata/radarr /data/appdata/seerr /data/appdata/sonarr /data/media/decypharr /data/media/others
+chown -R 1000:1000 /data/appdata/decypharr /data/appdata/flaresolverr /data/appdata/jellyfin /data/appdata/prowlarr /data/appdata/radarr /data/appdata/sonarr /data/media/decypharr /data/media/others
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]

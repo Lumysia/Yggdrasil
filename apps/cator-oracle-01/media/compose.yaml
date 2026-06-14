@@ -35,27 +35,6 @@ services:
     env_file:
       - stack.env
 
-  seerr:
-    image: ghcr.io/seerr-team/seerr:preview-new-oidc
-    init: true
-    restart: unless-stopped
-    networks:
-      - shared_media_net
-    labels:
-      caddy: seerr.${COMMON_DOMAIN_A}
-      caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 5055}}"
-    volumes:
-      - ${APPDATA_PATH}/seerr:/app/config
-    env_file:
-      - stack.env
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
-      start_period: 20s
-      timeout: 3s
-      interval: 15s
-      retries: 3
-
   decypharr:
     image: cy01/blackhole:latest
     restart: unless-stopped
