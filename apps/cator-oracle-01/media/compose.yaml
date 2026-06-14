@@ -57,7 +57,7 @@ services:
       retries: 3
 
   decypharr:
-    image: cy01/blackhole:v1.1.6
+    image: cy01/blackhole:latest
     restart: unless-stopped
     networks:
       - shared_media_net
