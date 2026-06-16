@@ -62,6 +62,12 @@ services:
       caddy_6.handle_1.forward_auth.3_handle_response.1_redir: "* /oauth2/sign_in?rd={scheme}://{host}{uri} 302"
       caddy_6.handle_1.reverse_proxy: "{args[0]}"
       caddy_6.handle_1.reverse_proxy.header_up: -Referer
+      caddy_7: (protected_forward_auth)
+      caddy_7.forward_auth: http://oauth2-proxy:4180
+      caddy_7.forward_auth.1_uri: /oauth2/auth
+      caddy_7.forward_auth.2_@error: status 401
+      caddy_7.forward_auth.3_handle_response: "@error"
+      caddy_7.forward_auth.3_handle_response.1_redir: "* /oauth2/sign_in?rd={scheme}://{host}{uri} 302"
   
   cloudflared:
     image: cloudflare/cloudflared:latest

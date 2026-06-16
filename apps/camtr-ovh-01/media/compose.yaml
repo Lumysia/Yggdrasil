@@ -4,9 +4,37 @@ services:
     networks:
       - shared_media_net
     labels:
-      caddy: jellyfin.${COMMON_DOMAIN_A}
-      caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 8096}}"
+      caddy: media.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.@prowlarr.path: /prowlarr /prowlarr/*
+      caddy.@radarr.path: /radarr /radarr/*
+      caddy.@sonarr.path: /sonarr /sonarr/*
+      caddy.0_handle: /oauth2/*
+      caddy.0_handle.reverse_proxy: oauth2-proxy:4180
+      caddy.1_redir: /qbt /qbt/ 308
+      caddy.2_handle_path: /qbt/*
+      caddy.2_handle_path.0_import: protected_forward_auth
+      caddy.2_handle_path.1_reverse_proxy: gluetun:8080
+      caddy.2_handle_path.1_reverse_proxy.0_header_up: -Referer
+      caddy.2_handle_path.1_reverse_proxy.1_header_up: -Origin
+      caddy.3_redir: /pbh /pbh/ 308
+      caddy.4_handle_path: /pbh/*
+      caddy.4_handle_path.0_import: protected_forward_auth
+      caddy.4_handle_path.1_reverse_proxy: peerbanhelper:9898
+      caddy.5_redir: /prowlarr /prowlarr/ 308
+      caddy.6_handle: "@prowlarr"
+      caddy.6_handle.0_import: protected_forward_auth
+      caddy.6_handle.1_reverse_proxy: prowlarr:9696
+      caddy.7_redir: /radarr /radarr/ 308
+      caddy.8_handle: "@radarr"
+      caddy.8_handle.0_import: protected_forward_auth
+      caddy.8_handle.1_reverse_proxy: radarr:7878
+      caddy.9_redir: /sonarr /sonarr/ 308
+      caddy.10_handle: "@sonarr"
+      caddy.10_handle.0_import: protected_forward_auth
+      caddy.10_handle.1_reverse_proxy: sonarr:8989
+      caddy.11_handle: /*
+      caddy.11_handle.reverse_proxy: jellyfin:8096
     # ports:
     #   - 127.0.0.1:8096:8096
     volumes:
@@ -30,10 +58,6 @@ services:
       - /dev/net/tun:/dev/net/tun
     networks:
       - shared_media_net
-    labels:
-      caddy: qbt.${COMMON_DOMAIN_A}
-      caddy.import_0: common_tls
-      caddy.import_1: protected_reverse_proxy_strip_referer "{{upstreams 8080}}"
     #ports:
     #  - 8080:8080
     volumes:
@@ -84,10 +108,6 @@ services:
     restart: unless-stopped
     networks:
       - shared_media_net
-    labels:
-      caddy: pbh.${COMMON_DOMAIN_A}
-      caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 9898}}"
     volumes:
       - ${APPDATA_PATH}/peerbanhelper:/app/data
       - /tmp/peerbanhelper:/tmp
@@ -101,26 +121,20 @@ services:
     restart: unless-stopped
     networks:
       - shared_media_net
-    labels:
-      caddy: prowlarr.${COMMON_DOMAIN_A}
-      caddy.import_0: common_tls
-      caddy.import_1: protected_reverse_proxy "{{upstreams 9696}}"
     # ports:
     #   - 9696:9696
     volumes:
       - ${APPDATA_PATH}/prowlarr:/config
     env_file:
       - stack.env
+    environment:
+      PROWLARR__SERVER__URLBASE: /prowlarr
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     restart: unless-stopped
     networks:
       - shared_media_net
-    labels:
-      caddy: radarr.${COMMON_DOMAIN_A}
-      caddy.import_0: common_tls
-      caddy.import_1: protected_reverse_proxy_except "{{upstreams 7878}}" /api/* /ping
     # ports:
     #   - 7878:7878
     volumes:
@@ -129,16 +143,14 @@ services:
       - ${DOWNLOADS_PATH}/qbittorrent:/downloads
     env_file:
       - stack.env
+    environment:
+      RADARR__SERVER__URLBASE: /radarr
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     restart: unless-stopped
     networks:
       - shared_media_net
-    labels:
-      caddy: sonarr.${COMMON_DOMAIN_A}
-      caddy.import_0: common_tls
-      caddy.import_1: protected_reverse_proxy_except "{{upstreams 8989}}" /api/* /ping
     # ports:
     #   - 8989:8989
     volumes:
@@ -147,6 +159,8 @@ services:
       - ${DOWNLOADS_PATH}/qbittorrent:/downloads
     env_file:
       - stack.env
+    environment:
+      SONARR__SERVER__URLBASE: /sonarr
 
   flaresolverr:
     image: flaresolverr/flaresolverr:latest
