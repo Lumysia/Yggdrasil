@@ -18,6 +18,24 @@ services:
   #     GID: ${PGID}
   #     GIDLIST: ${PGID}
 
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: plex.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.reverse_proxy: "{{upstreams 32400}}"
+    volumes:
+      - ${APPDATA_PATH}/plex:/config
+      - ${MEDIA_PATH}:/data:ro
+      - /tmp/plex-transcode:/transcode
+    env_file:
+      - stack.env
+    environment:
+      VERSION: docker
+
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     networks:
