@@ -1,4 +1,23 @@
 services:
+  emby:
+    image: amilys/embyserver:latest
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    labels:
+      caddy: emby.${COMMON_DOMAIN_A}
+      caddy.import_0: common_tls
+      caddy.reverse_proxy: "{{upstreams 8096}}"
+    volumes:
+      - ${APPDATA_PATH}/emby:/config
+      - ${MEDIA_PATH}:/data:ro
+    env_file:
+      - stack.env
+    environment:
+      UID: ${PUID}
+      GID: ${PGID}
+      GIDLIST: ${PGID}
+
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     networks:
