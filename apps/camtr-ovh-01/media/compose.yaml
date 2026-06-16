@@ -68,23 +68,22 @@ services:
       OPENVPN_PASSWORD: ${OPENVPN_PASSWORD}
       SERVER_REGIONS: CA Montreal
       VPN_PORT_FORWARDING: true
-  
-  gluetun-qbittorrent-port-manager:
-    image: snoringdragon/gluetun-qbittorrent-port-manager:latest
+      VPN_PORT_FORWARDING_STATUS_FILE: /tmp/gluetun/forwarded_port
+
+  qbit-gluetun-sync:
+    image: ghcr.io/hononeko/qbit-gluetun-sync:latest
     restart: unless-stopped
+    networks:
+      - shared_media_net
     volumes:
-      - /tmp-gluetun:/tmp/gluetun
-    network_mode: service:gluetun
+      - /tmp-gluetun:/tmp/gluetun:ro
     depends_on:
       - gluetun
       - qbittorrent
-    env_file:
-      - stack.env
     environment:
-      QBITTORRENT_SERVER: localhost
-      QBITTORRENT_PORT: 8080
-      PORT_FORWARDED: /tmp/gluetun/forwarded_port
-      HTTP_S: http
+      QBIT_ADDR: http://gluetun:8080
+      PORT_FILE: /tmp/gluetun/forwarded_port
+      LISTEN_PORT: 9090
   
   qbittorrent:
     image: linuxserver/qbittorrent:latest
