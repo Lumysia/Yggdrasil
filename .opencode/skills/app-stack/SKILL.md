@@ -86,7 +86,8 @@ If a service is exposed through Caddy:
 - add Caddy labels in `compose.yaml`
 - attach the service to a dedicated shared external network
 - add the same network to the host `gateway/compose.yaml`
-- create that network in the Komodo stack `pre_deploy.command`
+- create shared external networks used by ingress in the host gateway stack's Komodo `pre_deploy.command`
+- do not create ingress shared networks in app/service stack `pre_deploy.command`; keep service stack pre-deploys for service-local setup such as directories, files, permissions, or migrations
 
 ## Entry Gateway Services
 

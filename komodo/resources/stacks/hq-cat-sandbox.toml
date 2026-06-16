@@ -10,6 +10,18 @@ run_directory = "apps/hq-cat-sandbox/gateway"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
+pre_deploy.command = """
+if ! docker network inspect shared_goclaw_net >/dev/null 2>&1; then
+  docker network create shared_goclaw_net
+fi
+if ! docker network inspect shared_hermes1_net >/dev/null 2>&1; then
+  docker network create shared_hermes1_net
+fi
+if ! docker network inspect shared_hermes2_net >/dev/null 2>&1; then
+  docker network create shared_hermes2_net
+fi
+"""
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
@@ -75,15 +87,6 @@ run_directory = "apps/hq-cat-sandbox/hermes"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-if ! docker network inspect shared_hermes1_net >/dev/null 2>&1; then
-  docker network create shared_hermes1_net
-fi
-if ! docker network inspect shared_hermes2_net >/dev/null 2>&1; then
-  docker network create shared_hermes2_net
-fi
-"""
-pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]

@@ -11,6 +11,27 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
+if ! docker network inspect shared_aiapi_net >/dev/null 2>&1; then
+  docker network create shared_aiapi_net
+fi
+if ! docker network inspect shared_seafile_net >/dev/null 2>&1; then
+  docker network create shared_seafile_net
+fi
+if ! docker network inspect shared_immich_net >/dev/null 2>&1; then
+  docker network create shared_immich_net
+fi
+if ! docker network inspect shared_forgejo_net >/dev/null 2>&1; then
+  docker network create shared_forgejo_net
+fi
+if ! docker network inspect shared_lobechat_net >/dev/null 2>&1; then
+  docker network create shared_lobechat_net
+fi
+if ! docker network inspect shared_remnawave_net >/dev/null 2>&1; then
+  docker network create shared_remnawave_net
+fi
+if ! docker network inspect shared_n8n_net >/dev/null 2>&1; then
+  docker network create shared_n8n_net
+fi
 if ! docker network inspect shared_openlist_net >/dev/null 2>&1; then
   docker network create shared_openlist_net
 fi
@@ -41,12 +62,6 @@ run_directory = "apps/hq-cat-services/aiapi"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-if ! docker network inspect shared_aiapi_net >/dev/null 2>&1; then
-  docker network create shared_aiapi_net
-fi
-"""
-pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -70,12 +85,6 @@ run_directory = "apps/hq-cat-services/lobechat"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-if ! docker network inspect shared_lobechat_net >/dev/null 2>&1; then
-  docker network create shared_lobechat_net
-fi
-"""
-pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 POSTGRES_PASSWORD=[[HQCAT_SERVICES_LOBE_DBPWD]]
@@ -106,12 +115,6 @@ run_directory = "apps/hq-cat-services/forgejo"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-if ! docker network inspect shared_forgejo_net >/dev/null 2>&1; then
-  docker network create shared_forgejo_net
-fi
-"""
-pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 ignore_services = ["renovate"]
 environment = """
@@ -189,12 +192,6 @@ run_directory = "apps/hq-cat-services/remnawave"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-if ! docker network inspect shared_remnawave_net >/dev/null 2>&1; then
-  docker network create shared_remnawave_net
-fi
-"""
-pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -219,9 +216,6 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = """
-if ! docker network inspect shared_n8n_net >/dev/null 2>&1; then
-  docker network create shared_n8n_net
-fi
 mkdir -p /data/appdata/n8n /data/appdata/n8n-files
 chown -R 1000:1000 /data/appdata/n8n /data/appdata/n8n-files
 """
@@ -248,12 +242,6 @@ run_directory = "apps/hq-cat-services/openlist"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-if ! docker network inspect shared_openlist_net >/dev/null 2>&1; then
-  docker network create shared_openlist_net
-fi
-"""
-pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
