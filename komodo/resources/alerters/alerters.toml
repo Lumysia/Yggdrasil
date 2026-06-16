@@ -1,22 +1,13 @@
 [[alerter]]
-name = "Komodo Alert"
+name = "Komodo Ntfy"
 [alerter.config]
 enabled = true
 endpoint.type = "Ntfy"
-endpoint.params.url = "https://ntfy.sh/komodo-briskness0258"
+endpoint.params.url = "https://ntfy.sh/komodo-1sz71kbzb9klqj2j"
 alert_types = [
   "ServerUnreachable",
-  "ServerCpu",
-  "ServerMem",
   "ServerDisk",
-  "StackStateChange",
-  "StackImageUpdateAvailable",
-  "StackAutoUpdated",
-  "ContainerStateChange",
-  "DeploymentImageUpdateAvailable",
-  "DeploymentAutoUpdated",
   "AwsBuilderTerminationFailed",
-  "ResourceSyncPendingUpdates",
   "BuildFailed",
   "RepoBuildFailed"
 ]
