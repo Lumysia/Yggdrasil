@@ -43,11 +43,28 @@ run_directory = "apps/camtr-ovh-01/media"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-mkdir -p /data/media/downloads/qbittorrent /data/media/movies /data/media/tvshows
+pre_deploy.command = '''
+mkdir -p /data/media/downloads/qbittorrent/incomplete /data/media/movies /data/media/tvshows
+mkdir -p /data/appdata/qbittorrent/qBittorrent
+qbt_conf=/data/appdata/qbittorrent/qBittorrent/qBittorrent.conf
+current_port=
+if [ -f "$qbt_conf" ]; then
+  current_port=$(sed -n 's/^Session\\Port=//p' "$qbt_conf" | head -n 1)
+fi
+cp qBittorrent.conf "$qbt_conf"
+if [ -n "$current_port" ]; then
+  sed -i "s|^Session\\\\Port=.*|Session\\\\Port=$current_port|" "$qbt_conf"
+fi
+for arr in prowlarr radarr sonarr; do
+  arr_conf="/data/appdata/$arr/config.xml"
+  if [ -f "$arr_conf" ]; then
+    sed -i 's|<AuthenticationMethod>None</AuthenticationMethod>|<AuthenticationMethod>External</AuthenticationMethod>|' "$arr_conf"
+  fi
+done
 chown -R 1000:1000 /data/media
+chown -R 1000:1000 /data/appdata/qbittorrent
 chmod -R u+rwX,g+rwX /data/media
-"""
+'''
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """

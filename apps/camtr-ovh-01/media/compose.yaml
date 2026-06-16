@@ -39,7 +39,7 @@ services:
     #   - 127.0.0.1:8096:8096
     volumes:
       - ${APPDATA_PATH}/jellyfin:/config
-      - ${MEDIA_PATH}:/media
+      - ${MEDIA_PATH}:/data
     tmpfs:
       - /cache
     restart: unless-stopped
@@ -95,8 +95,7 @@ services:
     #   - 127.0.0.1:8080:8080
     volumes:
       - ${APPDATA_PATH}/qbittorrent:/config
-      - ${MEDIA_PATH}:/media
-      - ${MEDIA_PATH}/downloads/qbittorrent:/downloads
+      - ${MEDIA_PATH}:/data
     env_file:
       - stack.env
 
@@ -136,8 +135,7 @@ services:
     #   - 7878:7878
     volumes:
       - ${APPDATA_PATH}/radarr:/config
-      - ${MEDIA_PATH}:/media
-      - ${MEDIA_PATH}/downloads/qbittorrent:/downloads
+      - ${MEDIA_PATH}:/data
     env_file:
       - stack.env
     environment:
@@ -152,8 +150,7 @@ services:
     #   - 8989:8989
     volumes:
       - ${APPDATA_PATH}/sonarr:/config
-      - ${MEDIA_PATH}:/media
-      - ${MEDIA_PATH}/downloads/qbittorrent:/downloads
+      - ${MEDIA_PATH}:/data
     env_file:
       - stack.env
     environment:
