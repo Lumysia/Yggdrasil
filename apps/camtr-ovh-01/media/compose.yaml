@@ -96,6 +96,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/qbittorrent:/config
       - ${MEDIA_PATH}:/media
+      - ${MEDIA_PATH}/downloads/qbittorrent:/downloads
     env_file:
       - stack.env
 
@@ -136,6 +137,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/radarr:/config
       - ${MEDIA_PATH}:/media
+      - ${MEDIA_PATH}/downloads/qbittorrent:/downloads
     env_file:
       - stack.env
     environment:
@@ -151,6 +153,7 @@ services:
     volumes:
       - ${APPDATA_PATH}/sonarr:/config
       - ${MEDIA_PATH}:/media
+      - ${MEDIA_PATH}/downloads/qbittorrent:/downloads
     env_file:
       - stack.env
     environment:
