@@ -1,22 +1,22 @@
 [[stack]]
-name = "camtr-ovh-01-services-gateway"
-tags = ["origin", "ingress"]
+name = "camtr-ovh-01-gateway"
+tags = ["origin", "ingress", "deploy"]
 [stack.config]
-server = "camtr-ovh-01-services"
+server = "camtr-ovh-01"
 poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/camtr-ovh-01-services/gateway"
+run_directory = "apps/camtr-ovh-01/gateway"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
 extra_args = ["--remove-orphans"]
 environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]
 COMMON_CADDY_ADMIN_EMAIL=[[COMMON_CADDY_ADMIN_EMAIL]]
-CAMTROVH01_SERVICES_CFD_TOKEN=[[CAMTROVH01_SERVICES_CFD_TOKEN]]
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
+CAMTROVH01_CFD_TOKEN=[[CAMTROVH01_CFD_TOKEN]]
 OAUTH2_PROXY_CLIENT_SECRET=[[COMMON_OAUTH2_CLIENT_SECRET]]
 OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 """
@@ -24,16 +24,16 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 ##
 
 [[stack]]
-name = "camtr-ovh-01-services-media"
-tags = ["origin", "service"]
+name = "camtr-ovh-01-media"
+tags = ["origin", "service", "deploy"]
 [stack.config]
-server = "camtr-ovh-01-services"
+server = "camtr-ovh-01"
 poll_for_updates = true
 auto_update = true
 auto_update_all_services = true
 destroy_before_deploy = true
 linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/camtr-ovh-01-services/media"
+run_directory = "apps/camtr-ovh-01/media"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]

@@ -74,11 +74,6 @@
           hostname = "hq-nya-services";
         };
 
-        ## CA
-        camtr-ovh-01-services = mkSystem {
-          hostname = "camtr-ovh-01-services";
-        };
-
       };
     };
 }

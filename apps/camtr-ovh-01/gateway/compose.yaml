@@ -70,7 +70,7 @@ services:
       - cloudflare_net
     env_file:
       - stack.env
-    command: tunnel --no-autoupdate --protocol auto run --token ${CAMTROVH01_SERVICES_CFD_TOKEN}
+    command: tunnel --no-autoupdate --protocol auto run --token ${CAMTROVH01_CFD_TOKEN}
 
   oauth2-proxy-redis:
     image: redis:8-alpine

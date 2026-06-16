@@ -1,10 +1,10 @@
 [[server]]
-name = "camtr-ovh-01-services"
+name = "camtr-ovh-01"
 tags = ["origin"]
 [server.config]
-address = "https://100.86.12.41:8120"
+address = "https://100.0.0.0:8120"
 region = "ca-central"
-enabled = true
+enabled = false
 
 ##
 
