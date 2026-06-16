@@ -43,6 +43,12 @@ run_directory = "apps/camtr-ovh-01/media"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
+pre_deploy.command = """
+mkdir -p /data/media/downloads/qbittorrent /data/media/movies /data/media/tvshows
+chown -R 1000:1000 /data/media
+chmod -R u+rwX,g+rwX /data/media
+"""
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
