@@ -57,7 +57,7 @@ services:
       caddy.11_handle.reverse_proxy: "{{upstreams 32400}}"
     volumes:
       - ${APPDATA_PATH}/plex:/config
-      - ${MEDIA_PATH}:/data:ro
+      - ${MEDIA_PATH}:/data
       - /tmp/plex-transcode:/transcode
     env_file:
       - stack.env
