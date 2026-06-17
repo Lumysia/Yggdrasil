@@ -180,6 +180,7 @@ services:
     environment:
       basePath: /pulsarr
       cookieSecured: true
+      authenticationMethod: disabled
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
