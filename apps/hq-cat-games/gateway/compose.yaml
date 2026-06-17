@@ -5,6 +5,7 @@ services:
     networks:
       - cloudflare_net
       - shared_cte2_net
+      - shared_all_the_mons_net
     extra_hosts:
       - host.docker.internal:host-gateway
     env_file:
@@ -38,4 +39,6 @@ networks:
   cloudflare_net:
     enable_ipv6: true
   shared_cte2_net:
+    external: true
+  shared_all_the_mons_net:
     external: true

@@ -74,6 +74,10 @@ Search within the provided source pack, extracted files, bundled archives, and u
 
 Treat proper nouns as translatable when they are visible story, place, creature, boss, faction, quest, or dimension names and a good target-language name exists or can be rendered naturally. Preserve a proper noun when translation would make gameplay harder to match with item names, in-game lookup tools, commands, registry IDs, or wiki references. Use target-language descriptions around preserved names when helpful.
 
+Build a terminology baseline before large translation batches. Prefer target-language localization bundled in the pack or mod archives, then established community terms, then clear common Minecraft terms. Record recurring decisions for dimensions, progression materials, UI roles, trainer/gym-like concepts, quest mechanics, and common items. Do not treat "lookup-sensitive" as a blanket reason to keep English: preserve exact mod names and true item names when needed, but translate generic prose words, visible UI roles, dimensions, common Minecraft items, mechanics, and title phrases when a target-language rendering is available.
+
+For mixed strings, separate the technical token from the readable text. Translate the readable sentence around preserved names so the result reads naturally in the target language. A translated line that leaves ordinary words such as location names, role names, common item names, instructions, or UI phrases in the source language is incomplete unless the validator report explicitly justifies each remaining term.
+
 ## Subagent Workflow
 
 The main agent is the orchestrator. It owns intake, inventory, batching, terminology tracking, review, validation, and final reporting.
@@ -81,15 +85,22 @@ The main agent is the orchestrator. It owns intake, inventory, batching, termino
 Direct work by the main agent is appropriate only for small tasks. When the work may consume substantial context or time, delegate batches to subagents when the environment supports subagents. If subagents are unavailable, run the same batched workflow sequentially and keep the orchestrator role focused on coordination and review.
 
 1. Inventory candidate files and group them by chapter or file type.
-2. Give each translator exact file paths and strict preservation rules.
-3. Require each translator to edit only assigned files using native patch/edit tooling.
-4. Require each translator to report changed files, intentionally untranslated terms, terminology decisions, and checks performed.
-5. Review translator reports and run cross-file verification.
-6. Track recurring terminology decisions that need consistency across files.
-7. Dispatch a separate validator after translators claim completion.
-8. Fix validator findings before calling the translation finished.
+2. Identify reference localization and recurring terminology before dispatching translators.
+3. Give each translator exact file paths, the terminology baseline, strict preservation rules, and instructions to read each assigned file before editing.
+4. Require each translator to edit only assigned files using native patch/edit tooling.
+5. Require each translator to read back representative start, middle, and end samples after editing, not only run searches.
+6. Require each translator to report changed files, intentionally untranslated terms, terminology decisions, read-back samples checked, and checks performed.
+7. Treat empty, missing, or vague translator reports as incomplete. Re-read those assigned files or redispatch them before validation.
+8. Review translator reports and run cross-file verification.
+9. Track recurring terminology decisions that need consistency across files.
+10. Dispatch a separate validator after translators claim completion.
+11. Fix validator findings before calling the translation finished.
 
 The validator must be independent from the translation subagents. Completion requires validator results in addition to translator self-reporting.
+
+Use scans as triage, not as proof of quality. Scans can find unchanged files, English-looking prose, and suspicious terms, but they cannot judge whether a translated line reads naturally or whether an English term is justified. For multi-file work, combine scans with representative file reads. Prioritize reading files with empty translator reports, unchanged hashes, low target-language coverage, high source-language prose hits, or repeated mixed-language patterns.
+
+Before final validation, compare translated files against their source counterparts. Any file that is byte-identical to the source, has no target-language text where translation was expected, or contains source-language prose in display fields must be treated as unfinished unless it is intentionally skipped and documented.
 
 ## Update Existing Translation
 
@@ -112,8 +123,12 @@ Before reporting completion:
 
 - Check that every intended source file has a corresponding overwrite file or a reason it was skipped.
 - Check official target-language localization coverage; fill obvious missing user-facing entries.
+- Compare source and translated file counts and flag byte-identical translated files for manual review.
+- Review translator reports; re-open any file from a batch with an empty or non-specific report.
 - Scan display fields for remaining source-language prose and readable terms that should have been translated.
+- Read representative samples from every translated file for multi-file work. For large files, sample start, middle, and end plus any scan-hit locations.
 - Check recurring readable terms for consistent translations across files.
+- Check that preserved source-language terms are limited to documented mod names, lookup-sensitive item names, acronyms, technical units, IDs, paths, commands, selectors, formatting codes, and other true technical tokens.
 - Confirm technical tokens were preserved, especially commands, IDs, tags, resource paths, and formatting codes.
 - Validate syntax with available tools where possible.
 - Compare old-vs-new translation trees for update tasks.
@@ -132,8 +147,13 @@ Translate player-facing prose and readable game/lore terms by default. Preserve
 IDs, commands, registry names, resource paths, tags, URLs, formatting
 codes, placeholders, selectors, and config keys. If a string mixes readable text
 and a technical token, translate the readable text and preserve only the
-technical token. Keep recurring readable terms consistent across files. Report
-changed files, intentionally untranslated terms, terminology decisions, and
+technical token. Use the provided terminology baseline and bundled localization
+references for official/common names. Do not leave generic UI, role, location,
+common item, or instruction words in the source language just because they are
+near a preserved mod or item name. Read every assigned file before editing, then
+read back representative start/middle/end samples after editing. Keep recurring
+readable terms consistent across files. Report changed files, intentionally
+untranslated terms with reasons, terminology decisions, read-back samples, and
 checks performed.
 ```
 
@@ -141,10 +161,13 @@ Validator prompt:
 
 ```text
 Independently validate the translated overwrite folder against the source
-server pack. Validate in read-only mode. Find uncovered user-facing source
-keys, remaining user-facing source-language text, inconsistent recurring
-terminology, translated technical tokens that should have been preserved,
-missing new files, stale removed files, and syntax risks. Return findings with
-file paths and line references. If clean, state that explicitly and list
-residual risks.
+server pack. Validate in read-only mode. Use scans only as triage; read
+representative samples from every translated file, and read scan-hit locations.
+Find uncovered user-facing source keys, byte-identical or untranslated files,
+remaining user-facing source-language text, unnecessary mixed-language display
+strings, inconsistent recurring terminology, translated technical tokens that
+should have been preserved, missing new files, stale removed files, and syntax
+risks. Distinguish justified preserved mod/item names from ordinary words that
+should be translated. Return findings with file paths and line references. If
+clean, state that explicitly and list residual risks.
 ```

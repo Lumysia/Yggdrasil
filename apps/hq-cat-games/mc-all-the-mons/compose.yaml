@@ -1,0 +1,26 @@
+services:
+  all-the-mons:
+    image: itzg/minecraft-server:${MC_JAVA_VERSION}
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    ports:
+      - ${MC_PORT}:25565/tcp
+    env_file:
+      - stack.env
+    environment:
+      RCON_PASSWORD: ${RCON_PASSWORD}
+    volumes:
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}_downloads:/downloads
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}_config:/config:ro
+    networks:
+      - shared_all_the_mons_net
+    deploy:
+      resources:
+        limits:
+          memory: ${MEMORY}
+
+networks:
+  shared_all_the_mons_net:
+    external: true

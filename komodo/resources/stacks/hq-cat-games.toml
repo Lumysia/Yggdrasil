@@ -14,6 +14,9 @@ pre_deploy.command = """
 if ! docker network inspect shared_cte2_net >/dev/null 2>&1; then
   docker network create shared_cte2_net
 fi
+if ! docker network inspect shared_all_the_mons_net >/dev/null 2>&1; then
+  docker network create shared_all_the_mons_net
+fi
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -69,6 +72,59 @@ pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
+"""
+
+##
+
+[[stack]]
+name = "hq-cat-games-mc-all-the-mons"
+tags = ["origin", "service"]
+[stack.config]
+server = "hq-cat-games"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/hq-cat-games/mc-all-the-mons"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+if ! docker network inspect shared_all_the_mons_net >/dev/null 2>&1; then
+  docker network create shared_all_the_mons_net
+fi
+mkdir -p /data/games/mc-all-the-mons_config/bluemap
+touch /data/games/mc-all-the-mons_config/bluemap/core.conf
+if grep -q '^accept-download:' /data/games/mc-all-the-mons_config/bluemap/core.conf; then
+  sed -i 's/^accept-download:.*/accept-download: true/' /data/games/mc-all-the-mons_config/bluemap/core.conf
+else
+  printf '\naccept-download: true\n' >> /data/games/mc-all-the-mons_config/bluemap/core.conf
+fi
+if [ -f overrides.zip ]; then
+  mkdir -p /data/games/mc-all-the-mons_config
+  rm -rf /tmp/mc-all-the-mons-overrides
+  mkdir -p /tmp/mc-all-the-mons-overrides
+  if command -v unzip >/dev/null 2>&1; then
+    unzip -o overrides.zip -d /tmp/mc-all-the-mons-overrides
+  else
+    python3 - <<'PY'
+import zipfile
+
+with zipfile.ZipFile('overrides.zip') as archive:
+    archive.extractall('/tmp/mc-all-the-mons-overrides')
+PY
+  fi
+  if [ -d /tmp/mc-all-the-mons-overrides/config ]; then
+    cp -a /tmp/mc-all-the-mons-overrides/config/. /data/games/mc-all-the-mons_config/
+  else
+    cp -a /tmp/mc-all-the-mons-overrides/. /data/games/mc-all-the-mons_config/
+  fi
+  rm -rf /tmp/mc-all-the-mons-overrides
+fi
+"""
+pre_deploy.shell_mode = true
+extra_args = ["--remove-orphans"]
+environment = """
+RCON_PASSWORD=[[HQCAT_GAMES_ALL_THE_MONS_RCONPWD]]
 """
 
 ##
