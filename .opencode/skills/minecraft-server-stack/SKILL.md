@@ -81,6 +81,7 @@ For Compose and Komodo wiring:
 - keep shared non-secret values in `stack.env`
 - keep `stack.env` limited to non-secret values, with internal-only service credentials as the narrow exception
 - use `env_file:` for `stack.env`
+- default Minecraft host port mappings to `25565:25565`; use a different host port only when the user explicitly requests it
 - avoid Docker named volumes and anonymous volumes for persistent/runtime mounts
 - prefer bind mounts to explicit host paths
 - use temporary host paths under `/tmp/<name>` for non-durable writable runtime mounts
