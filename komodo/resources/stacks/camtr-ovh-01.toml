@@ -45,7 +45,7 @@ additional_env_files = [
 ]
 pre_deploy.command = '''
 mkdir -p /data/media/downloads/qbittorrent/incomplete /data/media/movies /data/media/tvshows
-mkdir -p /data/appdata/plex /data/appdata/qbittorrent/qBittorrent /tmp/plex-transcode
+mkdir -p /data/appdata/plex /data/appdata/pulsarr /data/appdata/qbittorrent/qBittorrent /tmp/plex-transcode
 qbt_conf=/data/appdata/qbittorrent/qBittorrent/qBittorrent.conf
 current_port=
 if [ -f "$qbt_conf" ]; then
@@ -62,7 +62,7 @@ for arr in prowlarr radarr sonarr; do
   fi
 done
 chown -R 1000:1000 /data/media
-chown -R 1000:1000 /data/appdata/plex /tmp/plex-transcode
+chown -R 1000:1000 /data/appdata/plex /data/appdata/pulsarr /tmp/plex-transcode
 chown -R 1000:1000 /data/appdata/qbittorrent
 chmod -R u+rwX,g+rwX /data/media
 '''
