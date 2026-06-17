@@ -35,6 +35,7 @@ services:
       - stack.env
     environment:
       VERSION: docker
+      PLEX_CLAIM: ${PLEX_CLAIM}
 
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
