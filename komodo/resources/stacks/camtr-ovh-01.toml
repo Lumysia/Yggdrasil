@@ -70,28 +70,10 @@ auth:
   type: null
 EOF
 else
-  awk '
-    function close_section() {
-      if (section == "general" && !general_base) { print "  base_url: /bazarr"; general_base = 1 }
-      if (section == "auth" && !auth_type) { print "  type: null"; auth_type = 1 }
-    }
-    /^[^[:space:]#][^:]*:/ {
-      close_section()
-      section = $1
-      sub(":", "", section)
-      if (section == "general") general_seen = 1
-      if (section == "auth") auth_seen = 1
-    }
-    section == "general" && /^[[:space:]]+base_url:/ { print "  base_url: /bazarr"; general_base = 1; next }
-    section == "auth" && /^[[:space:]]+type:/ { print "  type: null"; auth_type = 1; next }
-    { print }
-    END {
-      close_section()
-      if (!general_seen) { print "general:"; print "  base_url: /bazarr" }
-      if (!auth_seen) { print "auth:"; print "  type: null" }
-    }
-  ' "$bazarr_conf" > "$bazarr_conf.tmp"
-  mv "$bazarr_conf.tmp" "$bazarr_conf"
+  sed -i \
+    -e '/^general:/,/^[^[:space:]#][^:]*:/ s|^\([[:space:]]*base_url:\).*|\1 /bazarr|' \
+    -e '/^auth:/,/^[^[:space:]#][^:]*:/ s|^\([[:space:]]*type:\).*|\1 null|' \
+    "$bazarr_conf"
 fi
 chown -R 1000:1000 /data/media
 chown -R 1000:1000 /data/appdata/bazarr /data/appdata/plex /data/appdata/pulsarr /tmp/plex-transcode
