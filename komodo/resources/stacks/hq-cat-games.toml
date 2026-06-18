@@ -103,11 +103,11 @@ if [ -f overrides.zip ]; then
   mkdir -p /data/games/mc-all-the-mons_config
   rm -rf /tmp/mc-all-the-mons-overrides
   mkdir -p /tmp/mc-all-the-mons-overrides
-  if ! command -v unzip >/dev/null 2>&1; then
-    echo "unzip is required to extract mc-all-the-mons overrides.zip" >&2
+  if ! command -v unar >/dev/null 2>&1; then
+    echo "unar is required to extract mc-all-the-mons overrides.zip" >&2
     exit 1
   fi
-  unzip -o overrides.zip -d /tmp/mc-all-the-mons-overrides
+  unar -force-overwrite -no-directory -output-directory /tmp/mc-all-the-mons-overrides overrides.zip
   if [ -d /tmp/mc-all-the-mons-overrides/config ]; then
     cp -a /tmp/mc-all-the-mons-overrides/config/. /data/games/mc-all-the-mons_config/
   else

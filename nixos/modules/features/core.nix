@@ -46,7 +46,6 @@
     # Base Packages
     environment.systemPackages = with pkgs; [
       zip
-      unzip
       unar
       tree
       btop
