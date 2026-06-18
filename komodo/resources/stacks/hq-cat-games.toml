@@ -99,22 +99,6 @@ if grep -q '^accept-download:' /data/games/mc-all-the-mons_config/bluemap/core.c
 else
   printf '\naccept-download: true\n' >> /data/games/mc-all-the-mons_config/bluemap/core.conf
 fi
-if [ -f overrides.zip ]; then
-  mkdir -p /data/games/mc-all-the-mons_config
-  rm -rf /tmp/mc-all-the-mons-overrides
-  mkdir -p /tmp/mc-all-the-mons-overrides
-  if ! command -v unar >/dev/null 2>&1; then
-    echo "unar is required to extract mc-all-the-mons overrides.zip" >&2
-    exit 1
-  fi
-  unar -force-overwrite -no-directory -output-directory /tmp/mc-all-the-mons-overrides overrides.zip
-  if [ -d /tmp/mc-all-the-mons-overrides/config ]; then
-    cp -a /tmp/mc-all-the-mons-overrides/config/. /data/games/mc-all-the-mons_config/
-  else
-    cp -a /tmp/mc-all-the-mons-overrides/. /data/games/mc-all-the-mons_config/
-  fi
-  rm -rf /tmp/mc-all-the-mons-overrides
-fi
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
