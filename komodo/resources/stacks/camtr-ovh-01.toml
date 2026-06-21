@@ -103,7 +103,8 @@ chown -R 1000:1000 \
   "$appdata_path/pulsarr" \
   "$appdata_path/qbittorrent" \
   /tmp/plex-transcode
-chmod -R u+rwX,g+rwX "$media_path" "$lingarr_config_dir"
+chmod -R u+rwX,g+rwX "$media_path"
+chmod -R a+rwX "$lingarr_config_dir"
 '''
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
