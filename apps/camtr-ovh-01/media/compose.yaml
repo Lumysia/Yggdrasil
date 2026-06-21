@@ -178,7 +178,6 @@ services:
   lingarr:
     image: ghcr.io/lingarr-translate/lingarr:latest
     restart: unless-stopped
-    user: ${PUID}:${PGID}
     networks:
       - shared_media_net
     volumes:
