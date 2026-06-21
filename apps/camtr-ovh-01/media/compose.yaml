@@ -190,7 +190,7 @@ services:
       AUTH_ENABLED: "false"
       BASE_PATH: /lingarr
       DB_CONNECTION: sqlite
-      SQLITE_DB_PATH: /app/config/Lingarr.db
+      SQLITE_DB_PATH: Lingarr.db
       DB_HANGFIRE_SQLITE_PATH: /app/config/Hangfire.db
       RADARR_URL: http://radarr:7878/radarr
       SONARR_URL: http://sonarr:8989/sonarr
