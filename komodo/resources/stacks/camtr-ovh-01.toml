@@ -44,9 +44,26 @@ additional_env_files = [
   { path = "stack.env", track = true }
 ]
 pre_deploy.command = '''
-mkdir -p /data/media/downloads/qbittorrent/incomplete /data/media/movies /data/media/tvshows
-mkdir -p /data/appdata/bazarr/config /data/appdata/lingarr /data/appdata/plex /data/appdata/pulsarr /data/appdata/qbittorrent/qBittorrent /tmp/plex-transcode
-qbt_conf=/data/appdata/qbittorrent/qBittorrent/qBittorrent.conf
+appdata_path=/data/appdata
+media_path=/data/media
+bazarr_config_dir="$appdata_path/bazarr/config"
+lingarr_config_dir="$appdata_path/lingarr"
+qbt_config_dir="$appdata_path/qbittorrent/qBittorrent"
+
+mkdir -p \
+  "$media_path/downloads/qbittorrent/incomplete" \
+  "$media_path/movies" \
+  "$media_path/tvshows" \
+  "$bazarr_config_dir" \
+  "$lingarr_config_dir" \
+  "$appdata_path/plex" \
+  "$appdata_path/pulsarr" \
+  "$qbt_config_dir" \
+  /tmp/plex-transcode
+
+touch "$lingarr_config_dir/Lingarr.db" "$lingarr_config_dir/Hangfire.db"
+
+qbt_conf="$qbt_config_dir/qBittorrent.conf"
 current_port=
 if [ -f "$qbt_conf" ]; then
   current_port=$(sed -n 's/^Session\\Port=//p' "$qbt_conf" | head -n 1)
@@ -55,13 +72,15 @@ cp qBittorrent.conf "$qbt_conf"
 if [ -n "$current_port" ]; then
   sed -i "s|^Session\\\\Port=.*|Session\\\\Port=$current_port|" "$qbt_conf"
 fi
+
 for arr in prowlarr radarr sonarr; do
-  arr_conf="/data/appdata/$arr/config.xml"
+  arr_conf="$appdata_path/$arr/config.xml"
   if [ -f "$arr_conf" ]; then
     sed -i 's|<AuthenticationMethod>None</AuthenticationMethod>|<AuthenticationMethod>External</AuthenticationMethod>|' "$arr_conf"
   fi
 done
-bazarr_conf=/data/appdata/bazarr/config/config.yaml
+
+bazarr_conf="$bazarr_config_dir/config.yaml"
 if [ ! -f "$bazarr_conf" ]; then
   cat > "$bazarr_conf" <<'EOF'
 general:
@@ -75,10 +94,16 @@ else
     -e '/^auth:/,/^[^[:space:]#][^:]*:/ s|^\([[:space:]]*type:\).*|\1 null|' \
     "$bazarr_conf"
 fi
-chown -R 1000:1000 /data/media
-chown -R 1000:1000 /data/appdata/bazarr /data/appdata/lingarr /data/appdata/plex /data/appdata/pulsarr /tmp/plex-transcode
-chown -R 1000:1000 /data/appdata/qbittorrent
-chmod -R u+rwX,g+rwX /data/media
+
+chown -R 1000:1000 \
+  "$media_path" \
+  "$appdata_path/bazarr" \
+  "$lingarr_config_dir" \
+  "$appdata_path/plex" \
+  "$appdata_path/pulsarr" \
+  "$appdata_path/qbittorrent" \
+  /tmp/plex-transcode
+chmod -R u+rwX,g+rwX "$media_path" "$lingarr_config_dir"
 '''
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
