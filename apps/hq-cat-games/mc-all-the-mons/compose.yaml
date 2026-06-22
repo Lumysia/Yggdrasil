@@ -21,6 +21,20 @@ services:
         limits:
           memory: ${MEMORY}
 
+  backups:
+    image: itzg/mc-backup:latest
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    environment:
+      RCON_PASSWORD: ${RCON_PASSWORD}
+    volumes:
+      - ${GAMES_PATH}/rclone:/config/rclone # Optional, only if using rclone
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data:ro
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}-backups:/backups
+    networks:
+      - shared_all_the_mons_net
+
 networks:
   shared_all_the_mons_net:
     external: true
