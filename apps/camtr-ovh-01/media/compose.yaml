@@ -27,7 +27,7 @@ services:
       caddy: media.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
       caddy.@bazarr.path: /bazarr /bazarr/*
-      caddy.@lingarr_referrer.header: Referer */lingarr/*
+      caddy.@lingarr_assets.path: /assets/* /favicon.ico /index-*.css /index-*.js /services-*.js /speculationrules.json
       caddy.@prowlarr.path: /prowlarr /prowlarr/*
       caddy.@pulsarr.path: /pulsarr /pulsarr/*
       caddy.@radarr.path: /radarr /radarr/*
@@ -52,7 +52,7 @@ services:
       caddy.8_handle_path: /lingarr/*
       caddy.8_handle_path.0_import: protected_forward_auth
       caddy.8_handle_path.1_reverse_proxy: lingarr:9876
-      caddy.9_handle: "@lingarr_referrer"
+      caddy.9_handle: "@lingarr_assets"
       caddy.9_handle.0_import: protected_forward_auth
       caddy.9_handle.1_reverse_proxy: lingarr:9876
       caddy.10_redir: /prowlarr /prowlarr/ 308
