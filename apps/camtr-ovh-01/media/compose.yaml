@@ -27,9 +27,7 @@ services:
       caddy: media.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
       caddy.@bazarr.path: /bazarr /bazarr/*
-      caddy.@lingarr.path: /lingarr /lingarr/*
-      caddy.@lingarr_assets.header: Referer */lingarr/*
-      caddy.@lingarr_assets.path: /assets/* /favicon.ico /index-*.css /index-*.js /services-*.js /speculationrules.json
+      caddy.@lingarr_referrer.header: Referer */lingarr/*
       caddy.@prowlarr.path: /prowlarr /prowlarr/*
       caddy.@pulsarr.path: /pulsarr /pulsarr/*
       caddy.@radarr.path: /radarr /radarr/*
@@ -51,10 +49,10 @@ services:
       caddy.6_handle.0_import: protected_forward_auth
       caddy.6_handle.1_reverse_proxy: bazarr:6767
       caddy.7_redir: /lingarr /lingarr/ 308
-      caddy.8_handle: "@lingarr"
-      caddy.8_handle.0_import: protected_forward_auth
-      caddy.8_handle.1_reverse_proxy: lingarr:9876
-      caddy.9_handle: "@lingarr_assets"
+      caddy.8_handle_path: /lingarr/*
+      caddy.8_handle_path.0_import: protected_forward_auth
+      caddy.8_handle_path.1_reverse_proxy: lingarr:9876
+      caddy.9_handle: "@lingarr_referrer"
       caddy.9_handle.0_import: protected_forward_auth
       caddy.9_handle.1_reverse_proxy: lingarr:9876
       caddy.10_redir: /prowlarr /prowlarr/ 308
@@ -193,7 +191,6 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:9876
       AUTH_ENABLED: "false"
-      BASE_PATH: /lingarr
       DB_CONNECTION: sqlite
       SQLITE_DB_PATH: Lingarr.db
       DB_HANGFIRE_SQLITE_PATH: /app/config/Hangfire.db
