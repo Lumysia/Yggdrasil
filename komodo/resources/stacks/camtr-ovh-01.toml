@@ -47,7 +47,6 @@ pre_deploy.command = '''
 appdata_path=/data/appdata
 media_path=/data/media
 bazarr_config_dir="$appdata_path/bazarr/config"
-lingarr_config_dir="$appdata_path/lingarr"
 qbt_config_dir="$appdata_path/qbittorrent/qBittorrent"
 
 mkdir -p \
@@ -55,13 +54,10 @@ mkdir -p \
   "$media_path/movies" \
   "$media_path/tvshows" \
   "$bazarr_config_dir" \
-  "$lingarr_config_dir" \
   "$appdata_path/plex" \
   "$appdata_path/pulsarr" \
   "$qbt_config_dir" \
   /tmp/plex-transcode
-
-touch "$lingarr_config_dir/Lingarr.db" "$lingarr_config_dir/Hangfire.db"
 
 qbt_conf="$qbt_config_dir/qBittorrent.conf"
 current_port=
@@ -98,13 +94,11 @@ fi
 chown -R 1000:1000 \
   "$media_path" \
   "$appdata_path/bazarr" \
-  "$lingarr_config_dir" \
   "$appdata_path/plex" \
   "$appdata_path/pulsarr" \
   "$appdata_path/qbittorrent" \
   /tmp/plex-transcode
 chmod -R u+rwX,g+rwX "$media_path"
-chmod -R u+rwX,g+rwX "$lingarr_config_dir"
 '''
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]

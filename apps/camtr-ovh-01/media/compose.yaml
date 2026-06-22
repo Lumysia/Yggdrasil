@@ -27,7 +27,6 @@ services:
       caddy: media.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
       caddy.@bazarr.path: /bazarr /bazarr/*
-      caddy.@lingarr_assets.path: /assets/* /favicon.ico /index-*.css /index-*.js /services-*.js /speculationrules.json
       caddy.@prowlarr.path: /prowlarr /prowlarr/*
       caddy.@pulsarr.path: /pulsarr /pulsarr/*
       caddy.@radarr.path: /radarr /radarr/*
@@ -48,31 +47,24 @@ services:
       caddy.6_handle: "@bazarr"
       caddy.6_handle.0_import: protected_forward_auth
       caddy.6_handle.1_reverse_proxy: bazarr:6767
-      caddy.7_redir: /lingarr /lingarr/ 308
-      caddy.8_handle_path: /lingarr/*
-      caddy.8_handle_path.0_import: protected_forward_auth
-      caddy.8_handle_path.1_reverse_proxy: lingarr:9876
-      caddy.9_handle: "@lingarr_assets"
-      caddy.9_handle.0_import: protected_forward_auth
-      caddy.9_handle.1_reverse_proxy: lingarr:9876
-      caddy.10_redir: /prowlarr /prowlarr/ 308
-      caddy.11_handle: "@prowlarr"
-      caddy.11_handle.0_import: protected_forward_auth
-      caddy.11_handle.1_reverse_proxy: prowlarr:9696
-      caddy.12_redir: /pulsarr /pulsarr/ 308
-      caddy.13_handle: "@pulsarr"
-      caddy.13_handle.0_import: protected_forward_auth
-      caddy.13_handle.1_reverse_proxy: pulsarr:3003
-      caddy.14_redir: /radarr /radarr/ 308
-      caddy.15_handle: "@radarr"
-      caddy.15_handle.0_import: protected_forward_auth
-      caddy.15_handle.1_reverse_proxy: radarr:7878
-      caddy.16_redir: /sonarr /sonarr/ 308
-      caddy.17_handle: "@sonarr"
-      caddy.17_handle.0_import: protected_forward_auth
-      caddy.17_handle.1_reverse_proxy: sonarr:8989
-      caddy.18_handle: /*
-      caddy.18_handle.reverse_proxy: "{{upstreams 32400}}"
+      caddy.7_redir: /prowlarr /prowlarr/ 308
+      caddy.8_handle: "@prowlarr"
+      caddy.8_handle.0_import: protected_forward_auth
+      caddy.8_handle.1_reverse_proxy: prowlarr:9696
+      caddy.9_redir: /pulsarr /pulsarr/ 308
+      caddy.10_handle: "@pulsarr"
+      caddy.10_handle.0_import: protected_forward_auth
+      caddy.10_handle.1_reverse_proxy: pulsarr:3003
+      caddy.11_redir: /radarr /radarr/ 308
+      caddy.12_handle: "@radarr"
+      caddy.12_handle.0_import: protected_forward_auth
+      caddy.12_handle.1_reverse_proxy: radarr:7878
+      caddy.13_redir: /sonarr /sonarr/ 308
+      caddy.14_handle: "@sonarr"
+      caddy.14_handle.0_import: protected_forward_auth
+      caddy.14_handle.1_reverse_proxy: sonarr:8989
+      caddy.15_handle: /*
+      caddy.15_handle.reverse_proxy: "{{upstreams 32400}}"
     volumes:
       - ${APPDATA_PATH}/plex:/config
       - ${MEDIA_PATH}:/data
@@ -177,25 +169,6 @@ services:
       - ${MEDIA_PATH}:/data
     env_file:
       - stack.env
-
-  lingarr:
-    image: ghcr.io/lingarr-translate/lingarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
-    volumes:
-      - ${APPDATA_PATH}/lingarr:/app/config
-      - ${MEDIA_PATH}:/data
-    env_file:
-      - stack.env
-    environment:
-      ASPNETCORE_URLS: http://+:9876
-      AUTH_ENABLED: "false"
-      DB_CONNECTION: sqlite
-      SQLITE_DB_PATH: Lingarr.db
-      DB_HANGFIRE_SQLITE_PATH: /app/config/Hangfire.db
-      RADARR_URL: http://radarr:7878/radarr
-      SONARR_URL: http://sonarr:8989/sonarr
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
