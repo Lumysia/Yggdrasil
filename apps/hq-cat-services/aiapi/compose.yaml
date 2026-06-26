@@ -23,29 +23,6 @@ services:
     networks:
       - shared_aiapi_net
 
-  free-llm-gateway:
-    build:
-      context: https://github.com/MrFadiAi/free-llm-gateway.git#main
-    restart: unless-stopped
-    environment:
-      HOST: 0.0.0.0
-      PORT: ${FREE_LLM_GATEWAY_PORT}
-      MASTER_KEY: ${FREE_LLM_GATEWAY_MASTER_KEY}
-      DEFAULT_RPM_LIMIT: ${FREE_LLM_GATEWAY_DEFAULT_RPM_LIMIT}
-      CACHE_TTL: ${FREE_LLM_GATEWAY_CACHE_TTL}
-      CACHE_MAX_SIZE: ${FREE_LLM_GATEWAY_CACHE_MAX_SIZE}
-      BATCH_MAX_SIZE: ${FREE_LLM_GATEWAY_BATCH_MAX_SIZE}
-    volumes:
-      - ${APPDATA_PATH}/free-llm-gateway/data:/app/data
-    networks:
-      - shared_aiapi_net
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
   sub2api:
     image: weishaw/sub2api:latest
     restart: unless-stopped
@@ -55,11 +32,8 @@ services:
       caddy.0_redir: /copilot /copilot/ 308
       caddy.1_handle_path: /copilot/*
       caddy.1_handle_path.reverse_proxy: copilot-api:4141
-      caddy.2_redir: /free /free/ 308
-      caddy.3_handle_path: /free/*
-      caddy.3_handle_path.reverse_proxy: free-llm-gateway:8080
-      caddy.4_handle: /*
-      caddy.4_handle.reverse_proxy: "{{upstreams 8080}}"
+      caddy.2_handle: /*
+      caddy.2_handle.reverse_proxy: "{{upstreams 8080}}"
     env_file:
       - stack.env
     environment:
