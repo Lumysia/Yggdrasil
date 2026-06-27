@@ -1,7 +1,7 @@
 [[builder]]
-name = "default"
+name = "cator-oracle-01-builder"
 [builder.config]
 type = "Server"
-params.server_id = "hq-cat-services"
+params.server = "cator-oracle-01"
 
 ##
