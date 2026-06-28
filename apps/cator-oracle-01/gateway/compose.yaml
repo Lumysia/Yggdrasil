@@ -11,6 +11,7 @@ services:
       - 443:443/udp
     networks:
       - shared_media_net
+      - shared_lunatv_net
       - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
@@ -111,6 +112,8 @@ networks:
   cloudflare_net:
     enable_ipv6: true
   shared_media_net:
+    external: true
+  shared_lunatv_net:
     external: true
   oauth2_proxy_intranet:
     internal: true

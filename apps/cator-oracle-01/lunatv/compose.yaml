@@ -1,0 +1,33 @@
+services:
+  lunatv:
+    image: ghcr.io/moontechlab/lunatv:latest
+    restart: unless-stopped
+    labels:
+      caddy: luna.${COMMON_DOMAIN_B}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    depends_on:
+      kvrocks:
+        condition: service_started
+    env_file:
+      - stack.env
+    environment:
+      PASSWORD: ${LUNATV_PASSWORD}
+      SITE_BASE: https://luna.${COMMON_DOMAIN_B}
+    networks:
+      - shared_lunatv_net
+      - intra_lunatv_net
+
+  kvrocks:
+    image: apache/kvrocks:latest
+    restart: unless-stopped
+    volumes:
+      - ${DB_PATH}/lunatv-kvrocks:/var/lib/kvrocks
+    networks:
+      - intra_lunatv_net
+
+networks:
+  shared_lunatv_net:
+    external: true
+  intra_lunatv_net:
+    internal: true
