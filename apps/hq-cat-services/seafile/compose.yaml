@@ -45,7 +45,7 @@ services:
       caddy.1_handle_path.reverse_proxy: seadoc:80
       caddy.2_handle_path: /notification*
       caddy.2_handle_path.reverse_proxy: notification-server:8083
-      caddy.3_handle.reverse_proxy: "{{upstreams 80}}"
+      caddy.5_handle.reverse_proxy: "{{upstreams 80}}"
     volumes:
       - ${BLOBSTORE_PATH}/seafile:/shared
     env_file:
@@ -119,10 +119,12 @@ services:
     image: onlyoffice/documentserver:latest
     restart: unless-stopped
     labels:
-      caddy: office.${COMMON_DOMAIN_A}
-      caddy.import: common_tls
+      caddy: seafile.${COMMON_DOMAIN_A}
       caddy.encode: zstd gzip
-      caddy.reverse_proxy: "{{upstreams 80}}"
+      caddy.3_redir: /onlyofficeds /onlyofficeds/ 308
+      caddy.4_handle_path: /onlyofficeds/*
+      caddy.4_handle_path.reverse_proxy: "{{upstreams 80}}"
+      caddy.4_handle_path.reverse_proxy.header_up: X-Forwarded-Host {host}/onlyofficeds
     environment:
       JWT_ENABLED: true
       JWT_SECRET: ${ONLYOFFICE_JWT_SECRET:?Variable is not set or empty}
