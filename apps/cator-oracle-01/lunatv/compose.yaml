@@ -22,7 +22,7 @@ services:
     image: apache/kvrocks:latest
     restart: unless-stopped
     volumes:
-      - ${DB_PATH}/lunatv-kvrocks:/var/lib/kvrocks
+      - ${DB_PATH}/lunatv-kvrocks:/var/lib/kvrocks/db
     networks:
       - intra_lunatv_net
 
