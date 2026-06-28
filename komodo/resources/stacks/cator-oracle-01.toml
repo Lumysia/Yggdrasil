@@ -83,6 +83,11 @@ run_directory = "apps/cator-oracle-01/lunatv"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
+pre_deploy.command = """
+mkdir -p /data/db/lunatv-kvrocks
+chown -R 999:999 /data/db/lunatv-kvrocks
+"""
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
