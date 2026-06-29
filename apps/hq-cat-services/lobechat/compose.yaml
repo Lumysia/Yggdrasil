@@ -68,7 +68,6 @@ services:
       AUTH_GENERIC_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
       AUTH_GENERIC_OIDC_SECRET: ${AUTH_GENERIC_OIDC_SECRET}
       QSTASH_TOKEN: ${QSTASH_TOKEN}
-      COHERE_API_KEY: ${COHERE_API_KEY}
     restart: always
     networks:
       - intra_lobechat_net
