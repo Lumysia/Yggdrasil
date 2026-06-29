@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 
 {
   options.features.virtualisation.docker.enable = lib.mkEnableOption "Docker Engine";
@@ -6,6 +6,7 @@
   config = lib.mkIf config.features.virtualisation.docker.enable {
     virtualisation.docker = {
       enable = true;
+      package = pkgs.docker_29;
       daemon.settings = {
         userland-proxy = false;
         no-new-privileges = true;
