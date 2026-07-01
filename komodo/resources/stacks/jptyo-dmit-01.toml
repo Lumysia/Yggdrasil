@@ -1,6 +1,6 @@
 [[stack]]
 name = "jptyo-dmit-01-gateway"
-tags = ["edge", "ingress"]
+tags = ["edge", "ingress", "deploy"]
 [stack.config]
 server = "jptyo-dmit-01"
 poll_for_updates = true
@@ -22,7 +22,7 @@ extra_args = ["--remove-orphans"]
 
 [[stack]]
 name = "jptyo-dmit-01-remnawave-node"
-tags = ["edge", "service"]
+tags = ["edge", "service", "deploy"]
 [stack.config]
 server = "jptyo-dmit-01"
 poll_for_updates = true
