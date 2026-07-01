@@ -19,16 +19,6 @@ enabled = true
 ##
 
 [[server]]
-name = "defra-vpshosting-01"
-tags = ["edge"]
-[server.config]
-address = "https://100.86.19.70:8120"
-region = "eu-central"
-enabled = true
-
-##
-
-[[server]]
 name = "hq-cat-core"
 tags = ["origin"]
 [server.config]
@@ -91,16 +81,6 @@ name = "jptyo-greencloud-02"
 tags = ["edge"]
 [server.config]
 address = "https://100.77.56.36:8120"
-region = "ap-northeast"
-enabled = true
-
-##
-
-[[server]]
-name = "jptyo-rfchost-01"
-tags = ["edge"]
-[server.config]
-address = "https://100.90.208.19:8120"
 region = "ap-northeast"
 enabled = true
 
