@@ -202,30 +202,30 @@ SUBSCRIPTION_PAGE_API_TOKEN=[[HQCAT_SERVICES_REMNAWAVE_SUBSCRIPTION_PAGE_API_TOK
 """
 ##
 
-[[stack]]
-name = "hq-cat-services-n8n"
-tags = ["origin", "service", "deploy"]
-[stack.config]
-server = "hq-cat-services"
-poll_for_updates = true
-auto_update = true
-linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/n8n"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
-pre_deploy.command = """
-mkdir -p /data/appdata/n8n /data/appdata/n8n-files
-chown -R 1000:1000 /data/appdata/n8n /data/appdata/n8n-files
-"""
-pre_deploy.shell_mode = true
-extra_args = ["--remove-orphans"]
-environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
-N8N_ENCRYPTION_KEY=[[HQCAT_SERVICES_N8N_ENCRYPTION_KEY]]
-N8N_SSO_OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_N8N_OIDC_CLIENT_SECRET]]
-"""
+# [[stack]]
+# name = "hq-cat-services-n8n"
+# tags = ["origin", "service", "deploy"]
+# [stack.config]
+# server = "hq-cat-services"
+# poll_for_updates = true
+# auto_update = true
+# linked_repo = "GitHub-Yggdrasil"
+# run_directory = "apps/hq-cat-services/n8n"
+# additional_env_files = [
+#   { path = "stack.env", track = true }
+# ]
+# pre_deploy.command = """
+# mkdir -p /data/appdata/n8n /data/appdata/n8n-files
+# chown -R 1000:1000 /data/appdata/n8n /data/appdata/n8n-files
+# """
+# pre_deploy.shell_mode = true
+# extra_args = ["--remove-orphans"]
+# environment = """
+# COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+# COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
+# N8N_ENCRYPTION_KEY=[[HQCAT_SERVICES_N8N_ENCRYPTION_KEY]]
+# N8N_SSO_OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_N8N_OIDC_CLIENT_SECRET]]
+# """
 
 ##
 
