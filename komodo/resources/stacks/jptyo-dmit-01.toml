@@ -1,0 +1,38 @@
+[[stack]]
+name = "jptyo-dmit-01-gateway"
+tags = ["edge", "ingress"]
+[stack.config]
+server = "jptyo-dmit-01"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/jptyo-dmit-01/gateway"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = """
+if ! docker network inspect shared_gateway_net >/dev/null 2>&1; then
+  docker network create shared_gateway_net
+fi
+"""
+pre_deploy.shell_mode = true
+extra_args = ["--remove-orphans"]
+
+##
+
+[[stack]]
+name = "jptyo-dmit-01-remnawave-node"
+tags = ["edge", "service"]
+[stack.config]
+server = "jptyo-dmit-01"
+poll_for_updates = true
+auto_update = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/jptyo-dmit-01/remnawave-node"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+extra_args = ["--remove-orphans"]
+environment = """
+REMNANODE_SECRET_KEY=[[JPTYO_DMIT_01_REMNANODE_SECRET_KEY]]
+"""

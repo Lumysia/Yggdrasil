@@ -87,6 +87,15 @@ enabled = true
 ##
 
 [[server]]
+name = "jptyo-dmit-01"
+tags = ["edge"]
+[server.config]
+region = "ap-northeast"
+enabled = false
+
+##
+
+[[server]]
 name = "uslax-dmit-01"
 tags = ["edge"]
 [server.config]
