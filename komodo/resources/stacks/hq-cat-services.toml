@@ -128,24 +128,24 @@ RENOVATE_TOKEN=[[HQCAT_SERVICES_FORGEJO_RENOVATE_TOKEN]]
 
 ##
 
-[[stack]]
-name = "hq-cat-services-immich"
-tags = ["origin", "service", "deploy"]
-[stack.config]
-server = "hq-cat-services"
-poll_for_updates = true
-auto_update = true
-linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-services/immich"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
-extra_args = ["--remove-orphans"]
-environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-DB_USERNAME=[[HQCAT_SERVICES_IMMICH_DBUSER]]
-DB_PASSWORD=[[HQCAT_SERVICES_IMMICH_DBPWD]]
-"""
+# [[stack]]
+# name = "hq-cat-services-immich"
+# tags = ["origin", "service", "deploy"]
+# [stack.config]
+# server = "hq-cat-services"
+# poll_for_updates = true
+# auto_update = true
+# linked_repo = "GitHub-Yggdrasil"
+# run_directory = "apps/hq-cat-services/immich"
+# additional_env_files = [
+#   { path = "stack.env", track = true }
+# ]
+# extra_args = ["--remove-orphans"]
+# environment = """
+# COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+# DB_USERNAME=[[HQCAT_SERVICES_IMMICH_DBUSER]]
+# DB_PASSWORD=[[HQCAT_SERVICES_IMMICH_DBPWD]]
+# """
 
 ##
 
