@@ -47,3 +47,92 @@ console.log("Tagged stack deployment check complete.");
 """
 
 ##
+
+[[action]]
+name = "Redeploy Entry Gateways"
+description = "Destroys all edge ingress gateway stacks, then deploys them again so injected gateway environment variables are reapplied."
+tags = ["system"]
+
+[action.config]
+file_contents = """
+const stacks = await komodo.read("ListFullStacks", {
+  query: {
+    tags: ["edge", "ingress"],
+  },
+});
+
+const gatewayStacks = stacks
+  .filter((stack) => {
+    const tags = stack.tags ?? [];
+    return (
+      stack.name.endsWith("-gateway") &&
+      tags.includes("edge") &&
+      tags.includes("ingress")
+    );
+  })
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+console.log(`Found ${gatewayStacks.length} entry gateway stack(s)`);
+
+if (!gatewayStacks.length) {
+  throw new Error("No entry gateway stacks found");
+}
+
+const failures: string[] = [];
+
+for (const stack of gatewayStacks) {
+  const stackName = stack.name;
+  console.log(`Destroying stack: ${stackName}`);
+
+  try {
+    const update = await komodo.execute_and_poll("DestroyStack", {
+      stack: stackName,
+    });
+
+    console.log(
+      `[${stackName}] destroy success=${update.success} operation=${update.operation}`,
+    );
+
+    if (!update.success) {
+      failures.push(`${stackName}:destroy`);
+    }
+  } catch (error) {
+    console.error(`[${stackName}] destroy failed`, error);
+    failures.push(`${stackName}:destroy`);
+  }
+}
+
+if (failures.length) {
+  throw new Error(`DestroyStack failed for: ${failures.join(", ")}`);
+}
+
+for (const stack of gatewayStacks) {
+  const stackName = stack.name;
+  console.log(`Deploying stack: ${stackName}`);
+
+  try {
+    const update = await komodo.execute_and_poll("DeployStack", {
+      stack: stackName,
+    });
+
+    console.log(
+      `[${stackName}] deploy success=${update.success} operation=${update.operation}`,
+    );
+
+    if (!update.success) {
+      failures.push(`${stackName}:deploy`);
+    }
+  } catch (error) {
+    console.error(`[${stackName}] deploy failed`, error);
+    failures.push(`${stackName}:deploy`);
+  }
+}
+
+if (failures.length) {
+  throw new Error(`DeployStack failed for: ${failures.join(", ")}`);
+}
+
+console.log("Entry gateway destroy/deploy complete.");
+"""
+
+##

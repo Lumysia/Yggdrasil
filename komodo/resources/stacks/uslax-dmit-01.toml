@@ -19,6 +19,7 @@ pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
+COMMON_ENTRY_GATEWAY_TLS_ROUTES=[[COMMON_ENTRY_GATEWAY_TLS_ROUTES]]
 """
 
 ##

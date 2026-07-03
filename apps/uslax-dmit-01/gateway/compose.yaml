@@ -29,6 +29,7 @@ services:
     env_file:
       - stack.env
     environment:
+      GATEWAY_TLS_ROUTES: ${COMMON_ENTRY_GATEWAY_TLS_ROUTES}
       GATEWAY_EXTRA_TLS_ROUTES: file.${COMMON_DOMAIN_B}=100.126.143.61:443
     entrypoint:
       - /bin/sh
