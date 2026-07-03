@@ -51,7 +51,7 @@ services:
         frontend gateway_http
           mode http
           bind [::]:${GATEWAY_HTTP_PORT} v4v6
-          http-request return status 400 hdr Server AkamaiGHost hdr Mime-Version 1.0 content-type text/html string "<HTML><HEAD><TITLE>Invalid URL</TITLE></HEAD><BODY><H1>Invalid URL</H1>The requested URL is invalid.</BODY></HTML>"
+          http-request return status 400 content-type text/plain string "Bad Request"
 
         frontend gateway_tls
           bind [::]:${GATEWAY_HTTPS_PORT} v4v6
