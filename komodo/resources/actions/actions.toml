@@ -55,21 +55,25 @@ tags = ["system"]
 
 [action.config]
 file_contents = """
-const stacks = await komodo.read("ListFullStacks", {
+const edgeStacks = await komodo.read("ListFullStacks", {
   query: {
-    tags: ["edge", "ingress"],
+    tags: ["edge"],
   },
 });
 
-const gatewayStacks = stacks
-  .filter((stack) => {
-    const tags = stack.tags ?? [];
-    return (
-      stack.name.endsWith("-gateway") &&
-      tags.includes("edge") &&
-      tags.includes("ingress")
-    );
-  })
+const ingressStacks = await komodo.read("ListFullStacks", {
+  query: {
+    tags: ["ingress"],
+  },
+});
+
+const ingressStackNames = new Set(ingressStacks.map((stack) => stack.name));
+
+const gatewayStacks = edgeStacks
+  .filter(
+    (stack) =>
+      stack.name.endsWith("-gateway") && ingressStackNames.has(stack.name),
+  )
   .sort((a, b) => a.name.localeCompare(b.name));
 
 console.log(`Found ${gatewayStacks.length} entry gateway stack(s)`);
