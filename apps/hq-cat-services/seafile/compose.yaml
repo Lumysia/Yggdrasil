@@ -36,7 +36,7 @@ services:
     # image: seafileltd/seafile-pro-mc:13.0-latest
     restart: unless-stopped
     labels:
-      caddy: seafile.${COMMON_DOMAIN_A}
+      caddy: cloud.${COMMON_DOMAIN_A}
       caddy.import: common_tls
       caddy.0_handle_path: /socket.io/*
       caddy.0_handle_path.0_rewrite: "* /socket.io{path}{query}"
@@ -56,8 +56,8 @@ services:
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
-      SEAFILE_SERVER_HOSTNAME: seafile.${COMMON_DOMAIN_A}
-      SEADOC_SERVER_URL: https://seafile.${COMMON_DOMAIN_A}/sdoc-server
+      SEAFILE_SERVER_HOSTNAME: cloud.${COMMON_DOMAIN_A}
+      SEADOC_SERVER_URL: https://cloud.${COMMON_DOMAIN_A}/sdoc-server
       ENABLE_SEAFILE_AI: ${ENABLE_SEAFILE_AI}
       SEAFILE_AI_SERVER_URL: ${SEAFILE_AI_SERVER_URL}
       SEAFILE_AI_SECRET_KEY: ${JWT_PRIVATE_KEY}
@@ -119,7 +119,7 @@ services:
     image: onlyoffice/documentserver:latest
     restart: unless-stopped
     labels:
-      caddy: seafile.${COMMON_DOMAIN_A}
+      caddy: cloud.${COMMON_DOMAIN_A}
       caddy.encode: zstd gzip
       caddy.3_redir: /onlyofficeds /onlyofficeds/ 308
       caddy.4_handle_path: /onlyofficeds/*
