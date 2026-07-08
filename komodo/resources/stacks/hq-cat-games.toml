@@ -99,6 +99,27 @@ if grep -q '^accept-download:' /data/games/mc-all-the-mons_config/bluemap/core.c
 else
   printf '\naccept-download: true\n' >> /data/games/mc-all-the-mons_config/bluemap/core.conf
 fi
+touch /data/games/mc-all-the-mons_config/rctmod-server.toml
+if grep -q '^initialLevelCap[[:space:]]*=' /data/games/mc-all-the-mons_config/rctmod-server.toml; then
+  sed -i 's/^initialLevelCap[[:space:]]*=.*/initialLevelCap = 100/' /data/games/mc-all-the-mons_config/rctmod-server.toml
+else
+  printf '\ninitialLevelCap = 100\n' >> /data/games/mc-all-the-mons_config/rctmod-server.toml
+fi
+if grep -q '^allowOverLeveling[[:space:]]*=' /data/games/mc-all-the-mons_config/rctmod-server.toml; then
+  sed -i 's/^allowOverLeveling[[:space:]]*=.*/allowOverLeveling = true/' /data/games/mc-all-the-mons_config/rctmod-server.toml
+else
+  printf 'allowOverLeveling = true\n' >> /data/games/mc-all-the-mons_config/rctmod-server.toml
+fi
+if grep -q '^initialSeries[[:space:]]*=' /data/games/mc-all-the-mons_config/rctmod-server.toml; then
+  sed -i 's/^initialSeries[[:space:]]*=.*/initialSeries = "freeroam"/' /data/games/mc-all-the-mons_config/rctmod-server.toml
+else
+  printf 'initialSeries = "freeroam"\n' >> /data/games/mc-all-the-mons_config/rctmod-server.toml
+fi
+if grep -q '^freeroamRequiresCompletedSeries[[:space:]]*=' /data/games/mc-all-the-mons_config/rctmod-server.toml; then
+  sed -i 's/^freeroamRequiresCompletedSeries[[:space:]]*=.*/freeroamRequiresCompletedSeries = false/' /data/games/mc-all-the-mons_config/rctmod-server.toml
+else
+  printf 'freeroamRequiresCompletedSeries = false\n' >> /data/games/mc-all-the-mons_config/rctmod-server.toml
+fi
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
