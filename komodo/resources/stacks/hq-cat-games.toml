@@ -110,16 +110,6 @@ if grep -q '^allowOverLeveling[[:space:]]*=' /data/games/mc-all-the-mons_config/
 else
   printf 'allowOverLeveling = true\n' >> /data/games/mc-all-the-mons_config/rctmod-server.toml
 fi
-if grep -q '^initialSeries[[:space:]]*=' /data/games/mc-all-the-mons_config/rctmod-server.toml; then
-  sed -i 's/^initialSeries[[:space:]]*=.*/initialSeries = "freeroam"/' /data/games/mc-all-the-mons_config/rctmod-server.toml
-else
-  printf 'initialSeries = "freeroam"\n' >> /data/games/mc-all-the-mons_config/rctmod-server.toml
-fi
-if grep -q '^freeroamRequiresCompletedSeries[[:space:]]*=' /data/games/mc-all-the-mons_config/rctmod-server.toml; then
-  sed -i 's/^freeroamRequiresCompletedSeries[[:space:]]*=.*/freeroamRequiresCompletedSeries = false/' /data/games/mc-all-the-mons_config/rctmod-server.toml
-else
-  printf 'freeroamRequiresCompletedSeries = false\n' >> /data/games/mc-all-the-mons_config/rctmod-server.toml
-fi
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
