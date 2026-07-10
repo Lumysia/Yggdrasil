@@ -12,6 +12,7 @@ services:
     environment:
       SERVER_PASSWORD: ${SERVER_PASSWORD}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      PUBLIC_IP: ${PUBLIC_IP}
     volumes:
       - ${GAMES_PATH}/palworld:/palworld
     deploy:
