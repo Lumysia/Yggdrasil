@@ -1,0 +1,6 @@
+{
+  "name": "app-stack",
+  "version": "0.1.0",
+  "description": "Use when adding or changing app Docker/Compose stacks, stack.env files, Komodo stack TOML, Caddy exposure, OAuth proxy wiring, bind mounts, or app env/path mapping.",
+  "skills": ["./"]
+}

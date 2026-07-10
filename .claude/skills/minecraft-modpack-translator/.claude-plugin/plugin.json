@@ -1,0 +1,6 @@
+{
+  "name": "minecraft-modpack-translator",
+  "version": "0.1.0",
+  "description": "Use when translating Minecraft modpack server-pack quest/config text from a ZIP or folder, creating overwrite folders for server deployment, or updating an older translation folder against a newer modpack.",
+  "skills": ["./"]
+}

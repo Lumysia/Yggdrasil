@@ -1,0 +1,6 @@
+{
+  "name": "nixos-host",
+  "version": "0.1.0",
+  "description": "Use when adding, removing, or changing NixOS host definitions under nixos/hosts, nixos/flake.nix nixosConfigurations, hostnames, or related Komodo server names.",
+  "skills": ["./"]
+}

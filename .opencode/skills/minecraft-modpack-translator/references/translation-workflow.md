@@ -57,6 +57,8 @@ Restricted automation:
 - Regex replacement across all files only for user-approved simple repeated phrases where the replacement is safe.
 - Unnecessary reformatting of structured config files.
 
+After any bulk find-replace of a proper noun, re-scan every touched file for mechanical residue: whitespace left at the boundary between the replacement and adjacent target-language text (a space meant to separate the source-language term from surrounding text is often wrong once that term is translated), duplicate-word collisions where the source text already had the translated word next to the replaced term, and literal in-game UI strings (button labels, exact click targets) that must stay in the source language because the player has to find them on screen.
+
 Keep syntax stable. Preserve indentation, line endings where practical, comments, field order, and non-translated tokens.
 
 ## Search And Names
@@ -75,6 +77,10 @@ Search within the provided source pack, extracted files, bundled archives, and u
 Treat proper nouns as translatable when they are visible story, place, creature, boss, faction, quest, or dimension names and a good target-language name exists or can be rendered naturally. Preserve a proper noun when translation would make gameplay harder to match with item names, in-game lookup tools, commands, registry IDs, or wiki references. Use target-language descriptions around preserved names when helpful.
 
 Build a terminology baseline before large translation batches. Prefer target-language localization bundled in the pack or mod archives, then established community terms, then clear common Minecraft terms. Record recurring decisions for dimensions, progression materials, UI roles, trainer/gym-like concepts, quest mechanics, and common items. Do not treat "lookup-sensitive" as a blanket reason to keep English: preserve exact mod names and true item names when needed, but translate generic prose words, visible UI roles, dimensions, common Minecraft items, mechanics, and title phrases when a target-language rendering is available.
+
+A term left untranslated consistently within one file is not proof of an intentional per-file style. Verify against the terminology baseline and other already-translated files before accepting it as deliberate: if the same term is already rendered in the target language anywhere else in the project (a master index/chapter list, a sibling file), that rendering wins project-wide. Only treat "kept in the source language" as a real convention when no other file in the project translates that same term.
+
+When a proper noun's translation is confirmed, collect every surface form before replacing it, not just the bare name: adjective forms, hyphenated or compound variants (e.g. "X Gear", "Apothic Y" for a mod named "Apotheosis"), and forms with different spacing or capitalization. A dictionary keyed only on the base term misses these and leaves them untranslated.
 
 For mixed strings, separate the technical token from the readable text. Translate the readable sentence around preserved names so the result reads naturally in the target language. A translated line that leaves ordinary words such as location names, role names, common item names, instructions, or UI phrases in the source language is incomplete unless the validator report explicitly justifies each remaining term.
 
@@ -95,6 +101,7 @@ Direct work by the main agent is appropriate only for small tasks. When the work
 9. Track recurring terminology decisions that need consistency across files.
 10. Dispatch a separate validator after translators claim completion.
 11. Fix validator findings before calling the translation finished.
+12. When resuming a background subagent after an interruption (rate limit, error), confirm the target agent ID matches the intended task before sending it a follow-up — do not rely on message order or dispatch sequence.
 
 The validator must be independent from the translation subagents. Completion requires validator results in addition to translator self-reporting.
 
@@ -135,6 +142,7 @@ Before reporting completion:
 - Run a final independent validator for multi-file work.
 - Fix validator findings or clearly report intentionally untranslated terms.
 - Package the validated overwrite contents into a ZIP archive and report the ZIP path.
+- Do not report a file, batch, or the whole task as verified based on scan/diff output alone. Read full files, not only scan-flagged lines, before claiming completion — scans miss compound phrases outside a fixed term list and miss mechanical artifacts left by bulk edits.
 
 ## Subagent Prompts
 
