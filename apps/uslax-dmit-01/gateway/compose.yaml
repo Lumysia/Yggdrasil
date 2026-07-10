@@ -137,6 +137,38 @@ services:
 
         exec haproxy -f /tmp/haproxy.cfg
 
+  udp-relay:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - stack.env
+    entrypoint:
+      - /bin/sh
+      - -ec
+    command:
+      - |
+        cat > /tmp/nginx.conf <<EOF
+        worker_processes auto;
+
+        error_log /dev/stderr notice;
+        pid /tmp/nginx.pid;
+
+        events {
+          worker_connections 4096;
+        }
+
+        stream {
+          server {
+            listen [::]:$${GATEWAY_PALWORLD_UDP_PORT} udp reuseport ipv6only=off;
+            proxy_timeout 10m;
+            proxy_pass $${GATEWAY_PALWORLD_UDP_TARGET};
+          }
+        }
+        EOF
+
+        exec nginx -c /tmp/nginx.conf -g 'daemon off;'
+
 networks:
   shared_gateway_net:
     external: true
