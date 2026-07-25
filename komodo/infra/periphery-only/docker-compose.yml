@@ -9,6 +9,7 @@ services:
       - ${KOMODO_INFRA_DATA_DIR}/komodo-keys:/config/keys
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
+      - /sys:/sys:ro
       - ${KOMODO_INFRA_DATA_DIR}/komodo-periphery:/etc/komodo
       - /data:/data
     environment:
