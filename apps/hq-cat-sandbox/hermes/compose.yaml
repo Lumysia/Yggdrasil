@@ -31,7 +31,7 @@ services:
       - shared_hermes1_net
 
   camofox1:
-    image: ghcr.io/jo-inc/camofox-browser:1.13.0
+    image: ghcr.io/jo-inc/camofox-browser:latest
     restart: unless-stopped
     shm_size: 2g
     environment:
@@ -81,7 +81,7 @@ services:
       - shared_hermes2_net
 
   camofox2:
-    image: ghcr.io/jo-inc/camofox-browser:1.13.0
+    image: ghcr.io/jo-inc/camofox-browser:latest
     restart: unless-stopped
     shm_size: 2g
     environment:
