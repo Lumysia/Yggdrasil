@@ -21,7 +21,8 @@ services:
         not path /oauth2/* /camofox /camofox/*
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.1_redir: /camofox /camofox/vnc.html?path=camofox/websockify 308
+      caddy.@camofox_root.path: /camofox /camofox/
+      caddy.1_redir: "@camofox_root /camofox/vnc.html?path=camofox/websockify 308"
       caddy.2_route: /camofox/*
       caddy.2_route.0_import: protected_forward_auth
       caddy.2_route.1_uri: strip_prefix /camofox
@@ -71,7 +72,8 @@ services:
         not path /oauth2/* /camofox /camofox/*
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.1_redir: /camofox /camofox/vnc.html?path=camofox/websockify 308
+      caddy.@camofox_root.path: /camofox /camofox/
+      caddy.1_redir: "@camofox_root /camofox/vnc.html?path=camofox/websockify 308"
       caddy.2_route: /camofox/*
       caddy.2_route.0_import: protected_forward_auth
       caddy.2_route.1_uri: strip_prefix /camofox
