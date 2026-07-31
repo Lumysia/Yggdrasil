@@ -9,6 +9,7 @@
 	"tagOwners": {
 		"tag:placeholder":       ["autogroup:admin"],
 		"tag:pve-nodes":         ["autogroup:admin"],
+		"tag:routers":           ["autogroup:admin"],
 		"tag:komodo-core":       ["autogroup:admin"],
 		"tag:komodo-nodes":      ["autogroup:admin"],
 		"tag:edge-relay":        ["autogroup:admin"],
@@ -25,8 +26,13 @@
 	"grants": [
 		{
 			"src": ["autogroup:admin"],
-			"dst": ["tag:pve-nodes", "tag:komodo-core", "tag:komodo-nodes"],
+			"dst": ["tag:pve-nodes", "tag:routers", "tag:komodo-core", "tag:komodo-nodes"],
 			"ip":  ["tcp:22"],
+		},
+		{
+			"src": ["autogroup:admin"],
+			"dst": ["tag:routers"],
+			"ip":  ["tcp:80", "tcp:443"],
 		},
 		{
 			"src": ["autogroup:admin"],
