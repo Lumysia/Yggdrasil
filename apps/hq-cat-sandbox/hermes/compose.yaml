@@ -15,11 +15,7 @@ services:
     labels:
       caddy: hms1api.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.@hermes: |-
-        not path /oauth2/*
-      caddy.0_handle: /oauth2/*
-      caddy.0_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.1_reverse_proxy: "@hermes {{upstreams 8642}}"
+      caddy.reverse_proxy: "{{upstreams 8642}}"
     networks:
       - shared_hermes1_net
 
@@ -39,11 +35,7 @@ services:
     labels:
       caddy: hms2api.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.@hermes: |-
-        not path /oauth2/*
-      caddy.0_handle: /oauth2/*
-      caddy.0_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.1_reverse_proxy: "@hermes {{upstreams 8642}}"
+      caddy.reverse_proxy: "{{upstreams 8642}}"
     networks:
       - shared_hermes2_net
 
