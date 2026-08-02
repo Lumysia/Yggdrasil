@@ -7,8 +7,6 @@ services:
       - stack.env
     environment:
       API_SERVER_KEY: ${HERMES1_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES1_API_SERVER_KEY in Komodo}
-      CAMOFOX_URL: http://camofox1:9377
-      CAMOFOX_API_KEY: ${HERMES1_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES1_API_SERVER_KEY in Komodo}
       TELEGRAM_ALLOWED_USERS: ${HERMES1_TELEGRAM_ALLOWED_USERS}
       TELEGRAM_BOT_TOKEN: ${HERMES1_TELEGRAM_BOT_TOKEN}
     volumes:
@@ -18,35 +16,10 @@ services:
       caddy: hms1api.${COMMON_DOMAIN_A}
       caddy.import: common_tls
       caddy.@hermes: |-
-        not path /oauth2/* /camofox /camofox/*
+        not path /oauth2/*
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.@camofox_root.path: /camofox /camofox/
-      caddy.1_redir: "@camofox_root /camofox/vnc.html?path=camofox/websockify 308"
-      caddy.2_route: /camofox/*
-      caddy.2_route.0_import: protected_forward_auth
-      caddy.2_route.1_uri: strip_prefix /camofox
-      caddy.2_route.2_reverse_proxy: camofox1:6080
-      caddy.3_reverse_proxy: "@hermes {{upstreams 8642}}"
-    networks:
-      - shared_hermes1_net
-
-  camofox1:
-    image: ghcr.io/jo-inc/camofox-browser:latest
-    restart: unless-stopped
-    shm_size: 2g
-    environment:
-      NODE_ENV: production
-      CAMOFOX_BIND_HOST: 0.0.0.0
-      CAMOFOX_PORT: "9377"
-      ENABLE_VNC: "1"
-      VNC_BIND: 0.0.0.0
-      NOVNC_PORT: "6080"
-      CAMOFOX_CRASH_REPORT_ENABLED: "false"
-      CAMOFOX_ACCESS_KEY: ${HERMES1_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES1_API_SERVER_KEY in Komodo}
-      CAMOFOX_API_KEY: ${HERMES1_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES1_API_SERVER_KEY in Komodo}
-    volumes:
-      - ${APPDATA_PATH}/camofox1:/root/.camofox
+      caddy.1_reverse_proxy: "@hermes {{upstreams 8642}}"
     networks:
       - shared_hermes1_net
 
@@ -58,8 +31,6 @@ services:
       - stack.env
     environment:
       API_SERVER_KEY: ${HERMES2_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES2_API_SERVER_KEY in Komodo}
-      CAMOFOX_URL: http://camofox2:9377
-      CAMOFOX_API_KEY: ${HERMES2_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES2_API_SERVER_KEY in Komodo}
       TELEGRAM_ALLOWED_USERS: ${HERMES2_TELEGRAM_ALLOWED_USERS}
       TELEGRAM_BOT_TOKEN: ${HERMES2_TELEGRAM_BOT_TOKEN}
     volumes:
@@ -69,35 +40,10 @@ services:
       caddy: hms2api.${COMMON_DOMAIN_A}
       caddy.import: common_tls
       caddy.@hermes: |-
-        not path /oauth2/* /camofox /camofox/*
+        not path /oauth2/*
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
-      caddy.@camofox_root.path: /camofox /camofox/
-      caddy.1_redir: "@camofox_root /camofox/vnc.html?path=camofox/websockify 308"
-      caddy.2_route: /camofox/*
-      caddy.2_route.0_import: protected_forward_auth
-      caddy.2_route.1_uri: strip_prefix /camofox
-      caddy.2_route.2_reverse_proxy: camofox2:6080
-      caddy.3_reverse_proxy: "@hermes {{upstreams 8642}}"
-    networks:
-      - shared_hermes2_net
-
-  camofox2:
-    image: ghcr.io/jo-inc/camofox-browser:latest
-    restart: unless-stopped
-    shm_size: 2g
-    environment:
-      NODE_ENV: production
-      CAMOFOX_BIND_HOST: 0.0.0.0
-      CAMOFOX_PORT: "9377"
-      ENABLE_VNC: "1"
-      VNC_BIND: 0.0.0.0
-      NOVNC_PORT: "6080"
-      CAMOFOX_CRASH_REPORT_ENABLED: "false"
-      CAMOFOX_ACCESS_KEY: ${HERMES2_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES2_API_SERVER_KEY in Komodo}
-      CAMOFOX_API_KEY: ${HERMES2_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES2_API_SERVER_KEY in Komodo}
-    volumes:
-      - ${APPDATA_PATH}/camofox2:/root/.camofox
+      caddy.1_reverse_proxy: "@hermes {{upstreams 8642}}"
     networks:
       - shared_hermes2_net
 
