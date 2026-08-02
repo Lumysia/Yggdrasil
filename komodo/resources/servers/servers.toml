@@ -87,16 +87,6 @@ enabled = true
 ##
 
 [[server]]
-name = "jptyo-dmit-01"
-tags = ["edge"]
-[server.config]
-address = "https://100.81.80.29:8120"
-region = "ap-northeast"
-enabled = true
-
-##
-
-[[server]]
 name = "uslax-dmit-01"
 tags = ["edge"]
 [server.config]
