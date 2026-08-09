@@ -81,7 +81,7 @@ services:
       # PLEX_CLAIM: ${PLEX_CLAIM}
 
   hometube:
-    image: ghcr.io/egalitarianmonkey/hometube:2.10.0
+    image: ghcr.io/egalitarianmonkey/hometube:latest
     restart: unless-stopped
     networks:
       - shared_media_net
