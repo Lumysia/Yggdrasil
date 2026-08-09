@@ -88,7 +88,6 @@ services:
     volumes:
       - ${MEDIA_PATH}/youtube:/data/videos
       - /tmp/youtube:/data/tmp
-      - ${APPDATA_PATH}/youtube:/config
     env_file:
       - stack.env
     environment:
