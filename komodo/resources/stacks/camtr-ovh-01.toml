@@ -48,6 +48,9 @@ appdata_path=/data/appdata
 media_path=/data/media
 bazarr_config_dir="$appdata_path/bazarr/config"
 qbt_config_dir="$appdata_path/qbittorrent/qBittorrent"
+youtube_config_dir="$appdata_path/youtube"
+youtube_media_dir="$media_path/youtube"
+youtube_tmp_dir=/tmp/youtube
 
 mkdir -p \
   "$media_path/downloads/qbittorrent/incomplete" \
@@ -57,6 +60,9 @@ mkdir -p \
   "$appdata_path/plex" \
   "$appdata_path/pulsarr" \
   "$qbt_config_dir" \
+  "$youtube_config_dir" \
+  "$youtube_media_dir" \
+  "$youtube_tmp_dir" \
   /tmp/plex-transcode
 
 qbt_conf="$qbt_config_dir/qBittorrent.conf"
@@ -97,6 +103,9 @@ chown -R 1000:1000 \
   "$appdata_path/plex" \
   "$appdata_path/pulsarr" \
   "$appdata_path/qbittorrent" \
+  "$youtube_config_dir" \
+  "$youtube_media_dir" \
+  "$youtube_tmp_dir" \
   /tmp/plex-transcode
 chmod -R u+rwX,g+rwX "$media_path"
 '''

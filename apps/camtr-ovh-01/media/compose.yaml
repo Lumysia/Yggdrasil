@@ -31,6 +31,7 @@ services:
       caddy.@pulsarr.path: /pulsarr /pulsarr/*
       caddy.@radarr.path: /radarr /radarr/*
       caddy.@sonarr.path: /sonarr /sonarr/*
+      caddy.@hometube.path: /hometube /hometube/*
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
       caddy.1_redir: /qbt /qbt/ 308
@@ -63,8 +64,12 @@ services:
       caddy.14_handle: "@sonarr"
       caddy.14_handle.0_import: protected_forward_auth
       caddy.14_handle.1_reverse_proxy: sonarr:8989
-      caddy.15_handle: /*
-      caddy.15_handle.reverse_proxy: "{{upstreams 32400}}"
+      caddy.15_redir: /hometube /hometube/ 308
+      caddy.16_handle: "@hometube"
+      caddy.16_handle.0_import: protected_forward_auth
+      caddy.16_handle.1_reverse_proxy: hometube:8501
+      caddy.17_handle: /*
+      caddy.17_handle.reverse_proxy: "{{upstreams 32400}}"
     volumes:
       - ${APPDATA_PATH}/plex:/config
       - ${MEDIA_PATH}:/data
@@ -74,6 +79,29 @@ services:
     environment:
       VERSION: docker
       # PLEX_CLAIM: ${PLEX_CLAIM}
+
+  hometube:
+    image: ghcr.io/egalitarianmonkey/hometube:2.10.0
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    volumes:
+      - ${MEDIA_PATH}/youtube:/data/videos
+      - /tmp/youtube:/data/tmp
+      - ${APPDATA_PATH}/youtube:/config
+    env_file:
+      - stack.env
+    environment:
+      STREAMLIT_SERVER_BASE_URL_PATH: hometube
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/hometube/_stcore/health', timeout=5).read()"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # jellyfin:
   #   image: lscr.io/linuxserver/jellyfin:latest
