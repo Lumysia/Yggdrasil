@@ -87,7 +87,6 @@ services:
       - shared_media_net
     volumes:
       - ${MEDIA_PATH}/youtube:/data/videos
-      - /tmp/youtube:/data/tmp
     env_file:
       - stack.env
     environment:

@@ -58,7 +58,6 @@ mkdir -p \
   "$appdata_path/pulsarr" \
   "$qbt_config_dir" \
   "$media_path/youtube" \
-  /tmp/youtube \
   /tmp/plex-transcode
 
 qbt_conf="$qbt_config_dir/qBittorrent.conf"
@@ -99,7 +98,6 @@ chown -R 1000:1000 \
   "$appdata_path/plex" \
   "$appdata_path/pulsarr" \
   "$appdata_path/qbittorrent" \
-  /tmp/youtube \
   /tmp/plex-transcode
 chmod -R u+rwX,g+rwX "$media_path"
 '''
