@@ -1,4 +1,16 @@
 services:
+  searxng:
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    environment:
+      FORCE_OWNERSHIP: "false"
+    configs:
+      - source: searxng_settings
+        target: /etc/searxng/settings.yml
+    networks:
+      - shared_hermes1_net
+      - shared_hermes2_net
+
   hermes1:
     image: nousresearch/hermes-agent:latest
     restart: unless-stopped
@@ -44,3 +56,7 @@ networks:
     external: true
   shared_hermes2_net:
     external: true
+
+configs:
+  searxng_settings:
+    file: ./searxng-settings.yml
