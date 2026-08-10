@@ -59,4 +59,10 @@ networks:
 
 configs:
   searxng_settings:
-    file: ./searxng-settings.yml
+    content: |
+      use_default_settings: true
+
+      search:
+        formats:
+          - html
+          - json
