@@ -66,3 +66,6 @@ configs:
         formats:
           - html
           - json
+
+      server:
+        secret_key: internal-hermes-search-instance
