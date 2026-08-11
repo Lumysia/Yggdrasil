@@ -14,7 +14,6 @@ services:
       - shared_seafile_net
       - shared_immich_net
       - shared_forgejo_net
-      - shared_lobechat_net
       - shared_remnawave_net
       - shared_n8n_net
       - shared_openlist_net
@@ -135,8 +134,6 @@ networks:
   shared_immich_net:
     external: true
   shared_forgejo_net:
-    external: true
-  shared_lobechat_net:
     external: true
   shared_remnawave_net:
     external: true

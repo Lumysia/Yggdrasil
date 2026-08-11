@@ -1,231 +1,101 @@
-# 🌳 Yggdrasil
+# Yggdrasil
 
-![NixOS](https://img.shields.io/badge/NixOS-25.11-5277C3?logo=nixos&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
-![Komodo](https://img.shields.io/badge/Komodo-Orchestrator-4A154B)
-![Tailscale](https://img.shields.io/badge/Tailscale-Mesh_VPN-5865F2?logo=tailscale&logoColor=white)
-![Caddy](https://img.shields.io/badge/Caddy-Reverse_Proxy-00ADD8)
-![SOPS](https://img.shields.io/badge/SOPS-Secrets-FF6F00?logo=mozilla&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)
-![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
+Yggdrasil is the repository I use to manage NixOS hosts and container workloads. Host configuration, Compose stacks, orchestration resources, and network policy are versioned together so changes to the running environment can be traced back to Git.
 
-## Overview
+This README describes how the repository is organized and operated. It does not maintain a separate service inventory. The contents of `apps/` and `komodo/resources/` are the source of truth for what is deployed.
 
-Yggdrasil is a **declarative infrastructure monorepo** that manages the complete lifecycle of a multi-region, multi-host homelab and cloud environment. It solves three core problems:
+## Repository layout
 
-1. **Configuration Drift** — Every host is defined as a reproducible NixOS flake. OS-level state is version-controlled, auditable, and rebuildable from scratch with a single command.
-2. **Service Sprawl** — All Docker Compose stacks live alongside their host definitions in a single repository. [Komodo](https://komo.do) watches the repo, syncs changes, and rolls out updates automatically — eliminating manual `docker compose pull && up` sessions across a fleet.
-3. **Secrets & Network Trust** — Tailscale provides an encrypted mesh between all nodes, Caddy terminates TLS with Cloudflare DNS challenges, and SOPS+age encrypts secrets at rest in the repo. No plaintext credentials ever touch Git.
-
-### Use Cases
-
-- Hosting self-managed services (Git forge, file sync, photo management, AI APIs, game servers) across on-premises and cloud nodes.
-- Running a personal desktop workstation from the same Nix flake used for headless servers.
-- Achieving GitOps-style continuous deployment for Docker stacks without Kubernetes overhead.
-
-## Architecture / System Design
-
-```mermaid
-graph TB
-    subgraph "GitHub"
-        GH_REPO["Lumysia/Yggdrasil<br/><i>Single Source of Truth</i>"]
-        GH_CI["CI Pipeline"]
-    end
-
-    GH_REPO --> GH_CI
-    GH_REPO --> KOMODO_CORE
-
-    subgraph "Control Plane"
-        KOMODO_CORE["Orchestrator"]
-        IDENTITY["Identity & DNS"]
-        EDGE["Edge Proxy"]
-    end
-
-    subgraph "Service Plane"
-        SERVICES["Application Stacks"]
-        GAMES["Game Stacks"]
-        SANDBOX["Sandbox & Experiments"]
-    end
-
-    subgraph "Regional Nodes"
-        CA["Canada Nodes"]
-        US["US Nodes"]
-        JP["Japan Nodes"]
-    end
-
-    KOMODO_CORE -- "Deploys over mesh" --> SERVICES
-    KOMODO_CORE -- "Deploys over mesh" --> GAMES
-    KOMODO_CORE -- "Deploys over mesh" --> SANDBOX
-    KOMODO_CORE -- "Deploys over mesh" --> CA
-    KOMODO_CORE -- "Deploys over mesh" --> US
-    KOMODO_CORE -- "Deploys over mesh" --> JP
-
-    IDENTITY --> EDGE
-    SERVICES --> EDGE
-    EDGE -- "Public ingress" --> CF["Cloudflare Edge"]
-```
-
-### Data Flow
-
-1. A commit is pushed to `main`. GitHub Actions validates every NixOS host configuration with `nix flake check` and a dry-run build matrix.
-2. Every 6 hours, Komodo's **"Run Sync and Deploy"** procedure pulls the latest commit, diffs all stack definitions, and deploys changed stacks to their target servers.
-3. Each server runs a **Komodo Periphery** agent reachable only via its Tailscale address (`100.x.y.z:8120`). The core authenticates periphery connections using rotating Ed25519 key pairs.
-4. Public-facing services are exposed through **Caddy** (automatic TLS via Cloudflare DNS-01) and optionally tunnelled through **Cloudflare Tunnels** for DDoS protection.
-
-## Key Features
-
-- **Fully Declarative OS Layer** — NixOS flakes with a modular feature-flag system (`features.*.enable`). Add Docker, Tailscale, or GNOME to any host by toggling a boolean.
-- **GitOps for Docker Stacks** — Komodo syncs resource definitions from `komodo/resources/` and auto-deploys stacks tagged `deploy`. No `kubectl`, no Helm — just Compose files and TOML.
-- **Zero-Trust Networking** — All inter-node communication traverses a Tailscale WireGuard mesh. SSH is key-only. Docker daemon runs with `no-new-privileges`. Periphery endpoints require mutual TLS.
-- **Secrets Never Leave the Repo Unencrypted** — SOPS with age encryption for NixOS secrets; Komodo variable interpolation (`[[VAR]]` syntax) for Docker stack secrets injected at deploy time.
-- **Automated Maintenance Pipeline** — Daily Komodo procedures handle database backups, global container image updates, and server key rotation. Weekly GitHub Actions update the Nix flake lock and Docker Compose images via Dependabot.
-- **Multi-Region, Multi-Provider Fleet** — Nodes span on-premises hardware, OVH, Oracle Cloud, DMIT, and GreenCloud across Canada, US, and Japan.
-- **Desktop-as-Code** — The `kawaii` host proves the same flake can drive a full GNOME desktop with Nvidia drivers, Steam, Flatpak apps, Secure Boot (Lanzaboote), and CJK input methods.
-- **Ntfy Alerting** — Server unreachable, CPU/memory/disk thresholds, container state changes, failed builds, and pending sync updates all push to an Ntfy topic.
-
-## Tech Stack
-
-| Layer | Technologies |
+| Path | Contents |
 |---|---|
-| **OS / IaC** | NixOS 25.11, Nix Flakes, Home Manager, Lanzaboote (Secure Boot) |
-| **Secrets** | SOPS, age, sops-nix |
-| **Containers** | Docker Engine, Docker Compose, Podman (optional) |
-| **Orchestration** | Komodo (Core + Periphery), Watchtower |
-| **Reverse Proxy** | Caddy (Docker Proxy mode), Cloudflare Tunnels |
-| **Networking** | Tailscale (WireGuard mesh), EasyTier, Cloudflare |
-| **DNS** | AdGuard Home |
-| **Identity** | Pocket ID (OIDC), OAuth2 Proxy |
-| **CI/CD** | GitHub Actions, Dependabot |
-| **Alerting** | Ntfy |
-| **Self-Hosted Services** | Forgejo, Immich, Seafile, OnlyOffice, LobeChat, Dokploy |
-| **Game Servers** | Minecraft (itzg), Palworld |
+| `apps/` | Docker Compose stacks, grouped by target host |
+| `komodo/infra/` | Compose definitions used to run the control plane and host agents |
+| `komodo/resources/` | Servers, stacks, procedures, actions, and other resources imported by Komodo |
+| `nixos/` | The Nix flake, host definitions, shared modules, and encrypted secret declarations |
+| `tailscale/` | Tailnet access policy |
+| `nixos-rebuild.sh` | Wrapper for NixOS installation and rebuilds |
+| `komodo-infra-mgnt.sh` | Wrapper for starting and managing Komodo infrastructure |
 
-## Prerequisites
+## How it works
 
-| Requirement | Notes |
-|---|---|
-| **NixOS** | Hosts must be installed with NixOS. The flake targets `nixos-25.11` stable. |
-| **Nix (with Flakes)** | `nix-command` and `flakes` experimental features must be enabled (handled by [`core.nix`](nixos/modules/features/core.nix:9)). |
-| **Git** | The rebuild script validates it is running inside a Git work tree. |
-| **SOPS + age** | An age key must be placed at `/var/lib/sops-nix/key.txt` on each host that decrypts secrets. |
-| **Tailscale Account** | Each node must be authenticated to your Tailnet with `tailscale up --authkey`. |
-| **Komodo Core** | One node (typically `hq-cat-core`) runs the Komodo Core stack with MongoDB. |
-| **Cloudflare Account** | Required for DNS-01 TLS challenges and optional tunnel ingress. |
-| **Docker** | Installed declaratively via [`docker.nix`](nixos/modules/features/virtualisation/docker.nix:1) on server hosts. |
+Each machine has a NixOS configuration under `nixos/hosts/` and a matching entry in `nixos/flake.nix`. Shared behavior belongs in `nixos/modules/`; host directories should contain only the differences needed by that machine.
 
-## Getting Started / Deployment
+Container stacks live under `apps/<host>/<stack>/`. Runtime configuration belongs in `compose.yaml`, while non-secret values belong in `stack.env`. Values that must not be committed are stored in Komodo and interpolated when a stack is deployed.
 
-### 1. Clone the Repository
+Komodo imports the declarations under `komodo/resources/`. The resource sync is managed and has deletion enabled, so removing a declaration from Git also removes that resource on the next sync. A scheduled procedure runs the sync every six hours, then deploys changed stacks carrying the `deploy` tag. Untagged stacks remain manually managed.
 
-```
+Host-to-host management traffic uses the Tailnet. Public ingress is handled by the gateway stack assigned to each relevant host. NixOS secrets are encrypted with SOPS and age; stack secrets are kept in Komodo variables.
+
+## NixOS hosts
+
+Clone the repository and enter it:
+
+```bash
 git clone https://github.com/Lumysia/Yggdrasil.git
 cd Yggdrasil
 ```
 
-### 2. Provision the Age Key
+Hosts that decrypt SOPS secrets need their age private key at `/var/lib/sops-nix/key.txt` with mode `0600`.
 
-Place the host's age private key so sops-nix can decrypt secrets at build time:
+Install a new host whose disk has already been partitioned and mounted at `/mnt`:
 
-```
-sudo mkdir -p /var/lib/sops-nix
-sudo cp /path/to/age-key.txt /var/lib/sops-nix/key.txt
-sudo chmod 600 /var/lib/sops-nix/key.txt
+```bash
+./nixos-rebuild.sh --install <hostname>
 ```
 
-### 3. Build and Activate a Host
+Rebuild an existing host:
 
-For a first-time installation onto a freshly partitioned drive:
-
-```
-./nixos-rebuild.sh -I hq-cat-services
+```bash
+./nixos-rebuild.sh <hostname>
 ```
 
-For subsequent rebuilds on an already-running host:
+The wrapper also supports updating flake inputs, activating on the next boot, and using a network proxy:
 
-```
-./nixos-rebuild.sh hq-cat-services
-```
-
-To update flake inputs and pull latest changes before rebuilding:
-
-```
-./nixos-rebuild.sh -u hq-cat-services
+```bash
+./nixos-rebuild.sh --update <hostname>
+./nixos-rebuild.sh --boot <hostname>
+./nixos-rebuild.sh --proxy http://proxy.example:8080 <hostname>
 ```
 
-To build for next-boot instead of live-switching:
+If `<hostname>` is omitted, the script uses the current machine's hostname.
 
-```
-./nixos-rebuild.sh -b hq-cat-services
-```
+## Komodo infrastructure
 
-If the host requires a network proxy:
+Use the repository wrapper to manage the control plane or a host agent:
 
-```
-./nixos-rebuild.sh -p http://proxy:8080 hq-cat-services
-```
-
-### 4. Join the Tailnet
-
-After the first boot, authenticate the node:
-
-```
-sudo tailscale up --authkey tskey-auth-XXXXX
+```bash
+./komodo-infra-mgnt.sh up <variant> [hostname]
+./komodo-infra-mgnt.sh ps <variant> [hostname]
+./komodo-infra-mgnt.sh logs <variant> [hostname]
+./komodo-infra-mgnt.sh down <variant> [hostname]
 ```
 
-### 5. Deploy Komodo Core
+Run `./komodo-infra-mgnt.sh --help` for the accepted variants, commands, image-mirror option, and Compose argument forwarding. Host-specific environment files are stored under `komodo/infra/<variant>/host-env/`. Runtime data defaults to `${HOME}/komodo-data` and can be moved with `KOMODO_INFRA_DATA_DIR`.
 
-On the designated core node, populate the `.env` file and start the stack:
+After the control plane is running:
 
-```
-cd /data/infra/komodo/core
-docker compose up -d
-```
+1. Add the variables referenced as `[[VARIABLE]]` in `komodo/resources/`.
+2. Run the `Sync-Yggdrasil` resource sync.
+3. Review the pending resource changes before executing the initial deployment.
 
-### 6. Deploy Periphery Agents
+## Validation
 
-Use the top-level infra wrapper. Hostname is optional and defaults to `hostname`:
+Check the Nix flake locally:
 
-```
-cd /data/infra
-./komodo-infra-mgnt.sh up core
-./komodo-infra-mgnt.sh up periphery-only
-./komodo-infra-mgnt.sh up periphery-tailscale
-./komodo-infra-mgnt.sh down periphery-tailscale
+```bash
+cd nixos
+nix flake check
 ```
 
-Variants: `core|c`, `periphery-only|po`, `periphery-tailscale|pt`. Commands: `up`, `down`, `restart`, `ps`, `logs`, `config`, `pull`.
-Host env: `komodo/infra/<variant>/host-env/<hostname>.env`. Data: `${HOME}/komodo-data` unless `KOMODO_INFRA_DATA_DIR` is set. Use `-m` for Docker Hub via `docker.libcuda.so`; `ghcr.io` stays direct. First `pt up` prompts for `TAILSCALE_AUTH_KEY` if no Tailscale state exists.
+Render a Compose stack before deploying it:
 
-### 7. Trigger Initial Sync
-
-In the Komodo UI, run the **"Sync-Yggdrasil"** resource sync. This imports all server, stack, alerter, procedure, and action definitions from [`komodo/resources/`](komodo/resources/).
-
-### 8. Set Komodo Variables
-
-In the Komodo UI, populate all `[[VARIABLE]]` references used in stack environment blocks (e.g., `COMMON_DOMAIN_A`, `COMMON_CF_API_TOKEN`, database passwords). These are injected at deploy time and never stored in the repository.
-
-## Usage
-
-### Viewing Logs
-
-```
-docker compose -f apps/hq-cat-services/gateway/compose.yaml logs -f caddy
+```bash
+cd apps/<host>/<stack>
+docker compose config --quiet
 ```
 
-### Verifying Komodo Sync Status
-
-Open the Komodo Core dashboard at `https://{CORE_HOST}:9120`. The **Syncs** page shows whether `Sync-Yggdrasil` has pending changes. The **Procedures** page shows execution history for automated routines.
-
-### Rebuilding NixOS After a Config Change
-
-```
-git add -A && git commit -m "feat(nixos): update hq-cat-services"
-git push
-./nixos-rebuild.sh hq-cat-services
-```
-
-The GitHub Actions pipeline will also validate the change across all hosts automatically.
+CI runs `nix flake check` and a dry-run build for every host whenever NixOS configuration changes. Compose and Komodo changes should still be rendered or parsed locally because they are not covered by that workflow.
 
 ## License
 
-This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+Licensed under the [GNU Affero General Public License v3.0](LICENSE).
