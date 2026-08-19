@@ -1,6 +1,6 @@
 services:
   remnawave:
-    image: remnawave/backend:2
+    image: remnawave/backend:latest
     restart: always
     env_file:
       - stack.env
@@ -9,8 +9,7 @@ services:
       FRONT_END_DOMAIN: remnawave.${COMMON_DOMAIN_A}
       PANEL_DOMAIN: remnawave.${COMMON_DOMAIN_A}
       SUB_PUBLIC_DOMAIN: sub.${COMMON_DOMAIN_B}
-      JWT_AUTH_SECRET: ${JWT_AUTH_SECRET}
-      JWT_API_TOKENS_SECRET: ${JWT_API_TOKENS_SECRET}
+      APP_SECRET: ${APP_SECRET}
       METRICS_PASS: ${METRICS_PASS}
     labels:
       caddy: remnawave.${COMMON_DOMAIN_A}
