@@ -19,11 +19,17 @@
 		"tag:remnawave-entry":   ["autogroup:admin"],
 		"tag:forwarding-source": ["autogroup:admin"],
 		"tag:forwarding-target": ["autogroup:admin"],
+		"tag:hermes-agent":      ["autogroup:admin"],
 	},
 
 	// Define grants that govern access for users, groups, autogroups, tags,
 	// Tailscale IP addresses, and subnet ranges.
 	"grants": [
+		{
+			"src": ["tag:hermes-agent"],
+			"dst": ["autogroup:member"],
+			"ip":  ["tcp:22"],
+		},
 		{
 			"src": ["autogroup:admin"],
 			"dst": ["tag:pve-nodes", "tag:routers", "tag:komodo-core", "tag:komodo-nodes"],
