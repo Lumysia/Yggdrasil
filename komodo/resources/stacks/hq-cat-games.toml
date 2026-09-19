@@ -17,9 +17,6 @@ fi
 if ! docker network inspect shared_all_the_mons_net >/dev/null 2>&1; then
   docker network create shared_all_the_mons_net
 fi
-if ! docker network inspect shared_prominence_2_net >/dev/null 2>&1; then
-  docker network create shared_prominence_2_net
-fi
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -43,18 +40,7 @@ run_directory = "apps/hq-cat-games/mc-prominence-2"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = """
-if ! docker network inspect shared_prominence_2_net >/dev/null 2>&1; then
-  docker network create shared_prominence_2_net
-fi
-mkdir -p /data/games/mc-prominence-2-fabric_config/config/bluemap
-touch /data/games/mc-prominence-2-fabric_config/config/bluemap/core.conf
-if grep -q '^accept-download:' /data/games/mc-prominence-2-fabric_config/config/bluemap/core.conf; then
-  sed -i 's/^accept-download:.*/accept-download: true/' /data/games/mc-prominence-2-fabric_config/config/bluemap/core.conf
-else
-  printf '\naccept-download: true\n' >> /data/games/mc-prominence-2-fabric_config/config/bluemap/core.conf
-fi
-"""
+pre_deploy.command = "chmod -R a+rX /data/games/mc-prominence-2-fabric_config"
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
