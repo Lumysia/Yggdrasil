@@ -13,6 +13,9 @@ services:
     volumes:
       - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_downloads:/downloads
+      - ${GAMES_PATH}/${MC_FOLDER_NAME}_config:/config:ro
+    networks:
+      - shared_prominence_2_net
     deploy:
       resources:
         limits:
@@ -29,3 +32,9 @@ services:
       - ${GAMES_PATH}/rclone:/config/rclone # Optional, only if using rclone
       - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data:ro
       - ${GAMES_PATH}/${MC_FOLDER_NAME}-backups:/backups
+    networks:
+      - shared_prominence_2_net
+
+networks:
+  shared_prominence_2_net:
+    external: true
