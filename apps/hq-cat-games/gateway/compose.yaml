@@ -6,6 +6,7 @@ services:
       - cloudflare_net
       - shared_cte2_net
       - shared_all_the_mons_net
+      - shared_prominence_2_net
     extra_hosts:
       - host.docker.internal:host-gateway
     env_file:
@@ -41,4 +42,6 @@ networks:
   shared_cte2_net:
     external: true
   shared_all_the_mons_net:
+    external: true
+  shared_prominence_2_net:
     external: true
