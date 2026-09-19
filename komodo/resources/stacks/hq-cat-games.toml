@@ -40,7 +40,7 @@ run_directory = "apps/hq-cat-games/mc-prominence-2"
 additional_env_files = [
   { path = "stack.env", track = true }
 ]
-pre_deploy.command = "chmod -R a+rX /data/games/mc-prominence-2-fabric_config"
+pre_deploy.command = "install -d -m 755 /data/games/mc-prominence-2-fabric_config/config/bluemap && printf '%s\\n' 'accept-download: true' > /data/games/mc-prominence-2-fabric_config/config/bluemap/core.conf && chmod -R a+rX /data/games/mc-prominence-2-fabric_config"
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
