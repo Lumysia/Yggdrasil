@@ -19,7 +19,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEMORY}
+          memory: ${MAX_MEMORY}
 
 networks:
   shared_all_the_mons_net:
