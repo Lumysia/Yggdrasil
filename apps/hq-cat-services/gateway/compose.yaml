@@ -70,7 +70,6 @@ services:
     restart: always
     networks:
       - cloudflare_net
-      - shared_forgejo_net
       - shared_stalwart_net
     env_file:
       - stack.env
