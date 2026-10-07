@@ -5,7 +5,11 @@ services:
     labels:
       caddy: mail.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 8080}}"
+      caddy.redir: "/ /webmail 302"
+      caddy.@webmail.path: /webmail /webmail/*
+      caddy.handle_0: "@webmail"
+      caddy.handle_0.reverse_proxy: bulwark:3000
+      caddy.handle_1.reverse_proxy: "{{upstreams 8080}}"
     env_file:
       - stack.env
     environment:
@@ -14,6 +18,21 @@ services:
     volumes:
       - ${APPDATA_PATH}/stalwart/etc:/etc/stalwart
       - ${DB_PATH}/stalwart:/var/lib/stalwart
+    networks:
+      - shared_stalwart_net
+
+  bulwark:
+    image: docker.io/essaypu/bulwark:webmail-nightly
+    user: "1001:1001"
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    environment:
+      JMAP_SERVER_URL: https://mail.${COMMON_DOMAIN_A}
+      OAUTH_ISSUER_URL: https://${COMMON_DOMAIN_AUTH}
+      SESSION_SECRET: ${SESSION_SECRET:?Variable is not set or empty}
+    volumes:
+      - ${APPDATA_PATH}/bulwark:/app/data
     networks:
       - shared_stalwart_net
 

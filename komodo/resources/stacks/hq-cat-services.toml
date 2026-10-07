@@ -233,12 +233,16 @@ additional_env_files = [
 pre_deploy.command = """
 mkdir -p /data/appdata/stalwart/etc /data/db/stalwart
 chown 2000:2000 /data/appdata/stalwart/etc /data/db/stalwart
+mkdir -p /data/appdata/bulwark
+chown 1001:1001 /data/appdata/bulwark
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 ignore_services = ["stalwart-apply"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
+SESSION_SECRET=[[HQCAT_SERVICES_BULWARK_SESSION_SECRET]]
 
 EMAIL_SMTP_HOST=[[COMMON_SMTP_01_SERVER_ADDRESS]]
 EMAIL_SMTP_USERNAME=[[COMMON_SMTP_01_SERVER_USERNAME]]
