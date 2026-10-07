@@ -3,14 +3,14 @@ services:
     image: codeberg.org/forgejo/forgejo:16
     restart: unless-stopped
     labels:
-      caddy: code.${COMMON_DOMAIN_A}
+      caddy: git.${COMMON_DOMAIN_A}, code.${COMMON_DOMAIN_A}
       caddy.import: common_tls
       caddy.reverse_proxy: "{{upstreams 3000}}"
     env_file:
       - stack.env
     environment:
-      FORGEJO__SERVER__DOMAIN: code.${COMMON_DOMAIN_A}
-      FORGEJO__SERVER__ROOT_URL: https://code.${COMMON_DOMAIN_A}
+      FORGEJO__SERVER__DOMAIN: git.${COMMON_DOMAIN_A}
+      FORGEJO__SERVER__ROOT_URL: https://git.${COMMON_DOMAIN_A}
       FORGEJO__SERVICE__NO_REPLY_ADDRESS: ${COMMON_DOMAIN_A}
       FORGEJO__MAILER__FROM: Forgejo <no-reply@${COMMON_DOMAIN_A}>
       FORGEJO__MAILER__SMTP_ADDR: ${EMAIL_SMTP_HOST}
@@ -32,7 +32,7 @@ services:
     env_file:
       - stack.env
     environment:
-      RENOVATE_ENDPOINT: https://code.${COMMON_DOMAIN_A}/api/v1/
+      RENOVATE_ENDPOINT: https://git.${COMMON_DOMAIN_A}/api/v1/
       RENOVATE_TOKEN: ${RENOVATE_TOKEN}
 networks:
   shared_forgejo_net:
