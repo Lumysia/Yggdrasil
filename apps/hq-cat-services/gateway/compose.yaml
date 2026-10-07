@@ -17,6 +17,7 @@ services:
       - shared_remnawave_net
       - shared_n8n_net
       - shared_openlist_net
+      - shared_stalwart_net
       - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
@@ -70,6 +71,7 @@ services:
     networks:
       - cloudflare_net
       - shared_forgejo_net
+      - shared_stalwart_net
     env_file:
       - stack.env
     command: tunnel --no-autoupdate --protocol auto run --token ${HQCAT_SERVICES_CFD_TOKEN}
@@ -140,6 +142,8 @@ networks:
   shared_n8n_net:
     external: true
   shared_openlist_net:
+    external: true
+  shared_stalwart_net:
     external: true
   oauth2_proxy_intranet:
     internal: true

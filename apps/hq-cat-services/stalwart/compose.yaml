@@ -1,0 +1,49 @@
+services:
+  stalwart:
+    image: docker.io/stalwartlabs/stalwart:latest
+    restart: unless-stopped
+    labels:
+      caddy: mail.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+    env_file:
+      - stack.env
+    environment:
+      STALWART_PUBLIC_URL: https://mail.${COMMON_DOMAIN_A}
+      EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
+    volumes:
+      - ${APPDATA_PATH}/stalwart/etc:/etc/stalwart
+      - ${DB_PATH}/stalwart:/var/lib/stalwart
+    networks:
+      - shared_stalwart_net
+
+  # Run explicitly after the setup wizard, using a regular administrator account.
+  stalwart-apply:
+    image: docker.io/stalwartlabs/cli:latest
+    profiles: [setup]
+    restart: "no"
+    command: apply --file /plan.ndjson
+    environment:
+      STALWART_URL: http://stalwart:8080
+      STALWART_USER: ${STALWART_USER:-admin}
+      STALWART_PASSWORD: ${STALWART_PASSWORD:-}
+    configs:
+      - source: stalwart_plan
+        target: /plan.ndjson
+    networks:
+      - shared_stalwart_net
+
+networks:
+  shared_stalwart_net:
+    external: true
+
+configs:
+  # Cloudflare checks incoming sender authentication before the tunnel hop. The
+  # backend sees cloudflared's IP, so SPF, reverse-IP and dependent DMARC checks
+  # are disabled here. DKIM verification stays on; Resend signs outbound mail.
+  stalwart_plan:
+    content: |
+      {"@type":"upsert","object":"MtaRoute","matchOn":["name"],"value":{"resend":{"@type":"Relay","name":"resend","address":"${EMAIL_SMTP_HOST}","port":465,"implicitTls":true,"authUsername":"${EMAIL_SMTP_USERNAME}","authSecret":{"@type":"EnvironmentVariable","variableName":"EMAIL_SMTP_PASSWORD"}}}}
+      {"@type":"update","object":"MtaOutboundStrategy","value":{"route":{"match":{"0":{"if":"is_local_domain(rcpt_domain)","then":"'local'"}},"else":"'resend'"}}}
+      {"@type":"update","object":"SenderAuth","value":{"spfEhloVerify":{"match":{},"else":"disable"},"spfFromVerify":{"match":{},"else":"disable"},"reverseIpVerify":{"match":{},"else":"disable"},"dmarcVerify":{"match":{},"else":"disable"},"dkimSignDomain":{"match":{},"else":"false"}}}
+      {"@type":"update","object":"Http","value":{"useXForwarded":true}}
