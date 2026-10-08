@@ -38,7 +38,7 @@ services:
       - shared_hermes1_net
 
   hermes2:
-    image: nousresearch/hermes-agent:latest
+    image: nousresearch/hermes-agent:latest-desktop
     restart: unless-stopped
     command: ["gateway", "run"]
     env_file:
@@ -47,13 +47,20 @@ services:
       API_SERVER_KEY: ${HERMES2_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES2_API_SERVER_KEY in Komodo}
       TELEGRAM_ALLOWED_USERS: ${HERMES2_TELEGRAM_ALLOWED_USERS}
       TELEGRAM_BOT_TOKEN: ${HERMES2_TELEGRAM_BOT_TOKEN}
+      HERMES_DASHBOARD: "1"
+      HERMES_DASHBOARD_PUBLIC_URL: https://hms2.${COMMON_DOMAIN_A}
+      HERMES_DASHBOARD_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
+      HERMES_DASHBOARD_OIDC_CLIENT_ID: eceabdea-96f6-4972-a284-d53c98f6ee0a
+      AGENT_BROWSER_HEADED: "1"
     volumes:
       - ${APPDATA_PATH}/hermes2:/opt/data
     shm_size: 1g
     labels:
-      caddy: hms2api.${COMMON_DOMAIN_A}
+      caddy: hms2.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 8642}}"
+      caddy.0_handle_path: /agent/*
+      caddy.0_handle_path.reverse_proxy: "{{upstreams 8642}}"
+      caddy.1_handle.reverse_proxy: "{{upstreams 9119}}"
     networks:
       - shared_hermes2_net
 
