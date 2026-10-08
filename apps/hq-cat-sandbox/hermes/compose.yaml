@@ -22,7 +22,7 @@ services:
       TELEGRAM_ALLOWED_USERS: ${HERMES1_TELEGRAM_ALLOWED_USERS}
       TELEGRAM_BOT_TOKEN: ${HERMES1_TELEGRAM_BOT_TOKEN}
       HERMES_DASHBOARD: "1"
-      HERMES_DASHBOARD_PUBLIC_URL: https://hms1.${COMMON_DOMAIN_A}/dashboard
+      HERMES_DASHBOARD_PUBLIC_URL: https://hms1.${COMMON_DOMAIN_A}
       HERMES_DASHBOARD_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
       HERMES_DASHBOARD_OIDC_CLIENT_ID: 04c146bb-d0b3-4d48-90de-f856259bc9ff
     volumes:
@@ -31,10 +31,9 @@ services:
     labels:
       caddy: hms1.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.0_handle_path: /dashboard/*
-      caddy.0_handle_path.reverse_proxy: "{{upstreams 9119}}"
-      caddy.0_handle_path.reverse_proxy.header_up: X-Forwarded-Prefix /dashboard
-      caddy.1_handle.reverse_proxy: "{{upstreams 8642}}"
+      caddy.0_handle_path: /agent/*
+      caddy.0_handle_path.reverse_proxy: "{{upstreams 8642}}"
+      caddy.1_handle.reverse_proxy: "{{upstreams 9119}}"
     networks:
       - shared_hermes1_net
 
