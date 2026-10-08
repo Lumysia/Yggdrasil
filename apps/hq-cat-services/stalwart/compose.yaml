@@ -14,6 +14,7 @@ services:
       - stack.env
     environment:
       STALWART_PUBLIC_URL: https://mail.${COMMON_DOMAIN_A}
+      STALWART_HEALTHCHECK_URL: http://127.0.0.1:8080/healthz/live
       EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
     volumes:
       - ${APPDATA_PATH}/stalwart/etc:/etc/stalwart
