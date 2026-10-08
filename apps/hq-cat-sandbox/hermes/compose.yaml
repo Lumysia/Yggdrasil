@@ -29,7 +29,7 @@ services:
       - ${APPDATA_PATH}/hermes:/opt/data
     shm_size: 1g
     labels:
-      caddy: hms1.${COMMON_DOMAIN_A}, hms1api.${COMMON_DOMAIN_A}
+      caddy: hms1.${COMMON_DOMAIN_A}
       caddy.import: common_tls
       caddy.0_handle_path: /dashboard/*
       caddy.0_handle_path.reverse_proxy: "{{upstreams 9119}}"
