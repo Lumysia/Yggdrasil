@@ -78,6 +78,11 @@
 			"ip":  ["tcp:22401"],
 		},
 		{
+			"src": ["autogroup:admin"],
+			"dst": ["autogroup:internet"],
+			"ip":  ["*"],
+		},
+		{
 			"src": ["tag:forwarding-source"],
 			"dst": ["tag:forwarding-target"],
 			"ip":  ["tcp:25565", "tcp:443", "udp:8211"],

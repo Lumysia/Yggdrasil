@@ -18,6 +18,10 @@
   features.services.tailscale.enable = true;
   features.user.suser.enable = true;
 
+  # Exit node for reaching mainland-only services from abroad.
+  services.tailscale.useRoutingFeatures = "server";
+  services.tailscale.extraSetFlags = [ "--advertise-exit-node" ];
+
   time.timeZone = "Asia/Shanghai";
 
   boot.loader.grub.enable = true;
