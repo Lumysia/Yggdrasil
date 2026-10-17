@@ -32,8 +32,8 @@ services:
       - seafile_internal_net
 
   seafile:
-    image: creamed/seafile-server:13-nightly
-    # image: seafileltd/seafile-pro-mc:13.0-latest
+    image: creamed/seafile-server:14-nightly
+    # image: seafileltd/seafile-pro-mc:14.0-latest
     restart: unless-stopped
     labels:
       caddy: cloud.${COMMON_DOMAIN_A}
@@ -43,8 +43,8 @@ services:
       caddy.0_handle_path.1_reverse_proxy: seadoc:80
       caddy.1_handle_path: /sdoc-server/*
       caddy.1_handle_path.reverse_proxy: seadoc:80
-      caddy.2_handle_path: /notification*
-      caddy.2_handle_path.reverse_proxy: notification-server:8083
+      caddy.2_handle: /notification*
+      caddy.2_handle.reverse_proxy: notification-server:8083
       caddy.5_handle.reverse_proxy: "{{upstreams 80}}"
     volumes:
       - ${BLOBSTORE_PATH}/seafile:/shared
@@ -58,6 +58,7 @@ services:
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
       SEAFILE_SERVER_HOSTNAME: cloud.${COMMON_DOMAIN_A}
       SEADOC_SERVER_URL: https://cloud.${COMMON_DOMAIN_A}/sdoc-server
+      NOTIFICATION_SERVER_URL: https://cloud.${COMMON_DOMAIN_A}/notification
       ENABLE_SEAFILE_AI: ${ENABLE_SEAFILE_AI}
       SEAFILE_AI_SERVER_URL: ${SEAFILE_AI_SERVER_URL}
       SEAFILE_AI_SECRET_KEY: ${JWT_PRIVATE_KEY}
@@ -97,7 +98,7 @@ services:
       - shared_seafile_net
 
   notification-server:
-    image: seafileltd/notification-server:13.0-latest
+    image: seafileltd/notification-server:14.0-latest
     restart: unless-stopped
     volumes:
       - ${LOGS_PATH}/seafile-notification:/shared/logs
@@ -140,7 +141,7 @@ services:
       - shared_seafile_net
 
   seafile-md-server:
-    image: seafileltd/seafile-md-server:13.0-latest
+    image: seafileltd/seafile-md-server:14.0-latest
     restart: unless-stopped
     volumes:
       # - ${BLOBSTORE_PATH}/seafile/metadata:/shared
@@ -179,7 +180,7 @@ services:
         condition: service_healthy
 
   seafile-ai:
-    image: seafileltd/seafile-ai:13.0-latest
+    image: seafileltd/seafile-ai:14.0-latest
     restart: unless-stopped
     volumes:
       - ${BLOBSTORE_PATH}/seafile:/shared
@@ -188,11 +189,7 @@ services:
     environment:
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      SEAFILE_AI_LLM_TYPE: ${SEAFILE_AI_LLM_TYPE}
-      SEAFILE_AI_LLM_URL: ${SEAFILE_AI_LLM_URL}
-      SEAFILE_AI_LLM_KEY: ${SEAFILE_AI_LLM_KEY}
-      SEAFILE_AI_LLM_MODEL: ${SEAFILE_AI_LLM_MODEL}
-      SEAFILE_SERVER_URL: ${SEAFILE_SERVER_URL}
+      SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
     depends_on:
       seafile:
         condition: service_healthy
