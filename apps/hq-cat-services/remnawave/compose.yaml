@@ -49,7 +49,7 @@ services:
         condition: service_healthy
 
   remnawave-db:
-    image: postgres:17
+    image: postgres:18
     restart: always
     env_file:
       - stack.env
