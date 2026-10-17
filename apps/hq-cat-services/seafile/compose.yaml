@@ -62,6 +62,7 @@ services:
       ENABLE_SEAFILE_AI: ${ENABLE_SEAFILE_AI}
       SEAFILE_AI_SERVER_URL: ${SEAFILE_AI_SERVER_URL}
       SEAFILE_AI_SECRET_KEY: ${JWT_PRIVATE_KEY}
+      SEASEARCH_TOKEN: ${SEASEARCH_TOKEN:?set HQCAT_SERVICES_SFSS_TOKEN in Komodo}
     depends_on:
       db:
         condition: service_healthy
@@ -190,6 +191,7 @@ services:
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
+      SEASEARCH_TOKEN: ${SEASEARCH_TOKEN:?set HQCAT_SERVICES_SFSS_TOKEN in Komodo}
     depends_on:
       seafile:
         condition: service_healthy
