@@ -68,6 +68,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      # seafevents checks SeaSearch once at startup and leaves indexing off if it isn't up yet.
+      seasearch:
+        condition: service_started
     networks:
       - seafile_internal_net
       - shared_seafile_net
@@ -176,9 +179,6 @@ services:
       INIT_SS_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
     networks:
       - seafile_internal_net
-    depends_on:
-      seafile:
-        condition: service_healthy
 
   seafile-ai:
     image: seafileltd/seafile-ai:14.0-latest
