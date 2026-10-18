@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     networks:
       - shared_media_net
+      - alacarte-net
     depends_on:
       - alacarte-wrapper
     labels:
@@ -36,7 +37,7 @@ services:
     platform: linux/amd64
     restart: on-failure
     networks:
-      - shared_media_net
+      - alacarte-net
     volumes:
       - ${APPDATA_PATH}/alacarte/wrapper:/app/rootfs/data
       - ${APPDATA_PATH}/alacarte/supervisor:/app/supervisor-secret
@@ -49,12 +50,8 @@ services:
     environment:
       LD_PRELOAD: /app/libwrapper_login_fix.so
       SUPERVISOR_TOKEN_FILE: /app/supervisor-secret/token
-    expose:
-      - "10020"
-      - "20020"
-      - "30020"
-      - "40020"
 
 networks:
   shared_media_net:
     external: true
+  alacarte-net:
