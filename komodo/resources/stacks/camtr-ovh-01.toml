@@ -111,3 +111,35 @@ OPENVPN_PASSWORD=[[CAMTROVH01_PIA_PASSWORD]]
 """
 
 ##
+
+[[stack]]
+name = "camtr-ovh-01-alacarte"
+tags = ["origin", "service"]
+[stack.config]
+server = "camtr-ovh-01"
+poll_for_updates = true
+auto_update = true
+auto_update_all_services = true
+linked_repo = "GitHub-Yggdrasil"
+run_directory = "apps/camtr-ovh-01/alacarte"
+additional_env_files = [
+  { path = "stack.env", track = true }
+]
+pre_deploy.command = '''
+appdata_path=/data/appdata
+media_path=/data/media
+
+mkdir -p \
+  "$appdata_path/alacarte/web" \
+  "$appdata_path/alacarte/wrapper" \
+  "$appdata_path/alacarte/supervisor" \
+  "$media_path/music"
+
+chown -R 1000:1000 "$appdata_path/alacarte" "$media_path/music"
+'''
+pre_deploy.shell_mode = true
+environment = """
+COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
+"""
+
+##

@@ -1,0 +1,59 @@
+services:
+  alacarte-web:
+    image: essaypu/alacarte:web-nightly
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - shared_media_net
+    depends_on:
+      - alacarte-wrapper
+    labels:
+      caddy: alacarte.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.0_import: protected_forward_auth
+      caddy.1_reverse_proxy: "{{upstreams 7373}}"
+    volumes:
+      - ${APPDATA_PATH}/alacarte/web:/config
+      - ${APPDATA_PATH}/alacarte/supervisor:/supervisor-secret:ro
+      - ${MEDIA_PATH}/music:/music
+    env_file:
+      - stack.env
+    environment:
+      PORT: 7373
+      AMDL_WRAPPER_HOST: alacarte-wrapper
+      AMDL_WRAPPER_DECRYPT_PORT: 10020
+      AMDL_WRAPPER_M3U8_PORT: 20020
+      AMDL_WRAPPER_ACCOUNT_PORT: 30020
+      AMDL_WRAPPER_SUPERVISOR_PORT: 40020
+      AMDL_SUPERVISOR_TOKEN_FILE: /supervisor-secret/token
+      AMDL_MUSIC_PATH: /music
+      AMDL_CONFIG_DIR: /config
+      TRUST_PROXY: 172.16.0.0/12
+
+  alacarte-wrapper:
+    image: essaypu/alacarte-wrapper:wrapper-nightly
+    platform: linux/amd64
+    restart: on-failure
+    networks:
+      - shared_media_net
+    volumes:
+      - ${APPDATA_PATH}/alacarte/wrapper:/app/rootfs/data
+      - ${APPDATA_PATH}/alacarte/supervisor:/app/supervisor-secret
+      - /dev/null:/app/rootfs/dev/null
+      - /dev/urandom:/app/rootfs/dev/urandom
+      - /dev/random:/app/rootfs/dev/random
+      - /dev/zero:/app/rootfs/dev/zero
+    env_file:
+      - stack.env
+    environment:
+      LD_PRELOAD: /app/libwrapper_login_fix.so
+      SUPERVISOR_TOKEN_FILE: /app/supervisor-secret/token
+    expose:
+      - "10020"
+      - "20020"
+      - "30020"
+      - "40020"
+
+networks:
+  shared_media_net:
+    external: true
