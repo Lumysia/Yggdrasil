@@ -134,8 +134,6 @@ mkdir -p \
   "$appdata_path/alacarte/wrapper" \
   "$appdata_path/alacarte/supervisor" \
   "$media_path/music"
-
-chown -R 1000:1000 "$appdata_path/alacarte" "$media_path/music"
 '''
 pre_deploy.shell_mode = true
 environment = """
