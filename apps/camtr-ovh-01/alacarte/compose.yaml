@@ -28,6 +28,7 @@ services:
       AMDL_SUPERVISOR_TOKEN_FILE: /supervisor-secret/token
       AMDL_MUSIC_PATH: /music
       AMDL_CONFIG_DIR: /config
+      AUTH_DISABLED: "true"
       TRUST_PROXY: 172.16.0.0/12
 
   alacarte-wrapper:
