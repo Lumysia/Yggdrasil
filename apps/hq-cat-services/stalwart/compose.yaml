@@ -10,6 +10,10 @@ services:
       caddy.handle_0: "@webmail"
       caddy.handle_0.reverse_proxy: bulwark:3000
       caddy.handle_1.reverse_proxy: "{{upstreams 8080}}"
+      # Stalwart bans by the first X-Forwarded-For entry. Overwrite it with the
+      # real client IP so a forged header can't get Caddy itself banned.
+      caddy.handle_1.reverse_proxy.0_header_up: "X-Forwarded-For {client_ip}"
+      caddy.handle_1.reverse_proxy.1_header_up: "-Forwarded"
     env_file:
       - stack.env
     environment:
