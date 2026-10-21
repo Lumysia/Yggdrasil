@@ -82,7 +82,7 @@ services:
       start_period: 60s
 
   seadoc:
-    image: seafileltd/sdoc-server:2.0-latest
+    image: seafileltd/sdoc-server:3.0-latest
     restart: unless-stopped
     volumes:
       - ${BLOBSTORE_PATH}/seadoc:/shared
