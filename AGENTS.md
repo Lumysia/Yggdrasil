@@ -21,10 +21,12 @@ This file is the project guidance index. Load the relevant skill for detailed wo
 
 - For app Docker/Compose stack work, Komodo stack wiring, Caddy exposure, OAuth proxy wiring, or app env/path mapping, load the `app-stack` skill.
 - For Minecraft server Docker/Compose stack work, server pack deployment, or MC local startup testing, load the `minecraft-server-stack` skill.
+- For translating Minecraft modpack quest/config text into an overwrite folder, or updating an older translation against a newer modpack, load the `minecraft-modpack-translator` skill.
 - For NixOS host definitions, `nixos/flake.nix` `nixosConfigurations`, hostnames, or Komodo server names, load the `nixos-host` skill.
 
 ## Skill Authoring
 
+- Skills live in `.claude/skills/<name>/SKILL.md`; Claude Code and OpenCode both read that location.
 - Keep this file as the index for choosing which skill to load; put detailed workflow rules in the relevant skill.
 - Keep each skill self-contained: after loading a skill, the agent should have the rules needed to complete that workflow using the loaded skill and its bundled references.
 - Keep skills transferable: write workflow rules in terms of observable files, nearby conventions, and explicit checks rather than hidden repo knowledge.
