@@ -16,9 +16,6 @@ services:
       FORGEJO__MAILER__SMTP_ADDR: ${EMAIL_SMTP_HOST}
       FORGEJO__MAILER__USER: ${EMAIL_SMTP_USERNAME}
       FORGEJO__MAILER__PASSWD: ${EMAIL_SMTP_PASSWORD}
-      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST}
-      EMAIL_SMTP_USERNAME: ${EMAIL_SMTP_USERNAME}
-      EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
     networks:
       - shared_forgejo_net
     volumes:
@@ -26,7 +23,7 @@ services:
 
   renovate:
     image: renovate/renovate:full
-    restart: none
+    restart: "no"
     volumes:
       - /tmp/renovate-cache:/tmp/renovate-cache
     env_file:
@@ -34,6 +31,7 @@ services:
     environment:
       RENOVATE_ENDPOINT: https://git.${COMMON_DOMAIN_A}/api/v1/
       RENOVATE_TOKEN: ${RENOVATE_TOKEN}
+
 networks:
   shared_forgejo_net:
     external: true

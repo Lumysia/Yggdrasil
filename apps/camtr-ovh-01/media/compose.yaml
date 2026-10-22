@@ -1,28 +1,15 @@
-services:
-  # emby:
-  #   image: amilys/embyserver:latest
-  #   restart: unless-stopped
-  #   networks:
-  #     - shared_media_net
-  #   labels:
-  #     caddy: emby.${COMMON_DOMAIN_A}
-  #     caddy.import_0: common_tls
-  #     caddy.reverse_proxy: "{{upstreams 8096}}"
-  #   volumes:
-  #     - ${APPDATA_PATH}/emby:/config
-  #     - ${MEDIA_PATH}:/data:ro
-  #   env_file:
-  #     - stack.env
-  #   environment:
-  #     UID: ${PUID}
-  #     GID: ${PGID}
-  #     GIDLIST: ${PGID}
+# Shared by every service that joins the media network and reads stack.env.
+x-media-app: &media-app
+  restart: unless-stopped
+  networks:
+    - shared_media_net
+  env_file:
+    - stack.env
 
+services:
   plex:
     image: lscr.io/linuxserver/plex:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
+    <<: *media-app
     labels:
       caddy: media.${COMMON_DOMAIN_A}
       caddy.import_0: common_tls
@@ -74,21 +61,14 @@ services:
       - ${APPDATA_PATH}/plex:/config
       - ${MEDIA_PATH}:/data
       - /tmp/plex-transcode:/transcode
-    env_file:
-      - stack.env
     environment:
       VERSION: docker
-      # PLEX_CLAIM: ${PLEX_CLAIM}
 
   hometube:
     image: ghcr.io/egalitarianmonkey/hometube:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
+    <<: *media-app
     volumes:
       - ${MEDIA_PATH}/youtube:/data/videos
-    env_file:
-      - stack.env
     environment:
       STREAMLIT_SERVER_BASE_URL_PATH: hometube
     healthcheck:
@@ -101,41 +81,16 @@ services:
       retries: 3
       start_period: 30s
 
-  # jellyfin:
-  #   image: lscr.io/linuxserver/jellyfin:latest
-  #   networks:
-  #     - shared_media_net
-  #   labels:
-  #     caddy: jellyfin.${COMMON_DOMAIN_A}
-  #     caddy.import_0: common_tls
-  #     caddy.reverse_proxy: "{{upstreams 8096}}"
-  #   # ports:
-  #   #   - 127.0.0.1:8096:8096
-  #   volumes:
-  #     - ${APPDATA_PATH}/jellyfin:/config
-  #     - ${MEDIA_PATH}:/data
-  #   tmpfs:
-  #     - /cache
-  #   restart: unless-stopped
-  #   env_file:
-  #     - stack.env
-
   gluetun:
     image: qmcgaw/gluetun:latest
-    restart: unless-stopped
+    <<: *media-app
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
-    networks:
-      - shared_media_net
-    #ports:
-    #  - 8080:8080
     volumes:
       - ${APPDATA_PATH}/gluetun:/gluetun
-      - /tmp-gluetun:/tmp/gluetun
-    env_file:
-      - stack.env
+      - /tmp/gluetun:/tmp/gluetun
     environment:
       VPN_SERVICE_PROVIDER: private internet access
       OPENVPN_USER: ${OPENVPN_USER}
@@ -149,23 +104,24 @@ services:
     networks:
       - shared_media_net
     volumes:
-      - /tmp-gluetun:/tmp/gluetun:ro
+      - /tmp/gluetun:/tmp/gluetun:ro
     depends_on:
-      - gluetun
-      - qbittorrent
+      gluetun:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_started
     environment:
       QBIT_ADDR: http://gluetun:8080
       PORT_FILE: /tmp/gluetun/forwarded_port
       LISTEN_PORT: 9090
-  
+
   qbittorrent:
     image: linuxserver/qbittorrent:latest
     restart: unless-stopped
     network_mode: service:gluetun
     depends_on:
-      - gluetun
-    # ports:
-    #   - 127.0.0.1:8080:8080
+      gluetun:
+        condition: service_healthy
     volumes:
       - ${APPDATA_PATH}/qbittorrent:/config
       - ${MEDIA_PATH}:/data
@@ -180,55 +136,35 @@ services:
 
   peerbanhelper:
     image: ghostchu/peerbanhelper:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
+    <<: *media-app
     volumes:
       - ${APPDATA_PATH}/peerbanhelper:/app/data
       - /tmp/peerbanhelper:/tmp
-    # ports:
-    #   - 9898:9898
-    env_file:
-      - stack.env
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
+    <<: *media-app
     volumes:
       - ${APPDATA_PATH}/bazarr:/config
       - ${MEDIA_PATH}:/data
-    env_file:
-      - stack.env
     environment:
       DYNACONF_GENERAL__BASE_URL: /bazarr
       DYNACONF_AUTH__TYPE: "@none"
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
-    # ports:
-    #   - 9696:9696
+    <<: *media-app
     volumes:
       - ${APPDATA_PATH}/prowlarr:/config
-    env_file:
-      - stack.env
     environment:
       PROWLARR__SERVER__URLBASE: /prowlarr
       PROWLARR__AUTH__METHOD: External
 
   pulsarr:
     image: lakker/pulsarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
+    <<: *media-app
     volumes:
       - ${APPDATA_PATH}/pulsarr:/app/data
-    env_file:
-      - stack.env
     environment:
       basePath: /pulsarr
       cookieSecured: true
@@ -236,47 +172,29 @@ services:
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
-    # ports:
-    #   - 7878:7878
+    <<: *media-app
     volumes:
       - ${APPDATA_PATH}/radarr:/config
       - ${MEDIA_PATH}:/data
-    env_file:
-      - stack.env
     environment:
       RADARR__SERVER__URLBASE: /radarr
       RADARR__AUTH__METHOD: External
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
-    restart: unless-stopped
-    networks:
-      - shared_media_net
-    # ports:
-    #   - 8989:8989
+    <<: *media-app
     volumes:
       - ${APPDATA_PATH}/sonarr:/config
       - ${MEDIA_PATH}:/data
-    env_file:
-      - stack.env
     environment:
       SONARR__SERVER__URLBASE: /sonarr
       SONARR__AUTH__METHOD: External
 
   flaresolverr:
     image: flaresolverr/flaresolverr:latest
-    restart: unless-stopped
-    networks:
-      shared_media_net:
-    # ports:
-    #   - 8191:8191
+    <<: *media-app
     volumes:
       - ${APPDATA_PATH}/flaresolverr:/config
-    env_file:
-      - stack.env
 
 networks:
   shared_media_net:

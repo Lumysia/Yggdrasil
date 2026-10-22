@@ -8,7 +8,7 @@ services:
       caddy.reverse_proxy: "{{upstreams 3000}}"
     depends_on:
       kvrocks:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - stack.env
     environment:
@@ -16,18 +16,18 @@ services:
       SITE_BASE: https://luna.${COMMON_DOMAIN_B}
     networks:
       - shared_lunatv_net
-      - intra_lunatv_net
+      - lunatv_internal_net
 
   kvrocks:
-    image: apache/kvrocks:latest
+    image: apache/kvrocks:2.17.0
     restart: unless-stopped
     volumes:
       - ${DB_PATH}/lunatv-kvrocks:/var/lib/kvrocks/db
     networks:
-      - intra_lunatv_net
+      - lunatv_internal_net
 
 networks:
   shared_lunatv_net:
     external: true
-  intra_lunatv_net:
+  lunatv_internal_net:
     internal: true
