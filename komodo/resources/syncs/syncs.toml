@@ -3,4 +3,6 @@ name = "Sync-Yggdrasil"
 [resource_sync.config]
 linked_repo = "GitHub-Yggdrasil"
 resource_path = ["komodo/resources"]
+# managed stays as deployed: a sync cannot update its own config while running ("ResourceSync busy").
+managed = true
 delete = true
