@@ -8,7 +8,7 @@
       isNormalUser = true;
       uid = 1000;
       description = "sUser";
-      extraGroups = [ "networkmanager" "wheel" "docker" "podman" ];
+      extraGroups = [ "networkmanager" "wheel" "docker" ];
     };
 
     home-manager.users.suser = { pkgs, ... }: {
