@@ -1,0 +1,38 @@
+name: Auto-merge Dependabot flake.lock updates
+
+# Merges a Dependabot nix PR once every server host has built on it, so the
+# hosts' nightly auto-upgrade picks it up. Only lock-file-only PRs qualify:
+# a PR that also edits flake.nix (a release branch or tag change) waits for review.
+on:
+  workflow_run:
+    workflows: ["NixOS Configuration Check"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BRANCH: ${{ github.event.workflow_run.head_branch }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Merge if only flake.lock changed
+        run: |
+          pr=$(gh pr list --head "$BRANCH" --state open --json number,headRefOid \
+            --jq ".[] | select(.headRefOid == \"$HEAD_SHA\") | .number")
+          if [ -z "$pr" ]; then echo "No open PR at $HEAD_SHA"; exit 0; fi
+          files=$(gh pr view "$pr" --json files --jq '[.files[].path] | join(" ")')
+          if [ "$files" != "nixos/flake.lock" ]; then
+            echo "PR #$pr changes $files; leaving it for review."
+            exit 0
+          fi
+          gh pr merge "$pr" --squash --delete-branch --match-head-commit "$HEAD_SHA"
