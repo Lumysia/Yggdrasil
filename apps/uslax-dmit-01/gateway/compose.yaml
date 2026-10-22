@@ -23,151 +23,101 @@ services:
     image: haproxy:lts-alpine
     restart: unless-stopped
     network_mode: host
+    # Root keeps Docker's default NET_BIND_SERVICE capability for ports below 1024.
     user: root
-    cap_add:
-      - NET_BIND_SERVICE
     env_file:
       - stack.env
     environment:
-      GATEWAY_TLS_ROUTES: ${COMMON_ENTRY_GATEWAY_TLS_ROUTES}
-      GATEWAY_EXTRA_TLS_ROUTES: file.${COMMON_DOMAIN_B}=100.126.143.61:443
+      GATEWAY_TLS_ROUTES: ${COMMON_ENTRY_GATEWAY_TLS_ROUTES},file.${COMMON_DOMAIN_B}=${GATEWAY_FILE_TLS_TARGET}
+    configs:
+      - source: haproxy_cfg
+        target: /usr/local/etc/haproxy/haproxy.cfg
     entrypoint:
       - /bin/sh
       - -ec
+    # Turn the comma-separated "key=ip:port" route lists into haproxy map files.
     command:
       - |
-        cat > /tmp/haproxy.cfg <<EOF
-        global
-          log stdout format raw local0
-
-        defaults
-          log global
-          mode tcp
-          option tcplog
-          timeout connect 10s
-          timeout client 6h
-          timeout server 6h
-
-        frontend gateway_http
-          mode http
-          bind [::]:${GATEWAY_HTTP_PORT} v4v6
-          http-request return status 400 content-type text/plain string "Bad Request"
-
-        frontend gateway_tls
-          bind [::]:${GATEWAY_HTTPS_PORT} v4v6
-          tcp-request inspect-delay 5s
-          tcp-request content accept if { req.ssl_hello_type 1 }
-        EOF
-
-        tls_routes="$${GATEWAY_TLS_ROUTES:-}"
-        if [ -n "$${GATEWAY_EXTRA_TLS_ROUTES:-}" ]; then
-          if [ -n "$$tls_routes" ]; then
-            tls_routes="$${tls_routes},$${GATEWAY_EXTRA_TLS_ROUTES}"
-          else
-            tls_routes="$${GATEWAY_EXTRA_TLS_ROUTES}"
-          fi
+        routes_to_map() {
+          printf '%s' "$$1" | awk -v RS=, '(i = index($$0, "=")) > 1 { print tolower(substr($$0, 1, i - 1)), substr($$0, i + 1) }'
+        }
+        routes_to_map "$${GATEWAY_TLS_ROUTES:-}" > /tmp/tls.map
+        routes_to_map "$${GATEWAY_TCP_ROUTES:-}" > /tmp/tcp.map
+        if [ -s /tmp/tcp.map ]; then
+          export GATEWAY_TCP_BINDS="$$(sed 's/ .*//; s/^/[::]:/' /tmp/tcp.map | paste -sd,)"
         fi
-
-        idx=1
-        old_ifs="$$IFS"
-        IFS=','
-        for route in $$tls_routes; do
-          sni="$${route%%=*}"
-          target="$${route#*=}"
-          if [ -n "$$sni" ] && [ "$$target" != "$$route" ]; then
-            cat >> /tmp/haproxy.cfg <<EOF
-          acl gateway_tls_route_$${idx} req.ssl_sni -i $${sni}
-          use_backend gateway_tls_route_$${idx} if gateway_tls_route_$${idx}
-        EOF
-          fi
-          idx=$$((idx + 1))
-        done
-        IFS="$$old_ifs"
-
-        cat >> /tmp/haproxy.cfg <<EOF
-          default_backend gateway_tls_fallback
-
-        backend gateway_web_http
-          server web ${GATEWAY_WEB_HTTP_HOST}:${GATEWAY_WEB_HTTP_PORT}
-
-        backend gateway_web_https
-          server web ${GATEWAY_WEB_HTTPS_HOST}:${GATEWAY_WEB_HTTPS_PORT}
-
-        backend gateway_tls_fallback
-          server upstream ${GATEWAY_TLS_FALLBACK_TARGET}
-        EOF
-
-        idx=1
-        old_ifs="$$IFS"
-        IFS=','
-        for route in $$tls_routes; do
-          sni="$${route%%=*}"
-          target="$${route#*=}"
-          if [ -n "$$sni" ] && [ "$$target" != "$$route" ]; then
-            cat >> /tmp/haproxy.cfg <<EOF
-
-        backend gateway_tls_route_$${idx}
-          server upstream $${target}
-        EOF
-          fi
-          idx=$$((idx + 1))
-        done
-        IFS="$$old_ifs"
-
-        idx=1
-        old_ifs="$$IFS"
-        IFS=','
-        for route in $${GATEWAY_TCP_ROUTES:-}; do
-          listen="$${route%%=*}"
-          target="$${route#*=}"
-          if [ -n "$$listen" ] && [ "$$target" != "$$route" ]; then
-            cat >> /tmp/haproxy.cfg <<EOF
-
-        frontend gateway_tcp_route_$${idx}
-          bind [::]:$${listen} v4v6
-          default_backend gateway_tcp_route_backend_$${idx}
-
-        backend gateway_tcp_route_backend_$${idx}
-          server upstream $${target}
-        EOF
-          fi
-          idx=$$((idx + 1))
-        done
-        IFS="$$old_ifs"
-
-        exec haproxy -f /tmp/haproxy.cfg
+        exec haproxy -f /usr/local/etc/haproxy/haproxy.cfg
 
   udp-relay:
     image: nginx:stable-alpine
     restart: unless-stopped
     network_mode: host
-    env_file:
-      - stack.env
-    entrypoint:
-      - /bin/sh
-      - -ec
-    command:
-      - |
-        cat > /tmp/nginx.conf <<EOF
-        worker_processes auto;
+    configs:
+      - source: udp_relay_conf
+        target: /etc/nginx/nginx.conf
 
-        error_log /dev/stderr notice;
-        pid /tmp/nginx.pid;
+configs:
+  haproxy_cfg:
+    content: |
+      global
+        log stdout format raw local0
 
-        events {
-          worker_connections 4096;
+      defaults
+        log global
+        mode tcp
+        option tcplog
+        timeout connect 10s
+        timeout client 6h
+        timeout server 6h
+
+      frontend gateway_http
+        mode http
+        bind [::]:${GATEWAY_HTTP_PORT} v4v6
+        http-request return status 400 content-type text/plain string "Bad Request"
+
+      frontend gateway_tls
+        bind [::]:${GATEWAY_HTTPS_PORT} v4v6
+        tcp-request inspect-delay 5s
+        tcp-request content accept if { req.ssl_hello_type 1 }
+        use_backend gateway_tls_route if { req.ssl_sni,lower,map(/tmp/tls.map) -m found }
+        default_backend gateway_tls_fallback
+
+      backend gateway_tls_route
+        tcp-request content set-var(txn.target) req.ssl_sni,lower,map(/tmp/tls.map)
+        tcp-request content set-dst var(txn.target),field(1,:)
+        tcp-request content set-dst-port var(txn.target),field(2,:)
+        server upstream 0.0.0.0:0
+
+      backend gateway_tls_fallback
+        server upstream ${GATEWAY_TLS_FALLBACK_TARGET}
+
+      .if defined(GATEWAY_TCP_BINDS)
+      listen gateway_tcp_route
+        bind "$$GATEWAY_TCP_BINDS" v4v6
+        tcp-request content set-var(txn.target) dst_port,map_int(/tmp/tcp.map)
+        tcp-request content set-dst var(txn.target),field(1,:)
+        tcp-request content set-dst-port var(txn.target),field(2,:)
+        server upstream 0.0.0.0:0
+      .endif
+
+  udp_relay_conf:
+    content: |
+      worker_processes auto;
+
+      error_log /dev/stderr notice;
+      pid /tmp/nginx.pid;
+
+      events {
+        worker_connections 4096;
+      }
+
+      stream {
+        server {
+          listen [::]:${GATEWAY_PALWORLD_UDP_PORT} udp reuseport ipv6only=off;
+          proxy_timeout 10m;
+          proxy_pass ${GATEWAY_PALWORLD_UDP_TARGET};
         }
-
-        stream {
-          server {
-            listen [::]:$${GATEWAY_PALWORLD_UDP_PORT} udp reuseport ipv6only=off;
-            proxy_timeout 10m;
-            proxy_pass $${GATEWAY_PALWORLD_UDP_TARGET};
-          }
-        }
-        EOF
-
-        exec nginx -c /tmp/nginx.conf -g 'daemon off;'
+      }
 
 networks:
   shared_gateway_net:
