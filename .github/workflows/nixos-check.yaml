@@ -4,60 +4,50 @@ on:
   push:
     branches:
       - main
-      - master
     paths:
       - 'nixos/**'
+      - '.github/workflows/nixos-check.yaml'
   pull_request:
     paths:
       - 'nixos/**'
+      - '.github/workflows/nixos-check.yaml'
+
+permissions:
+  contents: read
 
 jobs:
+  # Evaluates every nixosConfigurations.<host> toplevel.
   check-flake:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: nixos
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/determinate-nix-action@v3
-      - name: Check Flake Structure
-        run: nix flake check
-
-  prepare-build-matrix:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: nixos
-    permissions:
-      contents: read
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v7
-      - id: set-matrix
-        name: Generate Host Matrix
-        run: |
-          HOSTS=$(find hosts -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "matrix=$HOSTS" >> "$GITHUB_OUTPUT"
-
-  check-host-builds:
-    needs: [check-flake, prepare-build-matrix]
-    runs-on: ubuntu-latest
+      servers: ${{ steps.hosts.outputs.servers }}
     defaults:
       run:
         working-directory: nixos
-    permissions:
-      contents: read
-      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28 # v3.23.3
+      - name: Check flake
+        run: nix flake check
+      - name: List server hosts
+        id: hosts
+        run: |
+          echo "servers=$(nix eval --json .#nixosConfigurations --apply 'c: builtins.filter (n: n != "kawaii") (builtins.attrNames c)')" >> "$GITHUB_OUTPUT"
+
+  # Builds the server hosts, catching compile failures that evaluation can't see.
+  # kawaii (desktop) is evaluated above but too heavy to build on a hosted runner.
+  build-servers:
+    needs: check-flake
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        host: ${{ fromJson(needs.prepare-build-matrix.outputs.matrix) }}
+        host: ${{ fromJson(needs.check-flake.outputs.servers) }}
+    defaults:
+      run:
+        working-directory: nixos
     steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/determinate-nix-action@v3
-      - name: Dry Run Build
-        run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28 # v3.23.3
+      - name: Build
+        run: nix build --no-link .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
