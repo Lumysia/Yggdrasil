@@ -1,25 +1,18 @@
+# No stack on this host is tagged deploy: game servers are started and stopped by hand,
+# and repo changes here are deployed by hand too.
 [[stack]]
 name = "hq-cat-games-gateway"
 tags = ["origin", "ingress"]
 [stack.config]
 server = "hq-cat-games"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-games/gateway"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
-if ! docker network inspect shared_cte2_net >/dev/null 2>&1; then
-  docker network create shared_cte2_net
-fi
-if ! docker network inspect shared_all_the_mons_net >/dev/null 2>&1; then
-  docker network create shared_all_the_mons_net
-fi
-if ! docker network inspect shared_prominence_2_net >/dev/null 2>&1; then
-  docker network create shared_prominence_2_net
-fi
+for net in shared_cte2_net shared_all_the_mons_net shared_prominence_2_net; do
+  docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
+done
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -36,19 +29,10 @@ name = "hq-cat-games-mc-prominence-2"
 tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-games"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-games/mc-prominence-2"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
-pre_deploy.command = """
-if ! docker network inspect shared_prominence_2_net >/dev/null 2>&1; then
-  docker network create shared_prominence_2_net
-fi
-"""
-pre_deploy.shell_mode = true
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 RCON_PASSWORD=[[HQCAT_GAMES_MC_ROCNPWD]]
@@ -61,13 +45,10 @@ name = "hq-cat-games-mc-craft-to-exile-2"
 tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-games"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-games/mc-craft-to-exile-2"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
@@ -80,19 +61,10 @@ name = "hq-cat-games-mc-all-the-mons"
 tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-games"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-games/mc-all-the-mons"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
-pre_deploy.command = """
-if ! docker network inspect shared_all_the_mons_net >/dev/null 2>&1; then
-  docker network create shared_all_the_mons_net
-fi
-"""
-pre_deploy.shell_mode = true
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 RCON_PASSWORD=[[HQCAT_GAMES_ALL_THE_MONS_RCONPWD]]
@@ -105,13 +77,10 @@ name = "hq-cat-games-palworld"
 tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-games"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-games/palworld"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 SERVER_PASSWORD=[[HQCAT_GAMES_PAL_SERVER_PASSWORD]]

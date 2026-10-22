@@ -1,7 +1,0 @@
-[[builder]]
-name = "cator-oracle-01-builder"
-[builder.config]
-type = "Server"
-params.server = "cator-oracle-01"
-
-##

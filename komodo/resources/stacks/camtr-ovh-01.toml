@@ -3,17 +3,14 @@ name = "camtr-ovh-01-gateway"
 tags = ["origin", "ingress", "deploy"]
 [stack.config]
 server = "camtr-ovh-01"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/camtr-ovh-01/gateway"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
-if ! docker network inspect shared_media_net >/dev/null 2>&1; then
-  docker network create shared_media_net
-fi
+for net in shared_media_net; do
+  docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
+done
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -31,41 +28,33 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 
 [[stack]]
 name = "camtr-ovh-01-media"
+# Not tagged deploy: repo changes to this stack are deployed by hand.
 tags = ["origin", "service"]
 [stack.config]
 server = "camtr-ovh-01"
-poll_for_updates = true
 auto_update = true
+# qbittorrent shares gluetun's network namespace (network_mode: service:gluetun),
+# so it has to be recreated whenever gluetun is: update and redeploy the stack as a whole.
 auto_update_all_services = true
 destroy_before_deploy = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/camtr-ovh-01/media"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = '''
 appdata_path=/data/appdata
 media_path=/data/media
 
-mkdir -p \
-  "$media_path/downloads/qbittorrent/incomplete" \
-  "$media_path/movies" \
-  "$media_path/tvshows" \
-  "$appdata_path/bazarr" \
-  "$appdata_path/plex" \
-  "$appdata_path/pulsarr" \
-  "$appdata_path/qbittorrent" \
-  "$media_path/youtube" \
-  /tmp/plex-transcode
+# Create and own only the directories this stack needs, not their contents:
+# the containers run as 1000:1000 and keep their own files owned that way.
+media_dirs="$media_path $media_path/downloads $media_path/downloads/qbittorrent
+  $media_path/downloads/qbittorrent/incomplete $media_path/movies
+  $media_path/tvshows $media_path/youtube"
+app_dirs="$appdata_path/bazarr $appdata_path/plex $appdata_path/pulsarr
+  $appdata_path/qbittorrent"
 
-chown -R 1000:1000 \
-  "$media_path" \
-  "$appdata_path/bazarr" \
-  "$appdata_path/plex" \
-  "$appdata_path/pulsarr" \
-  "$appdata_path/qbittorrent" \
-  /tmp/plex-transcode
-chmod -R u+rwX,g+rwX "$media_path"
+mkdir -p $media_dirs $app_dirs
+chown 1000:1000 $media_dirs $app_dirs
+chmod u+rwx,g+rwx $media_dirs
 '''
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -80,17 +69,16 @@ OPENVPN_PASSWORD=[[CAMTROVH01_PIA_PASSWORD]]
 
 [[stack]]
 name = "camtr-ovh-01-alacarte"
+# Not tagged deploy: repo changes to this stack are deployed by hand.
 tags = ["origin", "service"]
 [stack.config]
 server = "camtr-ovh-01"
-poll_for_updates = true
 auto_update = true
+# alacarte-web depends on alacarte-wrapper; update and redeploy both together.
 auto_update_all_services = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/camtr-ovh-01/alacarte"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = '''
 appdata_path=/data/appdata
 media_path=/data/media

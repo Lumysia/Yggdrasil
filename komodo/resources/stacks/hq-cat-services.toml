@@ -3,38 +3,14 @@ name = "hq-cat-services-gateway"
 tags = ["origin", "ingress", "deploy"]
 [stack.config]
 server = "hq-cat-services"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/gateway"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
-if ! docker network inspect shared_aiapi_net >/dev/null 2>&1; then
-  docker network create shared_aiapi_net
-fi
-if ! docker network inspect shared_seafile_net >/dev/null 2>&1; then
-  docker network create shared_seafile_net
-fi
-if ! docker network inspect shared_immich_net >/dev/null 2>&1; then
-  docker network create shared_immich_net
-fi
-if ! docker network inspect shared_forgejo_net >/dev/null 2>&1; then
-  docker network create shared_forgejo_net
-fi
-if ! docker network inspect shared_remnawave_net >/dev/null 2>&1; then
-  docker network create shared_remnawave_net
-fi
-if ! docker network inspect shared_n8n_net >/dev/null 2>&1; then
-  docker network create shared_n8n_net
-fi
-if ! docker network inspect shared_openlist_net >/dev/null 2>&1; then
-  docker network create shared_openlist_net
-fi
-if ! docker network inspect shared_stalwart_net >/dev/null 2>&1; then
-  docker network create shared_stalwart_net
-fi
+for net in shared_aiapi_net shared_seafile_net shared_forgejo_net shared_remnawave_net shared_openlist_net shared_stalwart_net; do
+  docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
+done
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -55,13 +31,10 @@ name = "hq-cat-services-aiapi"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-services"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/aiapi"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -78,13 +51,10 @@ name = "hq-cat-services-forgejo"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-services"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/forgejo"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 ignore_services = ["renovate"]
 environment = """
@@ -99,40 +69,18 @@ RENOVATE_TOKEN=[[HQCAT_SERVICES_FORGEJO_RENOVATE_TOKEN]]
 
 ##
 
-# [[stack]]
-# name = "hq-cat-services-immich"
-# tags = ["origin", "service", "deploy"]
-# [stack.config]
-# server = "hq-cat-services"
-# poll_for_updates = true
-# auto_update = true
-# linked_repo = "GitHub-Yggdrasil"
-# run_directory = "apps/hq-cat-services/immich"
-# additional_env_files = [
-#   { path = "stack.env", track = true }
-# ]
-# extra_args = ["--remove-orphans"]
-# environment = """
-# COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-# DB_USERNAME=[[HQCAT_SERVICES_IMMICH_DBUSER]]
-# DB_PASSWORD=[[HQCAT_SERVICES_IMMICH_DBPWD]]
-# """
-
-##
-
 [[stack]]
 name = "hq-cat-services-seafile"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-services"
-poll_for_updates = true
 auto_update = true
+# The sdoc, notification, metadata, search and AI images track the Seafile server release;
+# update them together.
 auto_update_all_services = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/seafile"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -153,13 +101,10 @@ name = "hq-cat-services-remnawave"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-services"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/remnawave"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -168,32 +113,6 @@ APP_SECRET=[[HQCAT_SERVICES_REMNAWAVE_JWT_AUTH_SECRET]]
 METRICS_PASS=[[HQCAT_SERVICES_REMNAWAVE_METRICS_PASS]]
 SUBSCRIPTION_PAGE_API_TOKEN=[[HQCAT_SERVICES_REMNAWAVE_SUBSCRIPTION_PAGE_API_TOKEN]]
 """
-##
-
-# [[stack]]
-# name = "hq-cat-services-n8n"
-# tags = ["origin", "service", "deploy"]
-# [stack.config]
-# server = "hq-cat-services"
-# poll_for_updates = true
-# auto_update = true
-# linked_repo = "GitHub-Yggdrasil"
-# run_directory = "apps/hq-cat-services/n8n"
-# additional_env_files = [
-#   { path = "stack.env", track = true }
-# ]
-# pre_deploy.command = """
-# mkdir -p /data/appdata/n8n /data/appdata/n8n-files
-# chown -R 1000:1000 /data/appdata/n8n /data/appdata/n8n-files
-# """
-# pre_deploy.shell_mode = true
-# extra_args = ["--remove-orphans"]
-# environment = """
-# COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-# COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
-# N8N_ENCRYPTION_KEY=[[HQCAT_SERVICES_N8N_ENCRYPTION_KEY]]
-# N8N_SSO_OIDC_CLIENT_SECRET=[[HQCAT_SERVICES_N8N_OIDC_CLIENT_SECRET]]
-# """
 
 ##
 
@@ -202,13 +121,10 @@ name = "hq-cat-services-openlist"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-services"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/openlist"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_B=[[COMMON_DOMAIN_B]]
@@ -221,13 +137,10 @@ name = "hq-cat-services-stalwart"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-services"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/stalwart"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
 mkdir -p /data/appdata/stalwart/etc /data/db/stalwart
 chown 2000:2000 /data/appdata/stalwart/etc /data/db/stalwart

@@ -3,20 +3,14 @@ name = "cator-oracle-01-gateway"
 tags = ["origin", "ingress", "deploy"]
 [stack.config]
 server = "cator-oracle-01"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/cator-oracle-01/gateway"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
-if ! docker network inspect shared_media_net >/dev/null 2>&1; then
-  docker network create shared_media_net
-fi
-if ! docker network inspect shared_lunatv_net >/dev/null 2>&1; then
-  docker network create shared_lunatv_net
-fi
+for net in shared_media_net shared_lunatv_net; do
+  docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
+done
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -37,16 +31,13 @@ name = "cator-oracle-01-runner"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "cator-oracle-01"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/cator-oracle-01/runner"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
-FORGEJO_DOMAIN=code.[[COMMON_DOMAIN_A]]
+FORGEJO_DOMAIN=git.[[COMMON_DOMAIN_A]]
 FORGEJO_RUNNER_REGISTRATION_TOKEN=[[CATOR_ORACLE_01_RUNNER_FORGEJO_REGISTRATION_TOKEN]]
 """
 
@@ -57,13 +48,10 @@ name = "cator-oracle-01-remnawave-node"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "cator-oracle-01"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/cator-oracle-01/remnawave-node"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 REMNANODE_SECRET_KEY=[[CATOR_ORACLE_01_REMNANODE_SECRET_KEY]]
@@ -76,13 +64,10 @@ name = "cator-oracle-01-lunatv"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "cator-oracle-01"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/cator-oracle-01/lunatv"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
 mkdir -p /data/db/lunatv-kvrocks
 chown -R 999:999 /data/db/lunatv-kvrocks

@@ -3,13 +3,16 @@ name = "Komodo Ntfy"
 [alerter.config]
 enabled = true
 endpoint.type = "Ntfy"
-endpoint.params.url = "https://ntfy.sh/komodo-1sz71kbzb9klqj2j"
+# Full topic URL, kept in a secret Komodo variable because this repo is public.
+endpoint.params.url = "[[COMMON_KOMODO_NTFY_URL]]"
 alert_types = [
   "ServerUnreachable",
   "ServerDisk",
-  "AwsBuilderTerminationFailed",
-  "BuildFailed",
-  "RepoBuildFailed"
+  "ServerVersionMismatch",
+  "StackStateChange",
+  "ResourceSyncPendingUpdates",
+  "ProcedureFailed",
+  "ActionFailed"
 ]
 
 ##

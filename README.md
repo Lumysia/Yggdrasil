@@ -22,7 +22,7 @@ Each machine has a NixOS configuration under `nixos/hosts/` and a matching entry
 
 Container stacks live under `apps/<host>/<stack>/`. Runtime configuration belongs in `compose.yaml`, while non-secret values belong in `stack.env`. Values that must not be committed are stored in Komodo and interpolated when a stack is deployed.
 
-Komodo imports the declarations under `komodo/resources/`. The resource sync is managed and has deletion enabled, so removing a declaration from Git also removes that resource on the next sync. A scheduled procedure runs the sync every six hours, then deploys changed stacks carrying the `deploy` tag. Untagged stacks remain manually managed.
+Komodo imports the declarations under `komodo/resources/`. The resource sync has deletion enabled, so removing a declaration from Git also removes that resource on the next sync. A scheduled procedure runs the sync every six hours, then deploys changed stacks carrying the `deploy` tag. Untagged stacks remain manually managed.
 
 Host-to-host management traffic uses the Tailnet. Public ingress is handled by the gateway stack assigned to each relevant host. Stack secrets are kept in Komodo variables. The NixOS hosts have sops-nix wired up for secrets encrypted with age, but no host declares a secret yet.
 
@@ -77,7 +77,7 @@ Use the repository wrapper to manage the control plane or a host agent:
 ./komodo-infra-mgnt.sh down <variant> [hostname]
 ```
 
-Run `./komodo-infra-mgnt.sh --help` for the accepted variants, commands, image-mirror option, and Compose argument forwarding. Host-specific environment files are stored under `komodo/infra/<variant>/host-env/`. Runtime data defaults to `${HOME}/komodo-data` and can be moved with `KOMODO_INFRA_DATA_DIR`.
+Run `./komodo-infra-mgnt.sh --help` for the accepted variants, commands, image-mirror option, and Compose argument forwarding. Host-specific environment files are stored under `komodo/infra/<variant>/host-env/`. Runtime data defaults to `komodo-data` next to the repository checkout and can be moved with `KOMODO_INFRA_DATA_DIR`. These Compose projects are started by hand with this script; Komodo does not deploy them.
 
 After the control plane is running:
 

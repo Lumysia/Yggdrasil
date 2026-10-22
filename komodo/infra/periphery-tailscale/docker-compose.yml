@@ -1,29 +1,13 @@
+# Started by hand with ./komodo-infra-mgnt.sh on each host; Komodo does not deploy this.
+# Same Periphery as periphery-only, plus a Tailscale node for hosts without one.
 services:
   periphery:
-    image: ghcr.io/moghtech/komodo-periphery:2
-    init: true
-    restart: always
-    ports:
-      - 8120:8120
+    extends:
+      file: ../periphery-only/docker-compose.yml
+      service: periphery
     volumes:
-      - ${KOMODO_INFRA_DATA_DIR}/komodo-keys:/config/keys
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /proc:/proc
-      - /sys:/sys:ro
-      - ${KOMODO_INFRA_DATA_DIR}/komodo-periphery:/etc/komodo
-      - /data:/data
+      # Host root's home, e.g. its docker CLI config, for Periphery (HOME=/root).
       - /root:/root
-    environment:
-      PERIPHERY_CORE_PUBLIC_KEYS: MCowBQYDK2VuAyEAMnQVnJN2WVoWyyWbaA8R8wzvon/XJ2cYQzvpb7S14TU=
-      PERIPHERY_SSL_ENABLED: true
-      PERIPHERY_DISABLE_TERMINALS: false
-      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
-      PERIPHERY_LOGGING_PRETTY: false
-      PERIPHERY_PRETTY_STARTUP_CONFIG: false
-      # PERIPHERY_EXCLUDE_DISK_MOUNTS: /snap,/etc/repos
-    labels:
-      komodo.skip:
-      com.centurylinklabs.watchtower.enable: "true"
 
   tailscale:
     image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}tailscale/tailscale:latest
@@ -43,21 +27,18 @@ services:
       TS_ACCEPT_DNS: false
       TS_USERSPACE: false
       TS_AUTHKEY: ${TAILSCALE_AUTH_KEY:-}
+      # containerboot re-applies TS_HOSTNAME and TS_ACCEPT_DNS on every start.
       TS_HOSTNAME: ${TAILSCALE_HOSTNAME}
+      # Used only by the first `tailscale up`. Later starts keep the node's existing tags,
+      # so a TAILSCALE_TAGS change on an existing node has to be made in the admin console.
       TS_EXTRA_ARGS: --snat-subnet-routes=false --advertise-tags=${TAILSCALE_TAGS} --advertise-exit-node=false
       TS_AUTH_ONCE: true
       TS_STATE_DIR: /var/lib/tailscale/state
     post_start:
-      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --hostname="${TAILSCALE_HOSTNAME}" --advertise-exit-node=false --advertise-routes= --snat-subnet-routes=false; if [ -n "${TS_RELAY_SERVER_PORT:-}" ]; then tailscale set --relay-server-port="${TS_RELAY_SERVER_PORT:-}"; else tailscale set --relay-server-port=""; fi'
+      # Settings containerboot doesn't re-apply. An empty TS_RELAY_SERVER_PORT turns the relay off.
+      - command: sh -c 'until tailscale status >/dev/null 2>&1; do sleep 1; done; tailscale set --advertise-exit-node=false --advertise-routes= --snat-subnet-routes=false --relay-server-port="${TS_RELAY_SERVER_PORT:-}"'
 
   watchtower:
-    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}nickfedor/watchtower:latest
-    labels:
-      komodo.skip:
-      com.centurylinklabs.watchtower.enable: "true"
-    restart: unless-stopped
-    command:
-      - --label-enable
-      - --cleanup
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    extends:
+      file: ../periphery-only/docker-compose.yml
+      service: watchtower

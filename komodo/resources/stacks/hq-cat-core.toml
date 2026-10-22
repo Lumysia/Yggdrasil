@@ -1,15 +1,13 @@
 [[stack]]
 name = "hq-cat-core-dns"
+# Not tagged deploy: stopped for now; deploy by hand.
 tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-core"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-core/dns"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 
 ##
@@ -19,13 +17,10 @@ name = "hq-cat-core-gateway"
 tags = ["origin", "ingress", "deploy"]
 [stack.config]
 server = "hq-cat-core"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-core/gateway"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 CLOUDFLARE_API_TOKEN=[[COMMON_CF_API_TOKEN]]

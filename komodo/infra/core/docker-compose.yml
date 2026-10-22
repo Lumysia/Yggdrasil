@@ -1,19 +1,22 @@
+# Started by hand with ./komodo-infra-mgnt.sh on the Core host; Komodo does not deploy this.
 services:
   mongo:
-    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}mongo:latest
+    # Pinned to the major.minor running now. Watchtower still pulls 9.0.x patches;
+    # moving to a new release is a manual change here.
+    image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}mongo:9.0
     labels:
       komodo.skip:
       com.centurylinklabs.watchtower.enable: "true"
     command: --quiet --wiredTigerCacheSizeGB 0.25
     restart: unless-stopped
-    env_file:
-      - .env
-    # ports:
-    #   - 27017:27017
+    # Only the root login. These apply on first init of an empty data dir.
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${KOMODO_DATABASE_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${KOMODO_DATABASE_PASSWORD}
     volumes:
       - ${KOMODO_INFRA_DATA_DIR}/mongo-data:/data/db
       - ${KOMODO_INFRA_DATA_DIR}/mongo-config:/data/configdb
-  
+
   core:
     image: ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-2}
     init: true
@@ -28,18 +31,10 @@ services:
     ports:
       - 9120:9120
     volumes:
-      ## Attach the Core / Periphery communication keys
       - ${KOMODO_INFRA_DATA_DIR}/keys:/config/keys
-      ## Core cache for repos for latest commit hash / contents
       - ${KOMODO_INFRA_DATA_DIR}/repo-cache:/repo-cache
-      ## Store sync files on server
       - ${KOMODO_INFRA_DATA_DIR}/syncs:/syncs
-      ## Optionally mount a custom core.config.toml
-      # - /path/to/core.config.toml:/config/config.toml
       - ${KOMODO_INFRA_DATA_DIR}/backups:/backups
-    ## Allows for systemd Periphery connection at "http://host.docker.internal:8120"
-    # extra_hosts:
-    #   - host.docker.internal:host-gateway
 
   periphery:
     image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}

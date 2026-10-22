@@ -3,17 +3,14 @@ name = "uslax-dmit-02-gateway"
 tags = ["edge", "ingress", "deploy"]
 [stack.config]
 server = "uslax-dmit-02"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/uslax-dmit-02/gateway"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
-if ! docker network inspect shared_gateway_net >/dev/null 2>&1; then
-  docker network create shared_gateway_net
-fi
+for net in shared_gateway_net; do
+  docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
+done
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -28,13 +25,10 @@ name = "uslax-dmit-02-remnawave-node"
 tags = ["edge", "service", "deploy"]
 [stack.config]
 server = "uslax-dmit-02"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/uslax-dmit-02/remnawave-node"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 REMNANODE_SECRET_KEY=[[USLAX_DMIT_02_REMNANODE_SECRET_KEY]]
