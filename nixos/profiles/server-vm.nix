@@ -7,7 +7,6 @@
   features.services.tailscale.enable = true;
   features.user.suser.enable = true;
 
-  boot.loader.grub.useOSProber = true;
   boot.kernelParams = [ "console=ttyS0,115200" "console=tty1" ];
 
   services.qemuGuest.enable = true;
