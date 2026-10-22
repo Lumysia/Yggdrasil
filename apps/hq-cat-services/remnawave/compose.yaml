@@ -1,6 +1,6 @@
 services:
   remnawave:
-    image: remnawave/backend:latest
+    image: remnawave/backend:3
     restart: always
     env_file:
       - stack.env

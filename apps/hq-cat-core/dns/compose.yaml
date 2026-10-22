@@ -3,12 +3,6 @@ services:
     image: adguard/adguardhome:latest
     restart: always
     ports:
-      #- 5443:5443/udp
-      #- 5443:5443/tcp
-      #- 8853:8853/udp
-      #- 853:853/udp
-      #- 784:784/udp
-      #- 853:853/tcp
       - 3000:3000/tcp
       - 53:53/udp
       - 53:53/tcp

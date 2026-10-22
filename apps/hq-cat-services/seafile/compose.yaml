@@ -1,6 +1,6 @@
 services:
   db:
-    image: mariadb:10
+    image: mariadb:10.11
     restart: unless-stopped
     env_file:
       - stack.env
@@ -19,21 +19,24 @@ services:
       retries: 10
 
   redis:
-    image: redis
+    image: redis:8
     restart: unless-stopped
     command: ["sh", "-c", "redis-server --requirepass \"$$REDIS_PASSWORD\""]
-    env_file:
-      - stack.env
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
     volumes:
       - /tmp/redisseafile:/data
     networks:
       - seafile_internal_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   seafile:
     image: creamed/seafile-server:14-nightly
-    # image: seafileltd/seafile-pro-mc:14.0-latest
     restart: unless-stopped
     labels:
       caddy: cloud.${COMMON_DOMAIN_A}
@@ -51,8 +54,6 @@ services:
     env_file:
       - stack.env
     environment:
-      INIT_SS_ADMIN_USER: ${INIT_SS_ADMIN_USER}
-      INIT_SS_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SEAFILE_MYSQL_DB_PASSWORD: ${SEAFILE_MYSQL_DB_PASSWORD}
@@ -67,7 +68,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       # seafevents checks SeaSearch once at startup and leaves indexing off if it isn't up yet.
       seasearch:
         condition: service_started
@@ -121,7 +122,7 @@ services:
       - shared_seafile_net
 
   onlyoffice:
-    image: onlyoffice/documentserver:latest
+    image: onlyoffice/documentserver:10.0
     restart: unless-stopped
     labels:
       caddy: cloud.${COMMON_DOMAIN_A}
@@ -148,10 +149,7 @@ services:
     image: seafileltd/seafile-md-server:14.0-latest
     restart: unless-stopped
     volumes:
-      # - ${BLOBSTORE_PATH}/seafile/metadata:/shared
       - ${BLOBSTORE_PATH}/seafile:/shared
-    #ports:
-      # - ${MD_PORT:-8084}:${MD_PORT:-8084}
     env_file:
       - stack.env
     environment:
@@ -175,8 +173,8 @@ services:
     env_file:
       - stack.env
     environment:
-      INIT_SS_ADMIN_USER: ${INIT_SS_ADMIN_USER}
-      INIT_SS_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
+      SS_FIRST_ADMIN_USER: ${INIT_SS_ADMIN_USER}
+      SS_FIRST_ADMIN_PASSWORD: ${INIT_SS_ADMIN_PASSWORD}
     networks:
       - seafile_internal_net
 
@@ -200,7 +198,7 @@ services:
       - shared_seafile_net
 
   av:
-    image: clamav/clamav:latest
+    image: clamav/clamav:1.5
     restart: unless-stopped
     networks:
       - seafile_internal_net

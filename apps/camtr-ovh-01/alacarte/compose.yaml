@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     networks:
       - shared_media_net
-      - alacarte-net
+      - alacarte_net
     depends_on:
       - alacarte-wrapper
     labels:
@@ -40,7 +40,7 @@ services:
     platform: linux/amd64
     restart: on-failure
     networks:
-      - alacarte-net
+      - alacarte_net
     volumes:
       - ${APPDATA_PATH}/alacarte/wrapper:/app/rootfs/data
       - ${APPDATA_PATH}/alacarte/supervisor:/app/supervisor-secret
@@ -57,4 +57,4 @@ services:
 networks:
   shared_media_net:
     external: true
-  alacarte-net:
+  alacarte_net:
