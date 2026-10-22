@@ -32,10 +32,7 @@
   };
 
   # Firewall
-  networking.firewall = {
-    enable = true;
-    checkReversePath = false; # Whonix fix
-  };
+  networking.firewall.checkReversePath = false; # Whonix fix
 
   system.autoUpgrade = {
     enable = true;
