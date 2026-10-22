@@ -52,7 +52,10 @@
 
       programs.fastfetch.enable = true;
       programs.git-credential-oauth.enable = true;
-      programs.firefox.enable = true;
+      programs.firefox = {
+        enable = true;
+        configPath = ".mozilla/firefox"; # pre-26.05 location; profiles live here
+      };
       programs.vscode.enable = true;
       programs.mangohud.enable = true;
     };
