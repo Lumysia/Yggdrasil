@@ -1,7 +1,7 @@
 services:
   cloudflared:
     image: cloudflare/cloudflared:latest
-    restart: always
+    restart: unless-stopped
     networks:
       - cloudflare_net
       - shared_cte2_net
@@ -9,9 +9,9 @@ services:
       - shared_prominence_2_net
     extra_hosts:
       - host.docker.internal:host-gateway
-    env_file:
-      - stack.env
-    command: tunnel --no-autoupdate --protocol auto run --token ${HQCAT_GAMES_CFD_TOKEN}
+    environment:
+      TUNNEL_TOKEN: ${HQCAT_GAMES_CFD_TOKEN}
+    command: tunnel --no-autoupdate --protocol auto run
 
   easytier:
     image: easytier/easytier:latest

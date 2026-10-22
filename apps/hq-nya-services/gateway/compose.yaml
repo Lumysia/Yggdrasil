@@ -4,7 +4,7 @@ services:
     command:
       - caddy
       - docker-proxy
-    restart: always
+    restart: unless-stopped
     ports:
       - 80:80
       - 443:443
@@ -16,8 +16,6 @@ services:
       - ${APPDATA_PATH}/caddyservices/data:/data/caddy
       - ${APPDATA_PATH}/caddyservices/config:/config/caddy
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    env_file:
-      - stack.env
     environment:
       CADDY_DOCKER_POLLING_INTERVAL: 30m
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
@@ -31,14 +29,14 @@ services:
 
   cloudflared:
     image: docker.libcuda.so/cloudflare/cloudflared:latest
-    restart: always
+    restart: unless-stopped
     networks:
       - cloudflare_net
     extra_hosts:
       - host.docker.internal:host-gateway
-    env_file:
-      - stack.env
-    command: tunnel --no-autoupdate --protocol auto run --token ${HQNYA_SERVICES_CFD_TOKEN}
+    environment:
+      TUNNEL_TOKEN: ${HQNYA_SERVICES_CFD_TOKEN}
+    command: tunnel --no-autoupdate --protocol auto run
 
 networks:
   default:
