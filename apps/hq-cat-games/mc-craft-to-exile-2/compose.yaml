@@ -14,6 +14,12 @@ services:
       - ${GAMES_PATH}/${MC_FOLDER_NAME}:/data
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_downloads:/downloads
       - ${GAMES_PATH}/${MC_FOLDER_NAME}_config:/config:ro
+    configs:
+      - source: bluemap_core
+        target: /data/FeedTheBeast/config/bluemap/core.conf
+        uid: "1000"
+        gid: "1000"
+        mode: 0644
     networks:
       - shared_cte2_net
     deploy:
@@ -24,3 +30,9 @@ services:
 networks:
   shared_cte2_net:
     external: true
+
+configs:
+  # BlueMap only downloads the Minecraft client assets after the EULA is accepted here.
+  bluemap_core:
+    content: |
+      accept-download: true
