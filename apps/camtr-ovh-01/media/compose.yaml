@@ -92,6 +92,14 @@ services:
     volumes:
       - ${APPDATA_PATH}/gluetun:/gluetun
       - /tmp/gluetun:/tmp/gluetun
+    # Image default allows ~25s; a failed first OpenVPN handshake retries after ~35s,
+    # which marked gluetun unhealthy and blocked qbittorrent's depends_on.
+    healthcheck:
+      test: ["CMD-SHELL", "/gluetun-entrypoint healthcheck"]
+      interval: 5s
+      timeout: 5s
+      start_period: 2m
+      retries: 3
     environment:
       VPN_SERVICE_PROVIDER: private internet access
       OPENVPN_USER: ${OPENVPN_USER}
