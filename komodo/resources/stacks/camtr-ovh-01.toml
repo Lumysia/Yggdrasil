@@ -46,51 +46,17 @@ additional_env_files = [
 pre_deploy.command = '''
 appdata_path=/data/appdata
 media_path=/data/media
-bazarr_config_dir="$appdata_path/bazarr/config"
-qbt_config_dir="$appdata_path/qbittorrent/qBittorrent"
 
 mkdir -p \
   "$media_path/downloads/qbittorrent/incomplete" \
   "$media_path/movies" \
   "$media_path/tvshows" \
-  "$bazarr_config_dir" \
+  "$appdata_path/bazarr" \
   "$appdata_path/plex" \
   "$appdata_path/pulsarr" \
-  "$qbt_config_dir" \
+  "$appdata_path/qbittorrent" \
   "$media_path/youtube" \
   /tmp/plex-transcode
-
-qbt_conf="$qbt_config_dir/qBittorrent.conf"
-current_port=
-if [ -f "$qbt_conf" ]; then
-  current_port=$(sed -n 's/^Session\\Port=//p' "$qbt_conf" | head -n 1)
-fi
-cp qBittorrent.conf "$qbt_conf"
-if [ -n "$current_port" ]; then
-  sed -i "s|^Session\\\\Port=.*|Session\\\\Port=$current_port|" "$qbt_conf"
-fi
-
-for arr in prowlarr radarr sonarr; do
-  arr_conf="$appdata_path/$arr/config.xml"
-  if [ -f "$arr_conf" ]; then
-    sed -i 's|<AuthenticationMethod>None</AuthenticationMethod>|<AuthenticationMethod>External</AuthenticationMethod>|' "$arr_conf"
-  fi
-done
-
-bazarr_conf="$bazarr_config_dir/config.yaml"
-if [ ! -f "$bazarr_conf" ]; then
-  cat > "$bazarr_conf" <<'EOF'
-general:
-  base_url: /bazarr
-auth:
-  type: null
-EOF
-else
-  sed -i \
-    -e '/^general:/,/^[^[:space:]#][^:]*:/ s|^\([[:space:]]*base_url:\).*|\1 /bazarr|' \
-    -e '/^auth:/,/^[^[:space:]#][^:]*:/ s|^\([[:space:]]*type:\).*|\1 null|' \
-    "$bazarr_conf"
-fi
 
 chown -R 1000:1000 \
   "$media_path" \
