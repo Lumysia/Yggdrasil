@@ -18,13 +18,13 @@ This README describes how the repository is organized and operated. It does not 
 
 ## How it works
 
-Each machine has a NixOS configuration under `nixos/hosts/` and a matching entry in `nixos/flake.nix`. Shared behavior belongs in `nixos/modules/`; host directories should contain only the differences needed by that machine.
+Each machine has a NixOS configuration under `nixos/hosts/` and a matching entry in `nixos/flake.nix`. Shared behavior belongs in `nixos/modules/` (feature modules, switched on per host) and `nixos/profiles/` (the common server VM base); host directories should contain only the differences needed by that machine.
 
 Container stacks live under `apps/<host>/<stack>/`. Runtime configuration belongs in `compose.yaml`, while non-secret values belong in `stack.env`. Values that must not be committed are stored in Komodo and interpolated when a stack is deployed.
 
 Komodo imports the declarations under `komodo/resources/`. The resource sync is managed and has deletion enabled, so removing a declaration from Git also removes that resource on the next sync. A scheduled procedure runs the sync every six hours, then deploys changed stacks carrying the `deploy` tag. Untagged stacks remain manually managed.
 
-Host-to-host management traffic uses the Tailnet. Public ingress is handled by the gateway stack assigned to each relevant host. NixOS secrets are encrypted with SOPS and age; stack secrets are kept in Komodo variables.
+Host-to-host management traffic uses the Tailnet. Public ingress is handled by the gateway stack assigned to each relevant host. Stack secrets are kept in Komodo variables. The NixOS hosts have sops-nix wired up for secrets encrypted with age, but no host declares a secret yet.
 
 ## NixOS hosts
 
@@ -49,15 +49,22 @@ Rebuild an existing host:
 ./nixos-rebuild.sh <hostname>
 ```
 
-The wrapper also supports updating flake inputs, activating on the next boot, and using a network proxy:
+The wrapper also supports activating on the next boot and using a network proxy:
 
 ```bash
-./nixos-rebuild.sh --update <hostname>
 ./nixos-rebuild.sh --boot <hostname>
 ./nixos-rebuild.sh --proxy http://proxy.example:8080 <hostname>
 ```
 
-If `<hostname>` is omitted, the script uses the current machine's hostname.
+If `<hostname>` is omitted, the script uses the current machine's hostname. Pull the repository first; `nixos/flake.lock` is updated through Dependabot pull requests, not on the hosts.
+
+A host can also be built on another machine and activated over SSH, so it needs no clone and no access to GitHub or the binary cache:
+
+```bash
+nixos-rebuild switch --flake ./nixos#<hostname> --target-host <user>@<hostname> --sudo
+```
+
+If a switch goes wrong, boot the previous generation from the boot menu, or run `sudo nixos-rebuild switch --rollback`. Generations are kept for 14 days.
 
 ## Komodo infrastructure
 
@@ -94,7 +101,7 @@ cd apps/<host>/<stack>
 docker compose config --quiet
 ```
 
-CI runs `nix flake check` and a dry-run build for every host whenever NixOS configuration changes. Compose and Komodo changes should still be rendered or parsed locally because they are not covered by that workflow.
+CI runs `nix flake check` (which evaluates every host) and builds every server host whenever NixOS configuration changes. Compose and Komodo changes should still be rendered or parsed locally because they are not covered by that workflow.
 
 ## License
 
