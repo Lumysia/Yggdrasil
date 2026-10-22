@@ -3,15 +3,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/features/core.nix
-    ../../modules/features/hardware/nvidia.nix
-    ../../modules/features/desktop/gnome.nix
-    ../../modules/features/desktop/flatpak.nix
-    ../../modules/features/desktop/gaming.nix
-    ../../modules/features/services/tailscale.nix
-    ../../modules/features/virtualisation/docker.nix
-    ../../modules/features/virtualisation/libvirtd.nix
-    ../../modules/home/users/ivy.nix
   ];
 
   # Feature Flags

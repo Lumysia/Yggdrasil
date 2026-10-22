@@ -27,12 +27,12 @@
 
   outputs = { self, nixpkgs-stable, home-manager-stable, ... }@inputs:
     let
-      mkSystem = { hostname, system ? "x86_64-linux", modules ? [] }:
+      mkSystem = { hostname, modules ? [] }:
         nixpkgs-stable.lib.nixosSystem {
-          inherit system;
           specialArgs = { inherit inputs; };
           modules = [
             ./hosts/${hostname}
+            ./modules
             home-manager-stable.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             {
@@ -47,7 +47,6 @@
         kawaii = mkSystem {
           hostname = "kawaii";
           modules = [
-            inputs.nix-flatpak.nixosModules.nix-flatpak
             inputs.lanzaboote.nixosModules.lanzaboote
           ];
         };
