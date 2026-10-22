@@ -35,7 +35,7 @@ run_directory = "apps/hq-cat-games/mc-prominence-2"
 additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
-RCON_PASSWORD=[[HQCAT_GAMES_MC_ROCNPWD]]
+RCON_PASSWORD=[[HQCAT_GAMES_MC_RCONPWD]]
 """
 
 ##
@@ -51,7 +51,7 @@ run_directory = "apps/hq-cat-games/mc-craft-to-exile-2"
 additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
-RCON_PASSWORD=[[HQCAT_GAMES_CTE2_RCONPWD]]
+RCON_PASSWORD=[[HQCAT_GAMES_MC_RCONPWD]]
 """
 
 ##
@@ -67,7 +67,7 @@ run_directory = "apps/hq-cat-games/mc-all-the-mons"
 additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
-RCON_PASSWORD=[[HQCAT_GAMES_ALL_THE_MONS_RCONPWD]]
+RCON_PASSWORD=[[HQCAT_GAMES_MC_RCONPWD]]
 """
 
 ##
