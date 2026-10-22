@@ -1,21 +1,59 @@
 [[procedure]]
 name = "Run Sync and Deploy"
+description = "Syncs resources from the repo, then deploys every stack tagged deploy whose files changed."
 tags = ["system"]
 config.schedule = "0 0 */6 * * *"
 config.schedule_format = "Cron"
 
 [[procedure.config.stage]]
-name = "Stage 1"
+name = "Sync"
 enabled = true
 executions = [
   { execution.type = "RunSync", execution.params.sync = "Sync-Yggdrasil", enabled = true }
 ]
 
+# DeployStackIfChanged compares compose and tracked env files only. A change to a stack's
+# TOML `environment` or to a Komodo variable does not count; deploy that stack by hand.
 [[procedure.config.stage]]
-name = "Stage 2"
+name = "Deploy changed stacks"
 enabled = true
 executions = [
-  { execution.type = "RunAction", execution.params.action = "Deploy Tagged Stacks", enabled = true }
+  { execution.type = "BatchDeployStackIfChanged", execution.params = { pattern = "*", tags = ["deploy"] }, enabled = true }
+]
+
+##
+
+[[procedure]]
+name = "Redeploy Entry Gateways"
+description = "Redeploys the edge gateways one at a time, e.g. after COMMON_ENTRY_GATEWAY_TLS_ROUTES changes. Stops at the first failure so the other gateways keep serving."
+tags = ["system"]
+
+[[procedure.config.stage]]
+name = "jptyo-greencloud-01-gateway"
+enabled = true
+executions = [
+  { execution.type = "DeployStack", execution.params.stack = "jptyo-greencloud-01-gateway", enabled = true }
+]
+
+[[procedure.config.stage]]
+name = "jptyo-greencloud-02-gateway"
+enabled = true
+executions = [
+  { execution.type = "DeployStack", execution.params.stack = "jptyo-greencloud-02-gateway", enabled = true }
+]
+
+[[procedure.config.stage]]
+name = "uslax-dmit-01-gateway"
+enabled = true
+executions = [
+  { execution.type = "DeployStack", execution.params.stack = "uslax-dmit-01-gateway", enabled = true }
+]
+
+[[procedure.config.stage]]
+name = "uslax-dmit-02-gateway"
+enabled = true
+executions = [
+  { execution.type = "DeployStack", execution.params.stack = "uslax-dmit-02-gateway", enabled = true }
 ]
 
 ##

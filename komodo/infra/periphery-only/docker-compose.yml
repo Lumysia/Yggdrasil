@@ -1,6 +1,8 @@
+# Started by hand with ./komodo-infra-mgnt.sh on each host; Komodo does not deploy this.
+# periphery-tailscale/docker-compose.yml extends both services below.
 services:
   periphery:
-    image: ghcr.io/moghtech/komodo-periphery:2
+    image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
     init: true
     restart: always
     ports:
@@ -19,7 +21,6 @@ services:
       PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
       PERIPHERY_LOGGING_PRETTY: false
       PERIPHERY_PRETTY_STARTUP_CONFIG: false
-      # PERIPHERY_EXCLUDE_DISK_MOUNTS: /snap,/etc/repos
     labels:
       komodo.skip:
       com.centurylinklabs.watchtower.enable: "true"

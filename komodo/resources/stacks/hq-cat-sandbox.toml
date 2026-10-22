@@ -3,23 +3,14 @@ name = "hq-cat-sandbox-gateway"
 tags = ["origin", "ingress", "deploy"]
 [stack.config]
 server = "hq-cat-sandbox"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-sandbox/gateway"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 pre_deploy.command = """
-if ! docker network inspect shared_goclaw_net >/dev/null 2>&1; then
-  docker network create shared_goclaw_net
-fi
-if ! docker network inspect shared_hermes1_net >/dev/null 2>&1; then
-  docker network create shared_hermes1_net
-fi
-if ! docker network inspect shared_hermes2_net >/dev/null 2>&1; then
-  docker network create shared_hermes2_net
-fi
+for net in shared_goclaw_net shared_hermes1_net shared_hermes2_net; do
+  docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
+done
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
@@ -37,16 +28,14 @@ OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
 
 [[stack]]
 name = "hq-cat-sandbox-goclaw"
+# Not tagged deploy: stopped for now; deploy by hand.
 tags = ["origin", "service"]
 [stack.config]
 server = "hq-cat-sandbox"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-sandbox/goclaw"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -61,13 +50,10 @@ name = "hq-cat-sandbox-remnawave-node"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-sandbox"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-sandbox/remnawave-node"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 REMNANODE_SECRET_KEY=[[HQCAT_SANDBOX_REMNANODE_SECRET_KEY]]
@@ -80,13 +66,10 @@ name = "hq-cat-sandbox-hermes"
 tags = ["origin", "service", "deploy"]
 [stack.config]
 server = "hq-cat-sandbox"
-poll_for_updates = true
 auto_update = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-sandbox/hermes"
-additional_env_files = [
-  { path = "stack.env", track = true }
-]
+additional_env_files = ["stack.env"]
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]

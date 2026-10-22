@@ -11,6 +11,12 @@ Usage: ./komodo-infra-mgnt.sh [-m [registry]] <command> <variant> [hostname] [--
 Commands: up, down, restart, ps, logs, config, pull
 Variants: core|c, periphery-only|peripheryonly|po, periphery-tailscale|peripherytailscale|pt
 Hostname defaults to current host.
+-m pulls Docker Hub images through a mirror (default docker.libcuda.so).
+  --mirror=<registry> also works after the variant.
+
+Data lives in KOMODO_INFRA_DATA_DIR (default: komodo-data next to this repo).
+Secrets (Core settings, TAILSCALE_AUTH_KEY) go in the git-ignored
+komodo/infra/<variant>/.env, which Compose reads on its own.
 
 Examples:
   ./komodo-infra-mgnt.sh up core
@@ -28,15 +34,16 @@ die() {
   exit 1
 }
 
+DEFAULT_MIRROR="docker.libcuda.so"
+
+set_mirror() {
+  KOMODO_INFRA_DOCKER_IMAGE_PREFIX="${1%/}/"
+  export KOMODO_INFRA_DOCKER_IMAGE_PREFIX
+}
+
 normalize_command() {
-  case "$1" in
-    up|down|restart|ps|logs|config|pull)
-      printf '%s\n' "$1"
-      ;;
-    *)
-      die "unknown command '$1'."
-      ;;
-  esac
+  is_command "$1" || die "unknown command '$1'."
+  printf '%s\n' "$1"
 }
 
 normalize_stack() {
@@ -100,11 +107,14 @@ load_env() {
   set -a
   . "$ENV_FILE"
   if [ -f "$STACK_DIR/.secrets.env" ]; then
+    echo "Warning: $STACK_DIR/.secrets.env is not git-ignored; move its values into .env." >&2
     . "$STACK_DIR/.secrets.env"
   fi
   set +a
 
-  export KOMODO_INFRA_DATA_DIR="${KOMODO_INFRA_DATA_DIR:-$HOME/komodo-data}"
+  # Next to the repo rather than $HOME, so running the script with sudo
+  # still finds the existing data instead of starting from an empty dir.
+  export KOMODO_INFRA_DATA_DIR="${KOMODO_INFRA_DATA_DIR:-$(dirname -- "$SCRIPT_DIR")/komodo-data}"
   export KOMODO_INFRA_DOCKER_IMAGE_PREFIX="${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}"
 }
 
@@ -122,7 +132,7 @@ print_context() {
     echo "TS:      $TAILSCALE_HOSTNAME"
   fi
   if [ -n "${TAILSCALE_TAGS:-}" ]; then
-    echo "Tags:    $TAILSCALE_TAGS"
+    echo "Tags:    $TAILSCALE_TAGS (first login only)"
   fi
   if [ -n "${TS_RELAY_SERVER_PORT:-}" ]; then
     echo "Relay:   UDP $TS_RELAY_SERVER_PORT"
@@ -140,7 +150,8 @@ ensure_tailscale_auth_key() {
     return
   fi
 
-  if [ -n "${TAILSCALE_AUTH_KEY:-}" ] || has_tailscale_state; then
+  if [ -n "${TAILSCALE_AUTH_KEY:-}" ] || has_tailscale_state ||
+    grep -q '^TAILSCALE_AUTH_KEY=.' "$STACK_DIR/.env" 2>/dev/null; then
     return
   fi
 
@@ -159,30 +170,18 @@ ensure_tailscale_auth_key() {
 }
 
 run_compose() {
-  local compose_args=(--project-directory "$STACK_DIR")
+  local compose=(docker compose --project-directory "$STACK_DIR")
 
   case "$COMMAND" in
     up)
       mkdir -p "$KOMODO_INFRA_DATA_DIR"
-      docker compose "${compose_args[@]}" up -d "$@"
-      ;;
-    down)
-      docker compose "${compose_args[@]}" down "$@"
-      ;;
-    restart)
-      docker compose "${compose_args[@]}" restart "$@"
-      ;;
-    ps)
-      docker compose "${compose_args[@]}" ps "$@"
+      "${compose[@]}" up -d "$@"
       ;;
     logs)
-      docker compose "${compose_args[@]}" logs -f "$@"
+      "${compose[@]}" logs -f "$@"
       ;;
-    config)
-      docker compose "${compose_args[@]}" config "$@"
-      ;;
-    pull)
-      docker compose "${compose_args[@]}" pull "$@"
+    *)
+      "${compose[@]}" "$COMMAND" "$@"
       ;;
   esac
 }
@@ -190,13 +189,16 @@ run_compose() {
 while [ "$#" -gt 0 ]; do
   case "${1:-}" in
     -m|--mirror)
-      mirror_registry="docker.libcuda.so"
       if [ -n "${2:-}" ] && ! is_command "$2"; then
-        mirror_registry="$2"
+        set_mirror "$2"
         shift
+      else
+        set_mirror "$DEFAULT_MIRROR"
       fi
-      KOMODO_INFRA_DOCKER_IMAGE_PREFIX="${mirror_registry%/}/"
-      export KOMODO_INFRA_DOCKER_IMAGE_PREFIX
+      shift
+      ;;
+    --mirror=*)
+      set_mirror "${1#--mirror=}"
       shift
       ;;
     -h|--help)
@@ -216,11 +218,16 @@ COMMAND="$(normalize_command "$1")"
 STACK="$(normalize_stack "$2")"
 shift 2
 
-if [ "${1:-}" = "-m" ] || [ "${1:-}" = "--mirror" ]; then
-  KOMODO_INFRA_DOCKER_IMAGE_PREFIX="docker.libcuda.so/"
-  export KOMODO_INFRA_DOCKER_IMAGE_PREFIX
-  shift
-fi
+case "${1:-}" in
+  -m|--mirror)
+    set_mirror "$DEFAULT_MIRROR"
+    shift
+    ;;
+  --mirror=*)
+    set_mirror "${1#--mirror=}"
+    shift
+    ;;
+esac
 
 if [ "${1:-}" = "--" ]; then
   TARGET_HOST="$(hostname)"
