@@ -28,7 +28,7 @@
 
   # Hardware Specialisation
   specialisation.docked.configuration = {
-    boot.blacklistedKernelModules = config.boot.blacklistedKernelModules ++ [ "i915" ];
+    boot.blacklistedKernelModules = [ "i915" ];
   };
 
   # Firewall
