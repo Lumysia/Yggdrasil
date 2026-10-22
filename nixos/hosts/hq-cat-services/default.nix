@@ -13,15 +13,28 @@ in
 
   time.timeZone = "America/Toronto";
 
-  # Cron Jobs
-  services.cron = {
-    enable = true;
-    systemCronJobs = [
-      # Seafile GC
-      "0 5 * * * root ${docker}/bin/docker exec $(${docker}/bin/docker ps -q --filter \"label=com.docker.compose.project=hq-cat-services-seafile\" --filter \"label=com.docker.compose.service=seafile\") /opt/seafile/seafile-server-latest/seaf-gc.sh"
-      # Gitea Renovate
-      "15 * * * * root ${docker}/bin/docker start $(${docker}/bin/docker ps -a -q --filter \"name=^renovate$\")"
-    ];
+  # Seafile garbage collection (runs inside the Komodo-managed seafile container).
+  systemd.services.seafile-gc = {
+    description = "Seafile garbage collection";
+    serviceConfig.Type = "oneshot";
+    path = [ docker ];
+    script = ''
+      container=$(docker ps -q \
+        --filter label=com.docker.compose.project=hq-cat-services-seafile \
+        --filter label=com.docker.compose.service=seafile)
+      if [ -z "$container" ]; then
+        echo "seafile container not running" >&2
+        exit 1
+      fi
+      docker exec "$container" /opt/seafile/seafile-server-latest/seaf-gc.sh
+    '';
+  };
+  systemd.timers.seafile-gc = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 05:00:00";
+      Persistent = true;
+    };
   };
 
   system.stateVersion = "25.05";
