@@ -14,7 +14,7 @@
       gc = {
         automatic = true;
         dates = "daily";
-        options = "--delete-old";
+        options = "--delete-older-than 14d";
       };
     };
 
@@ -50,7 +50,6 @@
       tree
       btop
       ctop
-      uv
       sops
       age
       ssh-to-age

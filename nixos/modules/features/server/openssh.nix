@@ -6,7 +6,10 @@
   config = lib.mkIf config.features.server.openssh.enable {
     services.openssh = {
       enable = true;
-      settings.PasswordAuthentication = false;
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+      };
     };
   };
 }

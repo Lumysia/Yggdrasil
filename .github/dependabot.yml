@@ -1,17 +1,23 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for more information:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-# https://containers.dev/guide/dependabot
-
 version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+  - package-ecosystem: "nix"
+    directory: "/nixos"
+    schedule:
+      interval: "weekly"
   - package-ecosystem: "docker-compose"
     directories:
       - "/apps/*/*"
     schedule:
       interval: "weekly"
+    ignore:
+      # Dependabot can't get an anonymous token from code.forgejo.org, which fails the whole job.
+      - dependency-name: "forgejo/runner"
+      # Database major upgrades need a dump and restore; do them by hand.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "mariadb"
+        update-types: ["version-update:semver-major"]

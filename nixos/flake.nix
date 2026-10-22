@@ -3,15 +3,10 @@
 
   inputs = {
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager-stable = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs-stable";
-    };
-    home-manager-unstable = {
-      url = "github:nix-community/home-manager/master";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     lanzaboote = {
@@ -27,12 +22,12 @@
 
   outputs = { self, nixpkgs-stable, home-manager-stable, ... }@inputs:
     let
-      mkSystem = { hostname, system ? "x86_64-linux", modules ? [] }:
+      mkSystem = { hostname, modules ? [] }:
         nixpkgs-stable.lib.nixosSystem {
-          inherit system;
           specialArgs = { inherit inputs; };
           modules = [
             ./hosts/${hostname}
+            ./modules
             home-manager-stable.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             {
@@ -47,7 +42,6 @@
         kawaii = mkSystem {
           hostname = "kawaii";
           modules = [
-            inputs.nix-flatpak.nixosModules.nix-flatpak
             inputs.lanzaboote.nixosModules.lanzaboote
           ];
         };

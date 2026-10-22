@@ -1,6 +1,8 @@
-{ lib, config, ... }:
+{ lib, config, inputs, ... }:
 
 {
+  imports = [ inputs.nix-flatpak.nixosModules.nix-flatpak ];
+
   options.features.desktop.flatpak.enable = lib.mkEnableOption "Flatpak Support";
 
   config = lib.mkIf config.features.desktop.flatpak.enable {
