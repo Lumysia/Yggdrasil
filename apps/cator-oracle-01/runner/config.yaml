@@ -1,4 +1,4 @@
 # Settings not listed here keep the runner's defaults.
 runner:
   # Default is 2s; four idle runners polling that often fill the Cloudflare logs.
-  fetch_interval: 30s
+  fetch_interval: 60s
