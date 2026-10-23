@@ -8,6 +8,8 @@ x-runner: &runner
   configs:
     - source: start_sh
       target: /start.sh
+    - source: runner_config
+      target: /runner.yaml
   environment: &runner-env
     FORGEJO_DOMAIN: ${FORGEJO_DOMAIN}
     FORGEJO_RUNNER_REGISTRATION_TOKEN: ${FORGEJO_RUNNER_REGISTRATION_TOKEN}
@@ -50,6 +52,10 @@ services:
       - ${APPDATA_PATH}/forgejo-runner-4:/data
 
 configs:
+  runner_config:
+    content: |
+      container:
+        docker_host: automount
   # Inline because Komodo Periphery runs compose inside its own container, so a
   # relative bind mount would point at a path that doesn't exist on the host.
   # "$$" is a literal "$" for compose.
@@ -86,4 +92,4 @@ configs:
       # Run from / so the daemon doesn't also load ./.runner, which would conflict with the flags.
       cd /
       echo "Starting daemon..."
-      exec forgejo-runner daemon "$$@"
+      exec forgejo-runner daemon --config /runner.yaml "$$@"
