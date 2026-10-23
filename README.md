@@ -56,7 +56,7 @@ The wrapper also supports activating on the next boot and using a network proxy:
 ./nixos-rebuild.sh --proxy http://proxy.example:8080 <hostname>
 ```
 
-The server VMs update themselves every night: at about 04:00 local time they build `main` from GitHub and switch to it, and reboot (03:30–06:00) only when the kernel or initrd changed. Dependabot updates to `nixos/flake.lock` are merged automatically once CI has built every server, so a host only ever pulls a configuration CI already built. Run the wrapper once on a new host to turn this on; hq-nya-services is excluded and is deployed with `--target-host`. Check a host with `systemctl status nixos-upgrade` and `journalctl -u nixos-upgrade`.
+The server VMs update themselves every night: at about 04:00 local time they build `main` from GitHub and switch to it, and reboot (03:30–06:00) only when the kernel or initrd changed. Dependabot updates to `nixos/flake.lock` are merged automatically once CI has built every server, so a host only ever pulls a configuration CI already built. Run the wrapper once on a new host to turn this on. hq-nya-services also self-updates; from the mainland a run may fail to fetch, which changes nothing, and the next night retries. Check a host with `systemctl status nixos-upgrade` and `journalctl -u nixos-upgrade`.
 
 If `<hostname>` is omitted, the script uses the current machine's hostname. Pull the repository first; `nixos/flake.lock` is updated through Dependabot pull requests, not on the hosts.
 

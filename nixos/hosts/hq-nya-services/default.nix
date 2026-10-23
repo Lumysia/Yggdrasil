@@ -1,5 +1,3 @@
-{ lib, ... }:
-
 {
   imports = [
     ./hardware-configuration.nix
@@ -12,9 +10,10 @@
 
   time.timeZone = "Asia/Shanghai";
 
-  # On the mainland it can't reliably fetch from GitHub or the binary cache;
-  # deploy it from another host with --target-host instead (see README).
-  system.autoUpgrade.enable = lib.mkForce false;
+  # On the mainland, fetching from GitHub or the binary cache sometimes fails.
+  # A failed run changes nothing and the next night retries; the timeout stops
+  # a stalled download from blocking later runs.
+  systemd.services.nixos-upgrade.serviceConfig.TimeoutStartSec = "3h";
 
   boot.loader.grub.device = "/dev/sda";
 
