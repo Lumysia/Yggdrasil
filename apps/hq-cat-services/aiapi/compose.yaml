@@ -1,24 +1,11 @@
 services:
-  copilot-api:
-    image: essaypu/copilot-api-plus:alpine-nightly
-    restart: unless-stopped
-    environment:
-      GH_TOKEN: ${GH_TOKEN}
-      COPILOT_API_KEY: ${COPILOT_API_KEY}
-    networks:
-      - shared_aiapi_net
-
   sub2api:
     image: weishaw/sub2api:latest
     restart: unless-stopped
     labels:
       caddy: aiapi.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.0_redir: /copilot /copilot/ 308
-      caddy.1_handle_path: /copilot/*
-      caddy.1_handle_path.reverse_proxy: copilot-api:4141
-      caddy.2_handle: /*
-      caddy.2_handle.reverse_proxy: "{{upstreams 8080}}"
+      caddy.reverse_proxy: "{{upstreams 8080}}"
     env_file:
       - stack.env
     environment:
