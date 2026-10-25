@@ -47,6 +47,9 @@ services:
       - core
     env_file:
       - .env
+    environment:
+      # komodo-infra-mgnt.sh adds /data when it is its own filesystem.
+      PERIPHERY_INCLUDE_DISK_MOUNTS: ${PERIPHERY_INCLUDE_DISK_MOUNTS:-/etc/hostname}
     volumes:
       - ${KOMODO_INFRA_DATA_DIR}/keys:/config/keys
       - /var/run/docker.sock:/var/run/docker.sock

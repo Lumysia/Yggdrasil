@@ -118,12 +118,27 @@ load_env() {
   export KOMODO_INFRA_DOCKER_IMAGE_PREFIX="${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}"
 }
 
+set_disk_mounts() {
+  # /etc/hostname sits on Docker's data disk, which is usually the root disk.
+  # Report /data too when it is a separate filesystem; on the same one it
+  # would be counted twice in Komodo's disk total.
+  if [ -n "${PERIPHERY_INCLUDE_DISK_MOUNTS:-}" ]; then
+    return
+  fi
+  PERIPHERY_INCLUDE_DISK_MOUNTS="/etc/hostname"
+  if [ -d /data ] && [ "$(stat -c %d /data)" != "$(stat -c %d /)" ]; then
+    PERIPHERY_INCLUDE_DISK_MOUNTS="$PERIPHERY_INCLUDE_DISK_MOUNTS,/data"
+  fi
+  export PERIPHERY_INCLUDE_DISK_MOUNTS
+}
+
 print_context() {
   echo "Command: $COMMAND"
   echo "Stack:   $STACK"
   echo "Host:    ${KOMODO_INFRA_HOSTNAME:-$TARGET_HOST}"
   echo "Env:     $ENV_FILE"
   echo "Data:    $KOMODO_INFRA_DATA_DIR"
+  echo "Disks:   $PERIPHERY_INCLUDE_DISK_MOUNTS"
   if [ -n "$KOMODO_INFRA_DOCKER_IMAGE_PREFIX" ]; then
     echo "Images:  Docker Hub via ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX%/}"
   fi
@@ -249,6 +264,7 @@ STACK_DIR="$INFRA_DIR/$STACK"
 ENV_FILE="$(resolve_host_env "$STACK_DIR" "$TARGET_HOST")"
 
 load_env
+set_disk_mounts
 print_context
 ensure_tailscale_auth_key
 run_compose "$@"

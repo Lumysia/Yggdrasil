@@ -18,7 +18,8 @@ services:
       PERIPHERY_CORE_PUBLIC_KEYS: MCowBQYDK2VuAyEAMnQVnJN2WVoWyyWbaA8R8wzvon/XJ2cYQzvpb7S14TU=
       PERIPHERY_SSL_ENABLED: true
       PERIPHERY_DISABLE_TERMINALS: false
-      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
+      # komodo-infra-mgnt.sh adds /data when it is its own filesystem.
+      PERIPHERY_INCLUDE_DISK_MOUNTS: ${PERIPHERY_INCLUDE_DISK_MOUNTS:-/etc/hostname}
       PERIPHERY_LOGGING_PRETTY: false
       PERIPHERY_PRETTY_STARTUP_CONFIG: false
     labels:
