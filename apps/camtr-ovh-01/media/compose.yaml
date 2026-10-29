@@ -152,6 +152,10 @@ services:
     environment:
       # oauth2-proxy already guards /pbh, so skip PBH's own token prompt.
       PBH_WEB_REQUIRELOGIN: "false"
+    extra_hosts:
+      # Keep license checks local: api.pbh-btn.com serves only the online
+      # revoke check and license download. BTN rules use other hosts.
+      - "api.pbh-btn.com:0.0.0.0"
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
