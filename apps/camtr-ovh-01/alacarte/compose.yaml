@@ -38,7 +38,7 @@ services:
   alacarte-wrapper:
     image: essaypu/alacarte-wrapper:wrapper-nightly
     platform: linux/amd64
-    restart: on-failure
+    restart: unless-stopped
     networks:
       - alacarte_net
     volumes:
