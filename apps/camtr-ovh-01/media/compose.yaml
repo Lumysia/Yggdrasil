@@ -149,6 +149,9 @@ services:
     volumes:
       - ${APPDATA_PATH}/peerbanhelper:/app/data
       - /tmp/peerbanhelper:/tmp
+    environment:
+      # oauth2-proxy already guards /pbh, so skip PBH's own token prompt.
+      PBH_WEB_REQUIRELOGIN: "false"
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
