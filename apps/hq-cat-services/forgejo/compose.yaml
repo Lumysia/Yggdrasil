@@ -21,17 +21,6 @@ services:
     volumes:
       - ${BLOBSTORE_PATH}/forgejo:/data
 
-  renovate:
-    image: renovate/renovate:full
-    restart: "no"
-    volumes:
-      - /tmp/renovate-cache:/tmp/renovate-cache
-    env_file:
-      - stack.env
-    environment:
-      RENOVATE_ENDPOINT: https://git.${COMMON_DOMAIN_A}/api/v1/
-      RENOVATE_TOKEN: ${RENOVATE_TOKEN}
-
 networks:
   shared_forgejo_net:
     external: true
