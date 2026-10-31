@@ -20,6 +20,7 @@ services:
     environment:
       <<: *runner-env
       FORGEJO_RUNNER_NAME: ${FORGEJO_RUNNER_NAME}-1
+      FORGEJO_RUNNER_START_DELAY: 0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${APPDATA_PATH}/forgejo-runner-1:/data
@@ -29,6 +30,7 @@ services:
     environment:
       <<: *runner-env
       FORGEJO_RUNNER_NAME: ${FORGEJO_RUNNER_NAME}-2
+      FORGEJO_RUNNER_START_DELAY: 15
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${APPDATA_PATH}/forgejo-runner-2:/data
@@ -38,6 +40,7 @@ services:
     environment:
       <<: *runner-env
       FORGEJO_RUNNER_NAME: ${FORGEJO_RUNNER_NAME}-3
+      FORGEJO_RUNNER_START_DELAY: 30
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${APPDATA_PATH}/forgejo-runner-3:/data
@@ -47,6 +50,7 @@ services:
     environment:
       <<: *runner-env
       FORGEJO_RUNNER_NAME: ${FORGEJO_RUNNER_NAME}-4
+      FORGEJO_RUNNER_START_DELAY: 45
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${APPDATA_PATH}/forgejo-runner-4:/data
@@ -88,6 +92,10 @@ configs:
       old_ifs=$$IFS; IFS=,
       for l in $$labels; do set -- "$$@" --label "$$l"; done
       IFS=$$old_ifs
+
+      # Each runner polls once at start and then every interval. Starting them a little
+      # apart spreads the four polls across the interval instead of all at once.
+      sleep "$${FORGEJO_RUNNER_START_DELAY:-0}"
 
       # Run from / so the daemon doesn't also load ./.runner, which would conflict with the flags.
       cd /
