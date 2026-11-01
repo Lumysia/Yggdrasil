@@ -16,6 +16,7 @@ services:
       - shared_remnawave_net
       - shared_openlist_net
       - shared_stalwart_net
+      - shared_dawarich_net
       - oauth2_proxy_intranet
       - cloudflare_net
     volumes:
@@ -121,6 +122,8 @@ networks:
   shared_openlist_net:
     external: true
   shared_stalwart_net:
+    external: true
+  shared_dawarich_net:
     external: true
   oauth2_proxy_intranet:
     internal: true

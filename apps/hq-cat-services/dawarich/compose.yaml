@@ -1,0 +1,77 @@
+services:
+  dawarich:
+    image: freikin/dawarich:latest
+    restart: unless-stopped
+    entrypoint: web-entrypoint.sh
+    command: ["bin/rails", "server", "-p", "3000", "-b", "::"]
+    stop_grace_period: 60s
+    labels:
+      caddy: dawarich.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    env_file:
+      - stack.env
+    environment:
+      APPLICATION_HOSTS: dawarich.${COMMON_DOMAIN_A}
+      DOMAIN: dawarich.${COMMON_DOMAIN_A}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set HQCAT_SERVICES_DAWARICH_SECRET_KEY_BASE in Komodo}
+      OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
+      OIDC_REDIRECT_URI: https://dawarich.${COMMON_DOMAIN_A}/users/auth/openid_connect/callback
+    volumes:
+      - /tmp/dawarich-public:/var/app/public
+      - ${APPDATA_PATH}/dawarich/watched:/var/app/tmp/imports/watched
+      - ${APPDATA_PATH}/dawarich/storage:/var/app/storage
+    networks:
+      - shared_dawarich_net
+      - dawarich_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:3000/api/v1/health | grep -q '\"status\"\\s*:\\s*\"ok\"'"]
+      interval: 10s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+
+  postgres:
+    image: postgis/postgis:17-3.5-alpine
+    restart: unless-stopped
+    shm_size: 1g
+    env_file:
+      - stack.env
+    volumes:
+      - ${DB_PATH}/dawarich-postgres:/var/lib/postgresql/data
+    networks:
+      - dawarich_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--appendonly", "no"]
+    volumes:
+      - ${DB_PATH}/dawarich-redis:/data
+    networks:
+      - dawarich_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+networks:
+  shared_dawarich_net:
+    external: true
+  dawarich_net:
+    internal: true
