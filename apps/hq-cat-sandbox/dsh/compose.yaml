@@ -10,11 +10,6 @@ services:
     environment:
       DSH_PUBLIC_URL: https://dsh1.${COMMON_DOMAIN_A}/
       DSH_TRUSTED_HOSTS: dsh1.${COMMON_DOMAIN_A}
-      # Read by the dsh-oidc profile patch (installed at runtime, see the PR).
-      DSH_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
-      DSH_OIDC_CLIENT_ID: ${DSH_OIDC_CLIENT_ID:?set HQCAT_SANDBOX_DSH_OIDC_CLIENT_ID in Komodo}
-      DSH_OIDC_PUBLIC_ORIGIN: https://dsh1.${COMMON_DOMAIN_A}
-      DSH_OIDC_ALLOWED_SUBJECTS: '[{"issuer":"https://${COMMON_DOMAIN_AUTH}","subject":"${DSH_OIDC_SUBJECT:?set HQCAT_SANDBOX_DSH_OIDC_SUBJECT in Komodo}"}]'
     volumes:
       - ${APPDATA_PATH}/dsh/home:/home/cua
     # dsh-oidc: its login endpoints go straight to DSH; everything else needs a
