@@ -8,7 +8,7 @@ linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-sandbox/gateway"
 additional_env_files = ["stack.env"]
 pre_deploy.command = """
-for net in shared_dsh_net shared_goclaw_net shared_hermes1_net shared_hermes2_net; do
+for net in shared_dsh1_net shared_goclaw_net shared_hermes1_net shared_hermes2_net; do
   docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
 done
 """
