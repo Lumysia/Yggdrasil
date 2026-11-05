@@ -1,0 +1,35 @@
+services:
+  dsh:
+    image: essaypu/dsh:web-nightly
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    # Upstream runs the trycua desktop with --shm-size=512m; Chromium needs more
+    # than Docker's 64 MB default.
+    shm_size: 512m
+    environment:
+      DSH_PUBLIC_URL: https://dsh1.${COMMON_DOMAIN_A}/
+      DSH_TRUSTED_HOSTS: dsh1.${COMMON_DOMAIN_A}
+    volumes:
+      - ${APPDATA_PATH}/dsh/home:/home/cua
+    # dsh-oidc: its login endpoints go straight to DSH; everything else needs a
+    # valid session from /auth/check. Caddy keeps Host by default. Upgrade headers
+    # are dropped only on the check subrequest so WebSockets still pass.
+    labels:
+      caddy: dsh1.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.@oidc: path /auth/login /auth/callback /auth/check /auth/signin /auth/logout
+      caddy.0_handle: "@oidc"
+      caddy.0_handle.reverse_proxy: "{{upstreams 3080}}"
+      caddy.0_handle.reverse_proxy.header_up: X-Dsh-Oidc-Client-Ip {client_ip}
+      caddy.1_handle.forward_auth: "{{upstreams 3080}}"
+      caddy.1_handle.forward_auth.uri: /auth/check
+      caddy.1_handle.forward_auth.0_header_up: -Connection
+      caddy.1_handle.forward_auth.1_header_up: -Upgrade
+      caddy.1_handle.reverse_proxy: "{{upstreams 3080}}"
+    networks:
+      - shared_dsh1_net
+
+networks:
+  shared_dsh1_net:
+    external: true
