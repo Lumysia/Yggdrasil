@@ -1,0 +1,58 @@
+services:
+  dsh:
+    image: essaypu/dsh:web-nightly
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    # Upstream runs the trycua desktop with --shm-size=512m; Chromium needs more
+    # than Docker's 64 MB default.
+    shm_size: 512m
+    environment:
+      DSH_PUBLIC_URL: https://dsh.${COMMON_DOMAIN_A}/
+      DSH_TRUSTED_HOSTS: dsh.${COMMON_DOMAIN_A}
+      # Read by the dsh-oidc profile patch (installed at runtime, see the PR).
+      DSH_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
+      DSH_OIDC_CLIENT_ID: ${DSH_OIDC_CLIENT_ID:?set HQCAT_SANDBOX_DSH_OIDC_CLIENT_ID in Komodo}
+      DSH_OIDC_PUBLIC_ORIGIN: https://dsh.${COMMON_DOMAIN_A}
+      DSH_OIDC_ALLOWED_SUBJECTS: '[{"issuer":"https://${COMMON_DOMAIN_AUTH}","subject":"${DSH_OIDC_SUBJECT:?set HQCAT_SANDBOX_DSH_OIDC_SUBJECT in Komodo}"}]'
+    volumes:
+      - ${APPDATA_PATH}/dsh/home:/home/cua
+    # dsh-oidc routing: only its five /auth endpoints reach DSH directly, other
+    # /auth/* is 404, and every other path (UI, /api, WebSocket) needs /auth/check.
+    labels:
+      caddy: dsh.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      caddy.0_request_header: -Authorization
+      caddy.1_request_header: -Proxy-Authorization
+      caddy.2_request_header: -X-Dsh-Oidc-Client-Ip
+      caddy.3_request_header: -X-Forwarded-User
+      caddy.4_request_header: -X-Forwarded-Email
+      caddy.5_request_header: -X-Auth-Request-User
+      caddy.6_request_header: -X-Auth-Request-Email
+      caddy.7_request_header: -X-Remote-User
+      caddy.8_request_header: -Remote-User
+      # DSH's cookie from a plain-HTTP listener has no Secure flag; add it once.
+      caddy.header.0_>Strict-Transport-Security: '"max-age=31536000"'
+      caddy.header.1_>Set-Cookie: '"^(dsh-auth-[^\r\n]*?);[ \t]*Secure((?:;[^\r\n]*)?)$$" "$$1$$2"'
+      caddy.header.2_>Set-Cookie: '"^(dsh-auth-[^\r\n]*)$$" "$$1; Secure"'
+      caddy.@oidc: path /auth/login /auth/callback /auth/check /auth/signin /auth/logout
+      caddy.route.0_handle: "@oidc"
+      caddy.route.0_handle.reverse_proxy: "{{upstreams 3080}}"
+      caddy.route.0_handle.reverse_proxy.0_header_up: Host {host}
+      caddy.route.0_handle.reverse_proxy.1_header_up: X-Dsh-Oidc-Client-Ip {remote_host}
+      caddy.route.1_handle: /auth/*
+      caddy.route.1_handle.respond: '"not found" 404'
+      caddy.route.2_handle.forward_auth: "{{upstreams 3080}}"
+      caddy.route.2_handle.forward_auth.uri: /auth/check
+      caddy.route.2_handle.forward_auth.0_header_up: -Connection
+      caddy.route.2_handle.forward_auth.1_header_up: -Upgrade
+      caddy.route.2_handle.forward_auth.2_header_up: Host {host}
+      caddy.route.2_handle.forward_auth.3_header_up: X-Dsh-Oidc-Client-Ip {remote_host}
+      caddy.route.2_handle.reverse_proxy: "{{upstreams 3080}}"
+      caddy.route.2_handle.reverse_proxy.header_up: Host {host}
+    networks:
+      - shared_dsh_net
+
+networks:
+  shared_dsh_net:
+    external: true

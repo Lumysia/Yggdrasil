@@ -10,6 +10,7 @@ services:
       - 443:443
       - 443:443/udp
     networks:
+      - shared_dsh_net
       - shared_goclaw_net
       - shared_hermes1_net
       - shared_hermes2_net
@@ -107,6 +108,8 @@ services:
 networks:
   cloudflare_net:
     enable_ipv6: true
+  shared_dsh_net:
+    external: true
   shared_goclaw_net:
     external: true
   shared_hermes1_net:
