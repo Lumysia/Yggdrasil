@@ -8,7 +8,7 @@ linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-sandbox/gateway"
 additional_env_files = ["stack.env"]
 pre_deploy.command = """
-for net in shared_dsh1_net shared_goclaw_net shared_hermes1_net shared_hermes2_net; do
+for net in shared_dsh1_net shared_hermes1_net shared_hermes2_net; do
   docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
 done
 """
@@ -22,25 +22,6 @@ COMMON_DOMAIN_AUTH=[[COMMON_DOMAIN_AUTH]]
 HQCAT_SANDBOX_CFD_TOKEN=[[HQCAT_SANDBOX_CFD_TOKEN]]
 OAUTH2_PROXY_CLIENT_SECRET=[[COMMON_OAUTH2_CLIENT_SECRET]]
 OAUTH2_PROXY_COOKIE_SECRET=[[COMMON_OAUTH2_COOKIE_SECRET]]
-"""
-
-##
-
-[[stack]]
-name = "hq-cat-sandbox-goclaw"
-# Not tagged deploy: stopped for now; deploy by hand.
-tags = ["origin", "service"]
-[stack.config]
-server = "hq-cat-sandbox"
-auto_update = true
-linked_repo = "GitHub-Yggdrasil"
-run_directory = "apps/hq-cat-sandbox/goclaw"
-additional_env_files = ["stack.env"]
-extra_args = ["--remove-orphans"]
-environment = """
-COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
-GOCLAW_GATEWAY_TOKEN=[[HQCAT_SANDBOX_GOCLAW_GATEWAY_TOKEN]]
-GOCLAW_ENCRYPTION_KEY=[[HQCAT_SANDBOX_GOCLAW_ENCRYPTION_KEY]]
 """
 
 ##
