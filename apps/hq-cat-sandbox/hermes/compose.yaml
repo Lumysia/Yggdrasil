@@ -21,20 +21,22 @@ x-hermes-routes: &hermes-routes
   caddy.2_handle.reverse_proxy: "{{upstreams 9119}}"
 
 services:
-  hermes1:
-    <<: *hermes
-    environment:
-      <<: *hermes-env
-      API_SERVER_KEY: ${HERMES1_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES1_API_SERVER_KEY in Komodo}
-      HERMES_DASHBOARD_PUBLIC_URL: https://hms1.${COMMON_DOMAIN_A}
-      HERMES_DASHBOARD_OIDC_CLIENT_ID: 04c146bb-d0b3-4d48-90de-f856259bc9ff
-    volumes:
-      - ${APPDATA_PATH}/hermes:/opt/data
-    labels:
-      <<: *hermes-routes
-      caddy: hms1.${COMMON_DOMAIN_A}
-    networks:
-      - shared_hermes1_net
+  # hermes1 is stopped: its agent moved to the dsh stack. Data stays under
+  # ${APPDATA_PATH}/hermes (dsh still mounts the vault from there). Uncomment to bring it back.
+  # hermes1:
+  #   <<: *hermes
+  #   environment:
+  #     <<: *hermes-env
+  #     API_SERVER_KEY: ${HERMES1_API_SERVER_KEY:?set HQCAT_SANDBOX_HERMES1_API_SERVER_KEY in Komodo}
+  #     HERMES_DASHBOARD_PUBLIC_URL: https://hms1.${COMMON_DOMAIN_A}
+  #     HERMES_DASHBOARD_OIDC_CLIENT_ID: 04c146bb-d0b3-4d48-90de-f856259bc9ff
+  #   volumes:
+  #     - ${APPDATA_PATH}/hermes:/opt/data
+  #   labels:
+  #     <<: *hermes-routes
+  #     caddy: hms1.${COMMON_DOMAIN_A}
+  #   networks:
+  #     - shared_hermes1_net
 
   hermes2:
     <<: *hermes
@@ -53,7 +55,7 @@ services:
       - shared_hermes2_net
 
 networks:
-  shared_hermes1_net:
-    external: true
+  # shared_hermes1_net:
+  #   external: true
   shared_hermes2_net:
     external: true
