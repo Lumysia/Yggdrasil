@@ -26,10 +26,9 @@ services:
       DSH_OIDC_DIRECT_LOGIN: "true"
     volumes:
       - ${APPDATA_PATH}/dsh/home:/home/cua
-      # Livia's vault, in this stack's own appdata. Files copied from hermes1
-      # keep uid 10000 as owner; DSH (uid 1000) gets access through POSIX ACLs,
-      # which vault-acl keeps in place. No host dir is created if it is missing,
-      # so a deploy before the data copy fails instead of showing an empty vault.
+      # Livia's vault, in this stack's own appdata, owned by DSH's user (uid 1000).
+      # No host dir is created if it is missing, so a deploy without the data
+      # fails instead of showing an empty vault.
       - type: bind
         source: ${APPDATA_PATH}/dsh/lia-notebook
         target: /home/cua/Documents/lia-notebook
@@ -53,40 +52,6 @@ services:
       caddy.1_handle.reverse_proxy: "{{upstreams 3080}}"
     networks:
       - shared_dsh1_net
-
-  # The vault came from hermes1 (uid 10000), and its files are still owned by
-  # that uid. DSH (uid 1000) writes new files 0600, which shrinks the ACL mask.
-  # This grants both users once at start, then every 30 s on files changed since
-  # the last pass.
-  vault-acl:
-    image: alpine:3
-    restart: unless-stopped
-    command: ["sh", "/vault-acl.sh"]
-    configs:
-      - source: vault_acl_sh
-        target: /vault-acl.sh
-    volumes:
-      - type: bind
-        source: ${APPDATA_PATH}/dsh/lia-notebook
-        target: /vault
-        bind:
-          create_host_path: false
-
-configs:
-  vault_acl_sh:
-    content: |
-      #!/bin/sh
-      set -eu
-      apk add --no-cache -q acl >/dev/null
-      find /vault -exec setfacl -m u:1000:rwX,u:10000:rwX,m::rwX {} +
-      find /vault -type d -exec setfacl -m d:u:1000:rwX,d:u:10000:rwX,d:m::rwX {} +
-      touch /tmp/stamp
-      while sleep 30; do
-        touch /tmp/next
-        find /vault -newer /tmp/stamp -exec setfacl -m u:1000:rwX,u:10000:rwX,m::rwX {} +
-        find /vault -type d -newer /tmp/stamp -exec setfacl -m d:u:1000:rwX,d:u:10000:rwX,d:m::rwX {} +
-        mv /tmp/next /tmp/stamp
-      done
 
 networks:
   shared_dsh1_net:
