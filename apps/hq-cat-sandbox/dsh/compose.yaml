@@ -10,14 +10,28 @@ services:
     environment:
       DSH_PUBLIC_URL: https://dsh1.${COMMON_DOMAIN_A}/
       DSH_TRUSTED_HOSTS: dsh1.${COMMON_DOMAIN_A}
+      # DSH's bash tool inherits PATH from the dsh process, and the profile can't
+      # set it; supervisord passes the container env through to the program.
+      PATH: /home/cua/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      # @lumysia/dsh-oidc reads its site config from here; these win over the
+      # profile. Without them the plugin refuses to start and Caddy denies all.
+      DSH_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
+      DSH_OIDC_CLIENT_ID: ${HQCAT_SANDBOX_DSH_OIDC_CLIENT_ID:?set the Pocket ID client id for dsh1}
+      DSH_OIDC_PUBLIC_ORIGIN: https://dsh1.${COMMON_DOMAIN_A}/
+      # Livia's Pocket ID subject, under the issuer above.
+      DSH_OIDC_ALLOWED_SUBJECTS: '["${HQCAT_SANDBOX_DSH_OIDC_SUBJECT:?set the Pocket ID subject allowed on dsh1}"]'
+      # Caddy reaches DSH over shared_dsh1_net, which only Caddy and DSH join.
+      DSH_OIDC_TRUSTED_PROXIES: '["172.24.0.0/16"]'
+      DSH_OIDC_DIRECT_LOGIN: "true"
     volumes:
       - ${APPDATA_PATH}/dsh/home:/home/cua
       # Livia's vault, shared with hermes1 (one copy, owned by hermes uid 10000).
       # Both users get access through POSIX ACLs; vault-acl keeps them working.
       - ${APPDATA_PATH}/hermes/home/Documents/Obsidian Vault/lia-notebook:/home/cua/Documents/lia-notebook
-    # dsh-oidc: its login endpoints go straight to DSH; everything else needs a
-    # valid session from /auth/check. Caddy keeps Host by default. Upgrade headers
-    # are dropped only on the check subrequest so WebSockets still pass.
+    # dsh-oidc: its login endpoints go straight to DSH; everything else, including
+    # the sidebar's /_dsh-oidc/session, needs a valid session from /auth/check.
+    # Caddy keeps Host by default. Upgrade headers are dropped only on the check
+    # subrequest so WebSockets still pass.
     labels:
       caddy: dsh1.${COMMON_DOMAIN_A}
       caddy.import: common_tls
