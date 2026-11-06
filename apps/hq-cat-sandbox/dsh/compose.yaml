@@ -1,5 +1,5 @@
 services:
-  dsh:
+  dsh1:
     image: essaypu/dsh:web-nightly
     restart: unless-stopped
     env_file:
