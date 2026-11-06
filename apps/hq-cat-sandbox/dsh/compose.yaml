@@ -26,9 +26,15 @@ services:
       DSH_OIDC_DIRECT_LOGIN: "true"
     volumes:
       - ${APPDATA_PATH}/dsh/home:/home/cua
-      # Livia's vault, shared with hermes1 (one copy, owned by hermes uid 10000).
-      # Both users get access through POSIX ACLs; vault-acl keeps them working.
-      - ${APPDATA_PATH}/hermes/home/Documents/Obsidian Vault/lia-notebook:/home/cua/Documents/lia-notebook
+      # Livia's vault, in this stack's own appdata. Files copied from hermes1
+      # keep uid 10000 as owner; DSH (uid 1000) gets access through POSIX ACLs,
+      # which vault-acl keeps in place. No host dir is created if it is missing,
+      # so a deploy before the data copy fails instead of showing an empty vault.
+      - type: bind
+        source: ${APPDATA_PATH}/dsh/lia-notebook
+        target: /home/cua/Documents/lia-notebook
+        bind:
+          create_host_path: false
     # dsh-oidc: its login endpoints go straight to DSH; everything else, including
     # the sidebar's /_dsh-oidc/session, needs a valid session from /auth/check.
     # Caddy keeps Host by default. Upgrade headers are dropped only on the check
@@ -48,9 +54,10 @@ services:
     networks:
       - shared_dsh1_net
 
-  # DSH (uid 1000) writes new files 0600 and Hermes (uid 10000) 0644, which
-  # shrinks the ACL mask and locks the other agent out of a new note. This grants
-  # both users once at start, then every 30 s on files changed since the last pass.
+  # The vault came from hermes1 (uid 10000), and its files are still owned by
+  # that uid. DSH (uid 1000) writes new files 0600, which shrinks the ACL mask.
+  # This grants both users once at start, then every 30 s on files changed since
+  # the last pass.
   vault-acl:
     image: alpine:3
     restart: unless-stopped
@@ -59,7 +66,11 @@ services:
       - source: vault_acl_sh
         target: /vault-acl.sh
     volumes:
-      - ${APPDATA_PATH}/hermes/home/Documents/Obsidian Vault/lia-notebook:/vault
+      - type: bind
+        source: ${APPDATA_PATH}/dsh/lia-notebook
+        target: /vault
+        bind:
+          create_host_path: false
 
 configs:
   vault_acl_sh:
