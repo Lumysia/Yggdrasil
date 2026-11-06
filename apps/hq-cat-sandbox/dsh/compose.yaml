@@ -1,5 +1,5 @@
 services:
-  dsh1:
+  dsh:
     image: essaypu/dsh:web-nightly
     restart: unless-stopped
     env_file:
@@ -8,8 +8,8 @@ services:
     # than Docker's 64 MB default.
     shm_size: 512m
     environment:
-      DSH_PUBLIC_URL: https://dsh1.${COMMON_DOMAIN_A}/
-      DSH_TRUSTED_HOSTS: dsh1.${COMMON_DOMAIN_A}
+      DSH_PUBLIC_URL: https://dsh.${COMMON_DOMAIN_A}/
+      DSH_TRUSTED_HOSTS: dsh.${COMMON_DOMAIN_A}
       # DSH's bash tool inherits PATH from the dsh process, and the profile can't
       # set it; supervisord passes the container env through to the program.
       PATH: /home/cua/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -18,7 +18,7 @@ services:
       DSH_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
       # Public PKCE client: the id is not a secret (it shows in every login redirect).
       DSH_OIDC_CLIENT_ID: afc9056d-16dc-443e-b0dd-b0ca612b3313
-      DSH_OIDC_PUBLIC_ORIGIN: https://dsh1.${COMMON_DOMAIN_A}/
+      DSH_OIDC_PUBLIC_ORIGIN: https://dsh.${COMMON_DOMAIN_A}/
       # Who may sign in is decided by the Pocket ID client's allowed groups.
       DSH_OIDC_ALLOW_ANY_USER: "true"
       # Caddy reaches DSH over shared_dsh1_net, which only Caddy and DSH join.
@@ -39,7 +39,7 @@ services:
     # Caddy keeps Host by default. Upgrade headers are dropped only on the check
     # subrequest so WebSockets still pass.
     labels:
-      caddy: dsh1.${COMMON_DOMAIN_A}
+      caddy: dsh.${COMMON_DOMAIN_A}
       caddy.import: common_tls
       caddy.@oidc: path /auth/login /auth/callback /auth/check /auth/signin /auth/logout
       caddy.0_handle: "@oidc"
