@@ -16,7 +16,8 @@ services:
       # @lumysia/dsh-oidc reads its site config from here; these win over the
       # profile. Without them the plugin refuses to start and Caddy denies all.
       DSH_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
-      DSH_OIDC_CLIENT_ID: ${HQCAT_SANDBOX_DSH_OIDC_CLIENT_ID:?set the Pocket ID client id for dsh1}
+      # Public PKCE client: the id is not a secret (it shows in every login redirect).
+      DSH_OIDC_CLIENT_ID: afc9056d-16dc-443e-b0dd-b0ca612b3313
       DSH_OIDC_PUBLIC_ORIGIN: https://dsh1.${COMMON_DOMAIN_A}/
       # Livia's Pocket ID subject, under the issuer above.
       DSH_OIDC_ALLOWED_SUBJECTS: '["${HQCAT_SANDBOX_DSH_OIDC_SUBJECT:?set the Pocket ID subject allowed on dsh1}"]'
