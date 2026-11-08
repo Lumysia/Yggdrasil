@@ -21,8 +21,9 @@ services:
       DSH_OIDC_PUBLIC_ORIGIN: https://dsh.${COMMON_DOMAIN_A}/
       # Who may sign in is decided by the Pocket ID client's allowed groups.
       DSH_OIDC_ALLOW_ANY_USER: "true"
-      # Caddy reaches DSH over shared_dsh1_net, which only Caddy and DSH join.
-      DSH_OIDC_TRUSTED_PROXIES: '["172.24.0.0/16"]'
+      # Caddy reaches DSH over shared_dsh_net, which only Caddy and DSH join. Its
+      # subnet is fixed where the gateway creates it (hq-cat-sandbox.toml).
+      DSH_OIDC_TRUSTED_PROXIES: '["172.25.0.0/16"]'
       DSH_OIDC_DIRECT_LOGIN: "true"
     volumes:
       - ${APPDATA_PATH}/dsh/home:/home/cua
@@ -52,8 +53,8 @@ services:
       caddy.1_handle.forward_auth.1_header_up: -Upgrade
       caddy.1_handle.reverse_proxy: "{{upstreams 3080}}"
     networks:
-      - shared_dsh1_net
+      - shared_dsh_net
 
 networks:
-  shared_dsh1_net:
+  shared_dsh_net:
     external: true
