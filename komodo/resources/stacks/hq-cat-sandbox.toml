@@ -11,6 +11,8 @@ pre_deploy.command = """
 for net in shared_dsh1_net shared_hermes1_net shared_hermes2_net; do
   docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net"
 done
+# Fixed subnet: dsh-oidc only accepts logins proxied from it (DSH_OIDC_TRUSTED_PROXIES in apps/hq-cat-sandbox/dsh).
+docker network inspect shared_dsh_net >/dev/null 2>&1 || docker network create --subnet 172.25.0.0/16 shared_dsh_net
 """
 pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
