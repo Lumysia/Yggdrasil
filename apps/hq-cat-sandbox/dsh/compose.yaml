@@ -26,12 +26,13 @@ services:
       DSH_OIDC_DIRECT_LOGIN: "true"
     volumes:
       - ${APPDATA_PATH}/dsh/home:/home/cua
-      # Livia's vault, in this stack's own appdata, owned by DSH's user (uid 1000).
-      # No host dir is created if it is missing, so a deploy without the data
-      # fails instead of showing an empty vault.
+      # Livia's vault, in this stack's own appdata, owned by DSH's user (uid 1000),
+      # mounted inside the agent's own folder of the home. No host dir is created
+      # if it is missing, so a deploy without the data fails instead of showing
+      # an empty vault.
       - type: bind
         source: ${APPDATA_PATH}/dsh/lia-notebook
-        target: /home/cua/Documents/lia-notebook
+        target: /home/cua/sakina/vault
         bind:
           create_host_path: false
     # dsh-oidc: its login endpoints go straight to DSH; everything else, including
