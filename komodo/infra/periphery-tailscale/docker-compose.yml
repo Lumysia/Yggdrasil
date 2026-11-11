@@ -8,6 +8,11 @@ services:
     volumes:
       # Host root's home, e.g. its docker CLI config, for Periphery (HOME=/root).
       - /root:/root
+    environment:
+      # 8120 is published on the public interface too, but Core only connects over
+      # Tailscale. Allow only hq-cat-core's tailnet IPv4 (Core's source address);
+      # change it here if that node is ever re-registered with a new address.
+      PERIPHERY_ALLOWED_IPS: 100.96.105.70
 
   tailscale:
     image: ${KOMODO_INFRA_DOCKER_IMAGE_PREFIX:-}tailscale/tailscale:latest

@@ -43,6 +43,14 @@ services:
       komodo.skip:
       com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
+    # Same cap and log rotation as the other Peripheries
+    # (komodo/infra/periphery-only/docker-compose.yml).
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     depends_on:
       - core
     env_file:

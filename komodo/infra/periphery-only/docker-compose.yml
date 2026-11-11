@@ -5,6 +5,15 @@ services:
     image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
     init: true
     restart: always
+    # Periphery itself uses under 30 MB; deploys add docker compose and git runs
+    # plus page cache (up to ~190 MiB seen). The cap keeps a runaway Periphery
+    # from taking the whole host down.
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     ports:
       - 8120:8120
     volumes:
