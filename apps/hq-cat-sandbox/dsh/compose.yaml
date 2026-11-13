@@ -16,7 +16,7 @@ services:
       # DSH's bash tool inherits PATH from the dsh process, and the profile can't
       # set it; supervisord passes the container env through to the program.
       PATH: /home/cua/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      # @lumysia/dsh-oidc reads its site config from here; these win over the
+      # @soffits/dsh-oidc reads its site config from here; these win over the
       # profile. Without them the plugin refuses to start and Caddy denies all.
       DSH_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
       # Public PKCE client: the id is not a secret (it shows in every login redirect).
