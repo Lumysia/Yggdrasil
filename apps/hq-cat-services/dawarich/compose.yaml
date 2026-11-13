@@ -39,7 +39,7 @@ services:
         restart: true
 
   postgres:
-    image: postgis/postgis:17-3.5-alpine
+    image: postgis/postgis:17-3.7-alpine
     restart: unless-stopped
     shm_size: 1g
     env_file:
