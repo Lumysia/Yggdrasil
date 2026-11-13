@@ -1,0 +1,32 @@
+services:
+  magpie:
+    image: ghcr.io/yetone/magpie:latest
+    restart: unless-stopped
+    command: [web, --addr, "0.0.0.0:3430", --no-open]
+    env_file:
+      - stack.env
+    environment:
+      MAGPIE_PUBLIC_URL: https://aimp.${COMMON_DOMAIN_A}
+      MAGPIE_WEB_KEY: ${MAGPIE_WEB_KEY:?Set the Magpie web key in Komodo}
+    volumes:
+      - ${APPDATA_PATH}/magpie:/config
+    networks:
+      - shared_magpie_net
+    labels:
+      caddy: aimp.${COMMON_DOMAIN_A}
+      caddy.import: common_tls
+      # Only client protocol routes go to the gateway; /api/* is the admin API.
+      caddy.@gateway.path: /v1 /v1/* /v1beta /v1beta/* /mcp /mcp/* /backend-api/codex /backend-api/codex/*
+      caddy.0_handle: /oauth2/*
+      caddy.0_handle.reverse_proxy: oauth2-proxy:4180
+      caddy.1_handle: "@gateway"
+      caddy.1_handle.reverse_proxy: "{{upstreams 3425}}"
+      caddy.2_handle:
+      caddy.2_handle.0_import: protected_forward_auth
+      caddy.2_handle.1_reverse_proxy: "{{upstreams 3430}}"
+      # Supply the native web credential only after OIDC; never on gateway requests.
+      caddy.2_handle.1_reverse_proxy.header_up: "Cookie magpie_web_3430=${MAGPIE_WEB_KEY:?Set the Magpie web key in Komodo}"
+
+networks:
+  shared_magpie_net:
+    external: true
