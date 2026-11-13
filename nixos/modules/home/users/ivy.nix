@@ -36,7 +36,6 @@
         # Tools
         mission-center
         steam-run
-        brave
         
         # GPG Utils
         gcr
