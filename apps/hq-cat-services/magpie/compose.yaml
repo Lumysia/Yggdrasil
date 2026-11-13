@@ -15,8 +15,8 @@ services:
     labels:
       caddy: aimp.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      # Only client protocol routes go to the gateway; /api/* is the admin API.
-      caddy.@gateway.path: /v1 /v1/* /v1beta /v1beta/* /mcp /mcp/* /backend-api/codex /backend-api/codex/*
+      # Client routes and the key-holder page go to the gateway; /api/* is the admin API.
+      caddy.@gateway.path: /me /v1 /v1/* /v1beta /v1beta/* /mcp /mcp/* /backend-api/codex /backend-api/codex/*
       caddy.0_handle: /oauth2/*
       caddy.0_handle.reverse_proxy: oauth2-proxy:4180
       caddy.1_handle: "@gateway"
