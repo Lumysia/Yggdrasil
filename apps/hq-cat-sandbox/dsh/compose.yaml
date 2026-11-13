@@ -8,6 +8,9 @@ services:
     # than Docker's 64 MB default.
     shm_size: 512m
     environment:
+      # The image sets TZ=Etc/UTC; Toronto is where the owner lives, so local-time
+      # tools (date, cron's host zone, Python/Node local time) follow it.
+      TZ: America/Toronto
       DSH_PUBLIC_URL: https://dsh.${COMMON_DOMAIN_A}/
       DSH_TRUSTED_HOSTS: dsh.${COMMON_DOMAIN_A}
       # DSH's bash tool inherits PATH from the dsh process, and the profile can't
