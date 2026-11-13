@@ -29,12 +29,17 @@ services:
       - ${APPDATA_PATH}/dsh/home:/home/cua
     # dsh-oidc: its login endpoints go straight to DSH; everything else, including
     # the sidebar's /_dsh-oidc/session, needs a valid session from /auth/check.
+    # The bypass matches the raw request URI exactly and case-sensitively, because
+    # Caddy's path matcher folds case and decodes/cleans the path while
+    # reverse_proxy forwards the raw URI: /AUTH/CHECK or an %2F..%2F path would
+    # skip forward_auth and still reach a DSH route. Any other spelling gets
+    # forward_auth.
     # Caddy keeps Host by default. Upgrade headers are dropped only on the check
     # subrequest so WebSockets still pass.
     labels:
       caddy: dsh.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.@oidc: path /auth/login /auth/callback /auth/check /auth/signin /auth/logout
+      caddy.@oidc: vars_regexp {http.request.uri} ^/auth/(login|callback|check|signin|logout)([?].*)?$$
       caddy.0_handle: "@oidc"
       caddy.0_handle.reverse_proxy: "{{upstreams 3080}}"
       caddy.0_handle.reverse_proxy.header_up: X-Dsh-Oidc-Client-Ip {client_ip}
