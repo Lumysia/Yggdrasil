@@ -1,6 +1,6 @@
 services:
   stalwart:
-    image: docker.io/stalwartlabs/stalwart:v1.0
+    image: docker.io/stalwartlabs/stalwart:v1
     restart: unless-stopped
     labels:
       caddy: mail.${COMMON_DOMAIN_A}
@@ -20,9 +20,11 @@ services:
       STALWART_PUBLIC_URL: https://mail.${COMMON_DOMAIN_A}
       STALWART_HEALTHCHECK_URL: http://127.0.0.1:8080/healthz/live
       EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
+    # Stalwart 1.x can't open a 0.16 store. These folders hold the store that
+    # stalwart-migrate copied from stalwart/, which is kept for rollback.
     volumes:
-      - ${APPDATA_PATH}/stalwart/etc:/etc/stalwart
-      - ${DB_PATH}/stalwart:/var/lib/stalwart
+      - ${APPDATA_PATH}/stalwart-v1/etc:/etc/stalwart
+      - ${DB_PATH}/stalwart-v1:/var/lib/stalwart
     networks:
       - shared_stalwart_net
 
@@ -67,7 +69,8 @@ configs:
   # are disabled here. DKIM verification stays on; Resend signs outbound mail.
   stalwart_plan:
     content: |
-      {"@type":"upsert","object":"MtaRoute","matchOn":["name"],"value":{"resend":{"@type":"Relay","name":"resend","address":"${EMAIL_SMTP_HOST}","port":465,"implicitTls":true,"authUsername":"${EMAIL_SMTP_USERNAME}","authSecret":{"@type":"EnvironmentVariable","variableName":"EMAIL_SMTP_PASSWORD"}}}}
+      {"@type":"upsert","object":"MtaRoute","matchOn":["name"],"value":{"resend":{"@type":"Relay","name":"resend","host":"${EMAIL_SMTP_HOST}","port":465,"implicitTls":true,"authUsername":"${EMAIL_SMTP_USERNAME}","authSecret":{"@type":"EnvironmentVariable","variableName":"EMAIL_SMTP_PASSWORD"}}}}
       {"@type":"update","object":"MtaOutboundStrategy","value":{"route":{"match":{"0":{"if":"is_local_domain(rcpt_domain)","then":"'local'"}},"else":"'resend'"}}}
-      {"@type":"update","object":"SenderAuth","value":{"spfEhloVerify":{"match":{},"else":"disable"},"spfFromVerify":{"match":{},"else":"disable"},"reverseIpVerify":{"match":{},"else":"disable"},"dmarcVerify":{"match":{},"else":"disable"},"dkimSignDomain":{"match":{},"else":"false"}}}
-      {"@type":"update","object":"Http","value":{"useXForwarded":true}}
+      {"@type":"update","object":"SenderAuth","value":{"spfEhloVerify":{"match":{},"else":"disable"},"spfFromVerify":{"match":{},"else":"disable"},"reverseIpVerify":{"match":{},"else":"disable"},"dmarcVerify":{"match":{},"else":"disable"}}}
+      {"@type":"update","object":"MtaStageData","value":{"dkimSignDomain":{"match":{},"else":"false"}}}
+      {"@type":"update","object":"Http","value":{"clientIpSource":"xForwardedFor","forwardedHops":1}}
