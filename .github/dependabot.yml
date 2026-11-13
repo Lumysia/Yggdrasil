@@ -19,5 +19,7 @@ updates:
       # Database major upgrades need a dump and restore; do them by hand.
       - dependency-name: "postgres"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "postgis/postgis"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "mariadb"
         update-types: ["version-update:semver-major"]
