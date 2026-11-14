@@ -1,0 +1,30 @@
+name: sakina-access
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/sakina-access/**'
+      - '.github/workflows/sakina-access.yaml'
+  pull_request:
+    paths:
+      - 'scripts/sakina-access/**'
+      - '.github/workflows/sakina-access.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: ShellCheck
+        run: shellcheck scripts/sakina-access/sakina-access scripts/sakina-access/test.sh
+      - name: Install sshd
+        run: test -x /usr/sbin/sshd || { sudo apt-get update && sudo apt-get install -y openssh-server; }
+      - name: Test
+        run: scripts/sakina-access/test.sh
+        env:
+          SSHD: /usr/sbin/sshd
