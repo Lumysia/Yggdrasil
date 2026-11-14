@@ -18,15 +18,17 @@
 		"tag:remnawave-entry":   ["autogroup:admin"],
 		"tag:forwarding-source": ["autogroup:admin"],
 		"tag:forwarding-target": ["autogroup:admin"],
-		"tag:hermes-agent":      ["autogroup:admin"],
+		"tag:sakina":            ["autogroup:admin"],
 	},
 
 	// Define grants that govern access for users, groups, autogroups, tags,
 	// Tailscale IP addresses, and subnet ranges.
 	"grants": [
+		// Sakina's own tailnet node (userspace tailscaled in her DSH container):
+		// SSH to the Proxmox hosts and the router; what she may do there is limited on each host.
 		{
-			"src": ["tag:hermes-agent"],
-			"dst": ["autogroup:member"],
+			"src": ["tag:sakina"],
+			"dst": ["tag:pve-nodes", "tag:routers"],
 			"ip":  ["tcp:22"],
 		},
 		{
