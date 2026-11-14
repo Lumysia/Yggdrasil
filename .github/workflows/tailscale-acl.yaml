@@ -25,12 +25,12 @@ jobs:
   acl:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
 
       # gitops-pusher keeps the last applied version here, so it refuses to
       # overwrite a policy that was edited in the admin console since.
       - name: Restore version cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache@v6
         with:
           path: ./version-cache.json
           key: version-cache.json-${{ github.run_id }}
@@ -39,7 +39,7 @@ jobs:
 
       - name: Apply ACL
         if: github.event_name == 'push'
-        uses: tailscale/gitops-acl-action@5a4a17f5708e9bf96f4ee915a95e9f83c2eebe1a # v1.5.2
+        uses: tailscale/gitops-acl-action@v1
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
@@ -49,7 +49,7 @@ jobs:
 
       - name: Test ACL
         if: github.event_name == 'pull_request'
-        uses: tailscale/gitops-acl-action@5a4a17f5708e9bf96f4ee915a95e9f83c2eebe1a # v1.5.2
+        uses: tailscale/gitops-acl-action@v1
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
