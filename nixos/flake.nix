@@ -9,11 +9,6 @@
       inputs.nixpkgs.follows = "nixpkgs-stable";
     };
 
-    lanzaboote = {
-      url = "github:nix-community/lanzaboote/v1.2.0";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
-    };
-    nix-flatpak.url = "github:gmodena/nix-flatpak";
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -38,14 +33,6 @@
     in
     {
       nixosConfigurations = {
-        # Personal Desktop
-        kawaii = mkSystem {
-          hostname = "kawaii";
-          modules = [
-            inputs.lanzaboote.nixosModules.lanzaboote
-          ];
-        };
-
         # Infrastructure
         ## Headquarters
         hq-cat-core = mkSystem {
