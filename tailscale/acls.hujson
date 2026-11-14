@@ -24,9 +24,6 @@
 	// Define grants that govern access for users, groups, autogroups, tags,
 	// Tailscale IP addresses, and subnet ranges.
 	"grants": [
-		// Sakina's own tailnet node (userspace tailscaled in her DSH container):
-		// SSH to every device on the tailnet. This only opens the port; logging in
-		// still needs her key on that host, and what she may do there is limited per host.
 		{
 			"src": ["tag:sakina"],
 			"dst": ["*"],
