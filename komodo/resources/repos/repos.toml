@@ -1,5 +1,4 @@
 [[repo]]
 name = "GitHub-Yggdrasil"
 [repo.config]
-git_account = "Lumysia"
 repo = "Lumysia/Yggdrasil"
