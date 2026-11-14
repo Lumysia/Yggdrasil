@@ -18,15 +18,15 @@
 		"tag:remnawave-entry":   ["autogroup:admin"],
 		"tag:forwarding-source": ["autogroup:admin"],
 		"tag:forwarding-target": ["autogroup:admin"],
-		"tag:hermes-agent":      ["autogroup:admin"],
+		"tag:sakina":            ["autogroup:admin"],
 	},
 
 	// Define grants that govern access for users, groups, autogroups, tags,
 	// Tailscale IP addresses, and subnet ranges.
 	"grants": [
 		{
-			"src": ["tag:hermes-agent"],
-			"dst": ["autogroup:member"],
+			"src": ["tag:sakina"],
+			"dst": ["*"],
 			"ip":  ["tcp:22"],
 		},
 		{
