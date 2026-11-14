@@ -31,10 +31,6 @@ jobs:
 
   test-openwrt:
     runs-on: ubuntu-latest
-    env:
-      # The dropbear release OpenWrt 25.12 ships; the hash is OpenWrt's PKG_HASH.
-      DROPBEAR_VERSION: '2025.89'
-      DROPBEAR_SHA256: 0d1f7ca711cfc336dc8a85e672cab9cfd8223a02fe2da0a4a7aeb58c9e113634
     steps:
       - uses: actions/checkout@v7
       - name: Install busybox
@@ -45,6 +41,15 @@ jobs:
           busybox sh scripts/sakina-access/sakina-access-openwrt show |
             awk '/^===== \/usr\/sbin/ { f = 1; next } /^===== / { f = 0 } f' > "$RUNNER_TEMP/sakina-ssh"
           shellcheck -s sh "$RUNNER_TEMP/sakina-ssh"
+      - name: Find the dropbear current OpenWrt stable ships
+        run: |
+          stable=$(curl -fsSL https://downloads.openwrt.org/.versions.json | jq -r .stable_version)
+          makefile=$(curl -fsSL "https://raw.githubusercontent.com/openwrt/openwrt/openwrt-${stable%.*}/package/network/services/dropbear/Makefile")
+          version=$(printf '%s\n' "$makefile" | sed -n 's/^PKG_VERSION:=//p')
+          hash=$(printf '%s\n' "$makefile" | sed -n 's/^PKG_HASH:=//p')
+          test -n "$version" && test -n "$hash"
+          echo "OpenWrt $stable ships dropbear $version"
+          { echo "DROPBEAR_VERSION=$version"; echo "DROPBEAR_SHA256=$hash"; } >> "$GITHUB_ENV"
       - name: Build dropbear
         run: |
           cd "$RUNNER_TEMP"
