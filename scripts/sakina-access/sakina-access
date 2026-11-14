@@ -1,0 +1,690 @@
+#!/usr/bin/env bash
+# sakina-access: give Sakina access to this Linux host, or take it back.
+#
+# Run as root on Debian/Ubuntu, Proxmox VE or NixOS. It enables the checks for whatever
+# the host has (Docker, ZFS, Proxmox, SMART).
+#
+#   sakina-access install --from LIST   first install; LIST is the sshd from= pattern list
+#                                       of addresses Sakina may connect from (comma-separated)
+#   sakina-access install               install or refresh the read-only access, no root
+#   sakina-access                       toggle temporary root: grant for 4 hours, or revoke
+#   sakina-access <hours>               grant temporary root for <hours> (1-72)
+#   sakina-access off                   revoke temporary root now and end her root sessions
+#   sakina-access status                show what Sakina has right now
+#   sakina-access update                install the latest version from the repo if it changed
+#   sakina-access remove                remove everything, this script included
+#   sakina-access show                  print the helper scripts this installs, for review
+#
+# First install, from a file so the script can keep a copy of itself:
+#   curl -fsSLo /tmp/sakina-access https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/sakina-access/sakina-access
+#   bash /tmp/sakina-access install --from 'LIST'
+#
+# Read-only access is permanent:
+#   - system user `sakina`, no password, in whichever of adm, systemd-journal, www-data
+#     exist; its SSH key is pinned to the forced command sakina-ro, which runs only an
+#     allow-list of read-only commands
+#   - a root key pinned to sakina-ro-priv, which runs a fixed set of root-only reads
+#     (docker ps/logs/stats, SMART, zpool/zfs, qm/pct, pvesm, pvesh get, dmesg) with every
+#     argument checked. When sshd refuses root logins, sakina-ro reaches the same helper
+#     through a sudo rule instead, and temporary root is not available.
+# Temporary root is a key with an OpenSSH expiry-time plus a systemd timer that revokes it
+# and ends her sessions at expiry.
+# A daily timer runs `update` (on NixOS the timer comes from the Yggdrasil NixOS module).
+# Everything is logged: journalctl -t sakina-access
+
+set -euo pipefail
+umask 022
+export PATH="${PATH:+$PATH:}/run/wrappers/bin:/run/current-system/sw/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+HEADER='# sakina-access: give Sakina access to this Linux host, or take it back.'
+UPDATE_URL=https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/sakina-access/sakina-access
+
+RO_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMejbtAgot6Hq5GAp/8z2Q9M/EaRaCLLqVHPsmTCfxcM'
+PRIV_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFh87h6FtXtBc5X97UCCvzKQj3fS9kHLGmNcKdaoVd+B'
+ROOT_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJd1rhsBKrizb8VpXBuPET54OT5ijjr5AhUOhXBDRqPm'
+# The marks end each key line in root's authorized_keys; the second of each pair is the
+# name older versions used, kept so their lines are still found and replaced.
+PRIV_MARKS=(sakina-access-priv sakina-cat-priv)
+ROOT_MARKS=(sakina-access-root-temp sakina-cat-root-temp)
+DEFAULT_HOURS=4
+
+USER_NAME=sakina
+USER_HOME=/home/sakina
+SELF=/usr/local/sbin/sakina-access
+RO_CMD=/usr/local/sbin/sakina-ro
+PRIV_CMD=/usr/local/sbin/sakina-ro-priv
+ROOT_SESSION=/usr/local/sbin/sakina-root-session
+CONF_DIR=/etc/sakina-access
+FROM_FILE=/etc/sakina-access/from
+SUDOERS=/etc/sudoers.d/sakina-ro
+SUDOERS_MAIN=/etc/sudoers
+ROOT_KEYS=/root/.ssh/authorized_keys
+UNIT_DIR=/etc/systemd/system
+NIXOS_MARK=/etc/NIXOS
+EXPIRE_UNIT=sakina-access-expire
+UPDATE_UNIT=sakina-access-update
+RUN_DIR=/run/sakina-access
+
+log() { logger -t sakina-access -- "$*"; }
+die() { echo "sakina-access: $*" >&2; exit 1; }
+
+usage() {
+  if has_header "$0"; then sed -n '/^#   sakina-access /s/^#   //p' "$0"
+  else echo "usage: sakina-access [install [--from LIST] | <hours> | off | status | update | remove | show]"; fi
+}
+
+# ---------------------------------------------------------------- helper scripts
+
+write_ro_cmd() {
+cat <<'RO_EOF'
+#!/usr/bin/env bash
+# sakina-ro: forced command for Sakina's read-only SSH key (installed by sakina-access).
+# Runs one allow-listed read-only command from SSH_ORIGINAL_COMMAND. Never evals it.
+set -f -u
+export PATH=/run/wrappers/bin:/run/current-system/sw/bin:/usr/sbin:/usr/bin:/sbin:/bin PAGER=cat SYSTEMD_PAGER= SYSTEMD_COLORS=0 LESSSECURE=1
+line=${SSH_ORIGINAL_COMMAND:-}
+logger -t sakina-access -- "ro from ${SSH_CLIENT:-local}: $line"
+
+die() { echo "sakina-ro: $*" >&2; exit 2; }
+
+usage() {
+  cat <<'U'
+Read-only commands (quote arguments like a shell):
+  journalctl ...            any query options (forced --no-pager)
+  systemctl status|list-units|list-timers|list-unit-files|is-active|is-enabled|is-failed|show|cat ...
+  cat|head|tail|ls|wc|stat|zcat|grep|zgrep|du FILES    files under /var/log /etc/pve /proc /sys
+  df free uptime lsblk ps ip ss findmnt last who sensors pveversion nixos-version uname date hostname
+  apt list|policy ...
+Root-only reads (the priv key as root, or here directly when the host uses sudo for them):
+  docker ps|logs|stats|images|version|info|system df|compose ls ...
+  smartctl --scan | smartctl [-a|-x|-H|-A|-i|-c|-j|-l LOG] DEVICE
+  nvme list | nvme smart-log|error-log DEVICE
+  zpool status|list|iostat|get|history|events ...   zfs list|get ...
+  qm list|status|config|pending ...   pct list|status|config|pending ...
+  pvesm status|list ...   pvesh get /PATH ...   dmesg [-T -k -x -l LEVELS]   ha-manager status   pvecm status
+U
+}
+
+[ -n "$line" ] || { usage; exit 1; }
+
+# Split like a shell would, without any expansion or execution.
+mapfile -d '' -t a < <(printf '%s' "$line" | xargs -r printf '%s\0') || die "cannot parse command"
+[ "${#a[@]}" -gt 0 ] || { usage; exit 1; }
+cmd=${a[0]}; args=("${a[@]:1}")
+
+in_roots() {
+  local p
+  p=$(realpath -m -- "$1") || return 1
+  case "$p" in
+    */priv|*/priv/*|*.key) return 1 ;;
+    /var/log|/var/log/*|/etc/pve|/etc/pve/*|/proc|/proc/*|/sys|/sys/*) return 0 ;;
+  esac
+  return 1
+}
+is_num() { [[ $1 =~ ^[+-]?[0-9]+[kKmMgGbB]?$ ]]; }
+
+# File readers: options are free, every other argument must be a path inside the roots.
+check_files() {
+  local x end=0
+  for x in "$@"; do
+    if [ $end -eq 0 ] && [ "$x" = "--" ]; then end=1; continue; fi
+    if [ $end -eq 0 ] && [[ $x == -* ]]; then continue; fi
+    is_num "$x" && continue
+    in_roots "$x" || die "path not allowed: $x"
+  done
+}
+
+# grep/zgrep: the pattern (first non-option, unless -e/-f given) is free; -f FILE and paths are checked.
+check_grep() {
+  local i=0 n=$# have_pat=0 end=0 x
+  local -a v=("$@")
+  for x in "$@"; do case "$x" in -e|--regexp|--regexp=*|-e?*|-f|--file|--file=*|-f?*) have_pat=1 ;; --) break ;; esac; done
+  while [ $i -lt $n ]; do
+    x=${v[$i]}
+    if [ $end -eq 0 ]; then
+      case "$x" in
+        --) end=1; i=$((i+1)); continue ;;
+        -e|--regexp) i=$((i+2)); continue ;;
+        -f|--file) in_roots "${v[$((i+1))]:-}" || die "pattern file not allowed"; i=$((i+2)); continue ;;
+        --file=*) in_roots "${x#--file=}" || die "pattern file not allowed"; i=$((i+1)); continue ;;
+        -f?*) in_roots "${x#-f}" || die "pattern file not allowed"; i=$((i+1)); continue ;;
+        -A|-B|-C|-m|--max-count|--context|--after-context|--before-context) i=$((i+2)); continue ;;
+        -*) i=$((i+1)); continue ;;
+      esac
+    fi
+    if [ $have_pat -eq 0 ]; then have_pat=1; i=$((i+1)); continue; fi
+    in_roots "$x" || die "path not allowed: $x"
+    i=$((i+1))
+  done
+}
+
+case "$cmd" in
+  journalctl)
+    for x in "${args[@]}"; do
+      case "$x" in
+        --vacuum*|--rotate|--flush|--sync|--relinquish-var|--smart-relinquish-var|--setup-keys|--update-catalog|--pager*) die "journalctl option not allowed: $x" ;;
+      esac
+    done
+    exec journalctl --no-pager "${args[@]}" ;;
+  systemctl)
+    sub=""
+    for x in "${args[@]}"; do
+      case "$x" in -H|--host|--host=*|-M|--machine|--machine=*|--root|--root=*|--image|--image=*) die "systemctl option not allowed: $x" ;; esac
+    done
+    for x in "${args[@]}"; do [[ $x == -* ]] || { sub=$x; break; }; done
+    case "$sub" in
+      ""|status|list-units|list-timers|list-unit-files|list-sockets|is-active|is-enabled|is-failed|show|cat) ;;
+      *) die "systemctl subcommand not allowed: $sub" ;;
+    esac
+    exec systemctl --no-pager "${args[@]}" ;;
+  cat|head|tail|ls|wc|stat|zcat|du)
+    check_files "${args[@]}"
+    exec "$cmd" "${args[@]}" ;;
+  grep|zgrep)
+    check_grep "${args[@]}"
+    exec "$cmd" "${args[@]}" ;;
+  ip)
+    for x in "${args[@]}"; do case "$x" in exec|netns|-b|-batch|-force) die "ip argument not allowed: $x" ;; esac; done
+    exec ip "${args[@]}" ;;
+  df|free|uptime|lsblk|ps|ss|findmnt|last|who|sensors|pveversion|nixos-version|uname)
+    exec "$cmd" "${args[@]}" ;;
+  apt)
+    case "${args[0]:-}" in list|policy) ;; *) die "apt subcommand not allowed" ;; esac
+    exec apt "${args[@]}" ;;
+  date|hostname)
+    [ "${#args[@]}" -eq 0 ] || die "$cmd takes no arguments"
+    exec "$cmd" ;;
+  smartctl|nvme|zpool|zfs|qm|pct|pvesm|pvesh|dmesg|ha-manager|pvecm|docker)
+    if [ -f /etc/sudoers.d/sakina-ro ]; then exec sudo -n /usr/local/sbin/sakina-ro-priv "$cmd" "${args[@]}"; fi
+    die "$cmd needs root: connect as root with the priv key" ;;
+  help|-h|--help)
+    usage; exit 0 ;;
+  *)
+    die "command not allowed: $cmd (try: help)" ;;
+esac
+RO_EOF
+}
+
+write_priv_cmd() {
+cat <<'PRIV_EOF'
+#!/usr/bin/env bash
+# sakina-ro-priv: root-only read commands for Sakina (installed by sakina-access).
+# Forced command of the priv root key, or run through sudo by sakina-ro. Every argument is
+# checked against a fixed pattern.
+set -f -u
+export PATH=/run/current-system/sw/bin:/usr/sbin:/usr/bin:/sbin:/bin PAGER=cat SYSTEMD_PAGER= LESSSECURE=1
+die() { echo "sakina-ro-priv: $*" >&2; exit 2; }
+if [ $# -eq 0 ]; then
+  line=${SSH_ORIGINAL_COMMAND:-}
+  logger -t sakina-access -- "priv from ${SSH_CLIENT:-local}: $line"
+  mapfile -d '' -t a < <(printf '%s' "$line" | xargs -r printf '%s\0') || die "cannot parse command"
+  set -- "${a[@]}"
+fi
+[ $# -ge 1 ] || die "no command"
+cmd=$1; shift
+DEV='^/dev/(sd[a-z]+|nvme[0-9]+(n[0-9]+)?|disk/by-id/[A-Za-z0-9._:-]+)$'
+NAME='^[A-Za-z0-9._:/,@=-]+$'
+OPT='^--?[A-Za-z][A-Za-z0-9-]*$'
+
+case "$cmd" in
+  smartctl)
+    if [ $# -eq 1 ] && [[ $1 == --scan || $1 == --scan-open ]]; then exec smartctl "$1"; fi
+    dev=""; out=()
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        -a|-x|-H|-A|-i|-c|-j) out+=("$1") ;;
+        -l) [[ ${2:-} =~ ^(error|xerror|selftest|xselftest|devstat|scttemp|sataphy)$ ]] || die "bad -l"; out+=(-l "$2"); shift ;;
+        -d) [[ ${2:-} =~ ^(sat|nvme|scsi|ata|auto)$ ]] || die "bad -d"; out+=(-d "$2"); shift ;;
+        *) [[ $1 =~ $DEV ]] && [ -z "$dev" ] || die "argument not allowed: $1"; dev=$1 ;;
+      esac
+      shift
+    done
+    [ -n "$dev" ] || die "need a device"
+    exec smartctl "${out[@]}" "$dev" ;;
+  nvme)
+    case "${1:-}" in
+      list) [ $# -eq 1 ] || die "nvme list takes no arguments"; exec nvme list ;;
+      smart-log|error-log) [ $# -eq 2 ] && [[ $2 =~ $DEV ]] || die "need one device"; exec nvme "$1" "$2" ;;
+      *) die "nvme subcommand not allowed" ;;
+    esac ;;
+  zpool)
+    sub=${1:-}; shift || true
+    case "$sub" in status|list|iostat|get|history|events) ;; *) die "zpool subcommand not allowed: $sub" ;; esac
+    for x in "$@"; do
+      [[ $x =~ ^[0-9]+$ ]] && die "intervals not allowed"
+      if [[ $x == -* ]]; then
+        [[ $x =~ ^-[A-Za-z]+$ ]] || die "option not allowed: $x"
+        [[ $sub == events && $x == *[cf]* ]] && die "zpool events -c/-f not allowed"
+      else
+        [[ $x =~ $NAME ]] || die "argument not allowed: $x"
+      fi
+    done
+    exec zpool "$sub" "$@" ;;
+  zfs)
+    sub=${1:-}; shift || true
+    case "$sub" in list|get) ;; *) die "zfs subcommand not allowed: $sub" ;; esac
+    for x in "$@"; do [[ $x =~ ^-[A-Za-z]+$ || $x =~ $NAME ]] || die "argument not allowed: $x"; done
+    exec zfs "$sub" "$@" ;;
+  qm|pct)
+    sub=${1:-}; shift || true
+    case "$sub" in list|status|config|pending) ;; *) die "$cmd subcommand not allowed: $sub" ;; esac
+    for x in "$@"; do [[ $x =~ $OPT || $x =~ $NAME ]] || die "argument not allowed: $x"; done
+    exec "$cmd" "$sub" "$@" ;;
+  pvesm)
+    sub=${1:-}; shift || true
+    case "$sub" in status|list) ;; *) die "pvesm subcommand not allowed: $sub" ;; esac
+    for x in "$@"; do [[ $x =~ $OPT || $x =~ $NAME ]] || die "argument not allowed: $x"; done
+    exec pvesm "$sub" "$@" ;;
+  pvesh)
+    [ "${1:-}" = get ] || die "only pvesh get"
+    [[ ${2:-} =~ ^/[A-Za-z0-9/_.:-]*$ ]] || die "bad API path"
+    path=$2; shift 2
+    for x in "$@"; do [[ $x =~ $OPT || $x =~ $NAME ]] || die "argument not allowed: $x"; done
+    exec pvesh get "$path" "$@" ;;
+  dmesg)
+    out=()
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        -T|-k|-x|--ctime|--kernel|--decode) out+=("$1") ;;
+        -l|--level) [[ ${2:-} =~ ^[a-z,]+$ ]] || die "bad level"; out+=(-l "$2"); shift ;;
+        --level=*) [[ ${1#--level=} =~ ^[a-z,]+$ ]] || die "bad level"; out+=("$1") ;;
+        *) die "dmesg option not allowed: $1" ;;
+      esac
+      shift
+    done
+    exec dmesg --nopager "${out[@]}" ;;
+  docker)
+    sub=${1:-}; shift || true
+    case "$sub" in
+      ps|images|version|info|logs) ;;
+      stats) set -- --no-stream "$@" ;;
+      system) [ "${1:-}" = df ] || die "only docker system df" ;;
+      compose) [ "${1:-}" = ls ] || die "only docker compose ls" ;;
+      *) die "docker subcommand not allowed: $sub" ;;
+    esac
+    # These subcommands only read and get no shell, so the arguments only need to keep
+    # docker talking to the local daemon.
+    for x in "$@"; do
+      case "$x" in -H|--host|--host=*|--context|--context=*|--config|--config=*|-c) die "argument not allowed: $x" ;; esac
+    done
+    exec docker "$sub" "$@" ;;
+  ha-manager|pvecm)
+    [ $# -eq 1 ] && [ "$1" = status ] || die "only status"
+    exec "$cmd" status ;;
+  *) die "command not allowed: $cmd" ;;
+esac
+PRIV_EOF
+}
+
+write_root_session() {
+cat <<'ROOT_EOF'
+#!/usr/bin/env bash
+# sakina-root-session: forced command for Sakina's temporary root key (installed by sakina-access).
+# Logs the session and records it so `sakina-access off` can end it.
+mkdir -p /run/sakina-access
+echo $$ > "/run/sakina-access/root.$$"
+logger -t sakina-access -- "root session $$ from ${SSH_CLIENT:-local}: ${SSH_ORIGINAL_COMMAND:-<interactive shell>}"
+if [ -n "${SSH_ORIGINAL_COMMAND:-}" ]; then
+  bash -c "$SSH_ORIGINAL_COMMAND"
+else
+  bash -l
+fi
+rc=$?
+rm -f "/run/sakina-access/root.$$"
+exit $rc
+ROOT_EOF
+}
+
+write_update_service() {
+cat <<EOF
+[Unit]
+Description=Update sakina-access from the Yggdrasil repo
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=$SELF
+
+[Service]
+Type=oneshot
+ExecStart=$SELF update
+EOF
+}
+
+write_update_timer() {
+cat <<'EOF'
+[Unit]
+Description=Daily sakina-access update check
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=4h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+}
+
+# ---------------------------------------------------------------- files
+
+# Writes only when the content changed; returns 1 when nothing was written.
+install_file() { # install_file <path> <mode> <writer function>
+  local tmp; tmp=$(mktemp)
+  "$3" > "$tmp"
+  if [ -f "$1" ] && cmp -s "$tmp" "$1"; then rm -f "$tmp"; return 1; fi
+  mkdir -p "$(dirname "$1")"
+  install -o root -g root -m "$2" "$tmp" "$1"
+  rm -f "$tmp"
+}
+
+has_header() { [ -f "$1" ] && [ "$(sed -n 2p "$1")" = "$HEADER" ]; }
+
+# ---------------------------------------------------------------- from list
+
+valid_from() { [[ $1 =~ ^[A-Za-z0-9.:/*?!_,-]+$ ]]; }
+
+normalize_from() { # turns whitespace or newlines into commas
+  local s
+  s=$(tr -s ' \t\n,' ',' <<<"$1")
+  s=${s#,}; printf '%s' "${s%,}"
+}
+
+# The from= list on a line this script wrote, for installs made before FROM_FILE existed.
+installed_from() {
+  local f m
+  for f in "$USER_HOME/.ssh/authorized_keys" "$ROOT_KEYS"; do
+    [ -f "$f" ] || continue
+    for m in "$RO_KEY" "${PRIV_MARKS[@]}" "${ROOT_MARKS[@]}"; do
+      grep -F -- "$m" "$f" | sed -n 's/.*from="\([^"]*\)".*/\1/p' | head -n1 | grep . && return 0
+    done
+  done
+  return 1
+}
+
+# Sets FROM from --from, else FROM_FILE, else an earlier install; saves it to FROM_FILE.
+load_from() { # load_from [list]
+  local src=${1:-}
+  if [ -z "$src" ] && [ -f "$FROM_FILE" ]; then src=$(cat "$FROM_FILE"); fi
+  if [ -z "$src" ]; then src=$(installed_from) || src=""; fi
+  [ -n "$src" ] || die "no source address list: run 'sakina-access install --from LIST' once"
+  FROM=$(normalize_from "$src")
+  valid_from "$FROM" || die "bad --from list: $FROM"
+  if [ ! -f "$FROM_FILE" ] || [ "$(cat "$FROM_FILE")" != "$FROM" ]; then
+    install -d -o root -g root -m 0755 "$CONF_DIR"
+    printf '%s\n' "$FROM" > "$FROM_FILE"
+    chmod 0644 "$FROM_FILE"
+  fi
+}
+
+# ---------------------------------------------------------------- root's authorized_keys
+
+# On Proxmox ROOT_KEYS is a symlink into the cluster filesystem, so the file is rewritten
+# through the link and never replaced.
+write_root_keys() { # write_root_keys <content file>
+  mkdir -p "$(dirname "$ROOT_KEYS")"
+  cat "$1" > "$ROOT_KEYS"
+}
+
+strip_root_key() { # strip_root_key <mark>...
+  [ -e "$ROOT_KEYS" ] || return 0
+  local tmp m pats=()
+  for m in "$@"; do pats+=(-e "$m"); done
+  tmp=$(mktemp)
+  grep -v -F "${pats[@]}" "$ROOT_KEYS" > "$tmp" || true
+  write_root_keys "$tmp"
+  rm -f "$tmp"
+}
+
+append_root_key() { # append_root_key <line>
+  local tmp; tmp=$(mktemp)
+  if [ -e "$ROOT_KEYS" ]; then cat "$ROOT_KEYS" > "$tmp"; fi
+  if [ -s "$tmp" ] && [ -n "$(tail -c1 "$tmp")" ]; then echo >> "$tmp"; fi
+  printf '%s\n' "$1" >> "$tmp"
+  write_root_keys "$tmp"
+  rm -f "$tmp"
+}
+
+ro_line()   { printf 'restrict,from="%s",command="%s" %s %s' "$FROM" "$RO_CMD" "$RO_KEY" "$USER_NAME-readonly"; }
+priv_line() { printf 'restrict,from="%s",command="%s" %s %s' "$FROM" "$PRIV_CMD" "$PRIV_KEY" "${PRIV_MARKS[0]}"; }
+root_line() { # root_line <expiry stamp YYYYMMDDHHMM>
+  printf 'from="%s",expiry-time="%sZ",command="%s",no-agent-forwarding,no-X11-forwarding %s %s' \
+    "$FROM" "$1" "$ROOT_SESSION" "$ROOT_KEY" "${ROOT_MARKS[0]}"
+}
+
+root_expiry() { # prints the expiry stamp of the current grant, if any
+  [ -e "$ROOT_KEYS" ] || return 1
+  local m pats=()
+  for m in "${ROOT_MARKS[@]}"; do pats+=(-e "$m"); done
+  grep -F "${pats[@]}" "$ROOT_KEYS" | sed -n 's/.*expiry-time="\([0-9]*\)Z".*/\1/p' | head -n1
+}
+
+root_active() {
+  local e
+  e=$(root_expiry) || return 1
+  [ -n "$e" ] && [ "$e" -gt "$(date -u +%Y%m%d%H%M)" ]
+}
+
+kill_root_sessions() {
+  local f pid sid
+  for f in "$RUN_DIR"/root.*; do
+    [ -e "$f" ] || continue
+    pid=$(cat "$f" 2>/dev/null || true)
+    if [ -n "$pid" ] && sid=$(ps -o sid= -p "$pid" 2>/dev/null | tr -d ' ') && [ -n "$sid" ] && [ "$sid" != 0 ]; then
+      pkill -KILL -s "$sid" || true
+    fi
+    rm -f "$f"
+  done
+}
+
+root_login_allowed() {
+  local v
+  v=$(sshd -T 2>/dev/null | awk '$1=="permitrootlogin"{print $2}') || v=""
+  [ "${v:-prohibit-password}" != no ]
+}
+
+sudo_reads_dropins() {
+  command -v visudo >/dev/null 2>&1 && grep -Eqs '^[@#]includedir[[:space:]]+/etc/sudoers.d' "$SUDOERS_MAIN"
+}
+
+# ---------------------------------------------------------------- actions
+
+install_priv_access() {
+  strip_root_key "${PRIV_MARKS[@]}"
+  rm -f "$SUDOERS"
+  if root_login_allowed; then
+    append_root_key "$(priv_line)"
+  elif sudo_reads_dropins; then
+    local tmp; tmp=$(mktemp)
+    printf '%s ALL=(root) NOPASSWD: %s\n' "$USER_NAME" "$PRIV_CMD" > "$tmp"
+    visudo -cqf "$tmp"
+    install -o root -g root -m 0440 "$tmp" "$SUDOERS"
+    rm -f "$tmp"
+  else
+    echo "Note: sshd refuses root logins and sudo has no drop-in directory here, so root-only reads are off." >&2
+  fi
+}
+
+install_update_timer() {
+  # NixOS owns /etc/systemd/system; its timer comes from the Yggdrasil NixOS module.
+  [ -e "$NIXOS_MARK" ] && return 0
+  local changed=0
+  install_file "$UNIT_DIR/$UPDATE_UNIT.service" 0644 write_update_service && changed=1
+  install_file "$UNIT_DIR/$UPDATE_UNIT.timer" 0644 write_update_timer && changed=1
+  if [ $changed -eq 1 ]; then systemctl daemon-reload; fi
+  systemctl enable --now "$UPDATE_UNIT.timer" >/dev/null 2>&1 || echo "Note: could not enable $UPDATE_UNIT.timer" >&2
+}
+
+install_readonly() {
+  if ! id "$USER_NAME" >/dev/null 2>&1; then
+    useradd --system --create-home --home-dir "$USER_HOME" --shell "$(command -v bash)" --comment "Sakina (read-only)" "$USER_NAME"
+  fi
+  passwd -l "$USER_NAME" >/dev/null
+  local g groups=()
+  for g in adm systemd-journal www-data; do getent group "$g" >/dev/null && groups+=("$g"); done
+  [ "${#groups[@]}" -eq 0 ] || usermod -aG "$(IFS=,; echo "${groups[*]}")" "$USER_NAME"
+
+  install_file "$RO_CMD" 0755 write_ro_cmd || true
+  install_file "$PRIV_CMD" 0755 write_priv_cmd || true
+  install_file "$ROOT_SESSION" 0755 write_root_session || true
+  install_priv_access
+
+  # Root owns the key file, so the sakina user can't loosen its options.
+  install -d -o root -g root -m 0755 "$USER_HOME/.ssh"
+  ro_line > "$USER_HOME/.ssh/authorized_keys"
+  echo >> "$USER_HOME/.ssh/authorized_keys"
+  chown root:root "$USER_HOME/.ssh/authorized_keys"
+  chmod 0644 "$USER_HOME/.ssh/authorized_keys"
+
+  if has_header "$0" && [ "$(readlink -f "$0")" != "$SELF" ]; then
+    install -o root -g root -m 0755 "$0" "$SELF"
+  fi
+  [ -f "$SELF" ] || echo "Note: $SELF is missing (run from a pipe?), so there are no updates. Install from a file." >&2
+  install_update_timer
+}
+
+grant_root() {
+  local hours=$1 exp
+  root_login_allowed || die "sshd refuses root logins on this host (PermitRootLogin no), so temporary root is not available."
+  exp=$(date -u -d "+${hours} hours" +%Y%m%d%H%M)
+  strip_root_key "${ROOT_MARKS[@]}"
+  append_root_key "$(root_line "$exp")"
+  systemctl stop "$EXPIRE_UNIT.timer" >/dev/null 2>&1 || true
+  systemctl reset-failed "$EXPIRE_UNIT.service" >/dev/null 2>&1 || true
+  systemd-run --quiet --unit="$EXPIRE_UNIT" --on-active="${hours}h" "$BASH" "$SELF" off
+  log "root granted for ${hours}h (until ${exp} UTC)"
+  echo "Sakina now has root for ${hours} hours (until $(date -d "+${hours} hours" '+%Y-%m-%d %H:%M %Z'))."
+  echo "Run 'sakina-access' again to take it back sooner."
+}
+
+revoke_root() {
+  strip_root_key "${ROOT_MARKS[@]}"
+  systemctl stop "$EXPIRE_UNIT.timer" >/dev/null 2>&1 || true
+  log "root revoked"
+  echo "Root access taken back; Sakina's open root sessions were ended."
+  # Last, since this may be running inside one of those sessions.
+  kill_root_sessions
+}
+
+download() { # download <url> <file>
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 3 --max-time 60 -o "$2" "$1"
+  else
+    wget -q -T 60 -t 3 -O "$2" "$1"
+  fi
+}
+
+# Installs the repo version when it differs, then runs its install. A failed download or
+# check keeps the current version; a failed install puts the previous version back.
+update_self() {
+  local dir rc=0
+  dir=$(mktemp -d)
+  update_from_repo "$dir/new" "$dir/old" || rc=$?
+  rm -rf "$dir"
+  return $rc
+}
+
+update_from_repo() { # update_from_repo <download file> <backup file>
+  local new=$1 old=$2
+  if ! download "$UPDATE_URL" "$new"; then
+    log "update: download failed, keeping the current version"; echo "Download failed." >&2; return 1
+  fi
+  if ! bash -n "$new" 2>/dev/null || ! has_header "$new"; then
+    log "update: downloaded file failed the checks, keeping the current version"; echo "Downloaded file failed the checks." >&2; return 1
+  fi
+  if [ -f "$SELF" ] && cmp -s "$new" "$SELF"; then
+    echo "Already up to date."; return 0
+  fi
+  if [ -f "$SELF" ]; then cp -p "$SELF" "$old" || return 1; fi
+  install -o root -g root -m 0755 "$new" "$SELF" || return 1
+  if "$BASH" "$SELF" install; then
+    log "update: installed the new version"
+    return 0
+  fi
+  log "update: the new version's install failed, restoring the previous one"
+  if [ -s "$old" ]; then
+    install -o root -g root -m 0755 "$old" "$SELF"
+    "$BASH" "$SELF" install || true
+  fi
+  return 1
+}
+
+status() {
+  local how
+  if id "$USER_NAME" >/dev/null 2>&1 && [ -s "$USER_HOME/.ssh/authorized_keys" ]; then
+    if [ -f "$SUDOERS" ]; then how="sudo rule"
+    elif grep -qsF -e "${PRIV_MARKS[0]}" -e "${PRIV_MARKS[1]}" "$ROOT_KEYS"; then how="root key"
+    else how="off"; fi
+    echo "Read-only: on (user $USER_NAME, forced command $RO_CMD; root reads via $PRIV_CMD: $how)"
+  else
+    echo "Read-only: off"
+  fi
+  if root_active; then
+    echo "Root: on, expires $(root_expiry | sed 's/^\(....\)\(..\)\(..\)\(..\)\(..\)$/\1-\2-\3 \4:\5/') UTC"
+  else
+    echo "Root: off"
+  fi
+  echo "Allowed from: $(cat "$FROM_FILE" 2>/dev/null || echo '(not set)')"
+  echo "Auto-update: $(systemctl is-enabled "$UPDATE_UNIT.timer" 2>/dev/null || echo off)"
+  echo "Host: $(hostname) $(hostname -I 2>/dev/null || ip -br -4 addr 2>/dev/null | awk '{print $3}' | paste -sd' ')"
+  echo "Recent activity: journalctl -t sakina-access -n 20"
+}
+
+remove_all() {
+  revoke_root
+  strip_root_key "${PRIV_MARKS[@]}"
+  if [ ! -e "$NIXOS_MARK" ]; then
+    systemctl disable --now "$UPDATE_UNIT.timer" >/dev/null 2>&1 || true
+    rm -f "$UNIT_DIR/$UPDATE_UNIT.service" "$UNIT_DIR/$UPDATE_UNIT.timer"
+    systemctl daemon-reload || true
+  fi
+  rm -f "$SUDOERS" "$RO_CMD" "$PRIV_CMD" "$ROOT_SESSION" "$SELF"
+  rm -rf "$CONF_DIR"
+  if id "$USER_NAME" >/dev/null 2>&1; then
+    pkill -KILL -u "$USER_NAME" || true
+    userdel -r "$USER_NAME" 2>/dev/null || userdel "$USER_NAME"
+  fi
+  log "all access removed"
+  echo "All of Sakina's access is removed, this script included."
+}
+
+# ---------------------------------------------------------------- main
+
+[[ ${BASH_SOURCE[0]} == "$0" ]] || return 0
+
+case "${1:-}" in
+  show) echo "===== $RO_CMD"; write_ro_cmd; echo "===== $PRIV_CMD"; write_priv_cmd; echo "===== $ROOT_SESSION"; write_root_session; exit 0 ;;
+  -h|--help|help) usage; exit 0 ;;
+esac
+
+[ "$(id -u)" -eq 0 ] || die "run as root."
+
+case "${1:-}" in
+  "")
+    load_from
+    install_readonly
+    if root_active; then revoke_root; else grant_root "$DEFAULT_HOURS"; fi ;;
+  install)
+    case "${2:-}" in
+      "") load_from ;;
+      --from) [ -n "${3:-}" ] || die "--from needs a list"; load_from "$3" ;;
+      --from=*) load_from "${2#--from=}" ;;
+      *) usage; exit 1 ;;
+    esac
+    install_readonly
+    # Clear a revoke timer left over from an earlier grant that is already gone.
+    root_active || systemctl stop "$EXPIRE_UNIT.timer" >/dev/null 2>&1 || true
+    log "installed/updated (read-only)"
+    echo "Read-only access installed/updated; root not granted." ;;
+  update)
+    load_from
+    update_self
+    exit $? ;;
+  off) revoke_root ;;
+  status) status ;;
+  remove) remove_all; exit 0 ;;
+  *)
+    [[ $1 =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 72 ] || { usage; exit 1; }
+    load_from
+    install_readonly
+    grant_root "$1" ;;
+esac
+status
