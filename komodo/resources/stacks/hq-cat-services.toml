@@ -98,6 +98,11 @@ auto_update_all_services = true
 linked_repo = "GitHub-Yggdrasil"
 run_directory = "apps/hq-cat-services/seafile"
 additional_env_files = ["stack.env"]
+pre_deploy.command = """
+mkdir -p /data/appdata/rummage
+chown 10001:10001 /data/appdata/rummage
+"""
+pre_deploy.shell_mode = true
 extra_args = ["--remove-orphans"]
 environment = """
 COMMON_DOMAIN_A=[[COMMON_DOMAIN_A]]
@@ -109,6 +114,8 @@ JWT_PRIVATE_KEY=[[HQCAT_SERVICES_SF_JWT_PRIVATE_KEY]]
 REDIS_PASSWORD=[[HQCAT_SERVICES_SFREDIS_PASSWORD]]
 SEAFILE_MYSQL_DB_PASSWORD=[[HQCAT_SERVICES_SFDB_PASSWORD]]
 ONLYOFFICE_JWT_SECRET=[[HQCAT_SERVICES_SFOFFICE_JWT_SECRET]]
+RUMMAGE_TOKEN=[[HQCAT_SERVICES_RUMMAGE_TOKEN]]
+RUMMAGE_SEAFILE_TOKEN=[[HQCAT_SERVICES_RUMMAGE_SEAFILE_TOKEN]]
 """
 
 ##

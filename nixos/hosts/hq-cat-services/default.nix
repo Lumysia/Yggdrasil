@@ -37,5 +37,19 @@ in
     };
   };
 
+  # The Seafile search API (rummage in the seafile stack) listens on loopback; share it on the tailnet only.
+  systemd.services.rummage-tailnet = {
+    description = "Serve the Seafile search API on the tailnet";
+    after = [ "tailscaled.service" ];
+    wants = [ "tailscaled.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${config.services.tailscale.package}/bin/tailscale serve --bg --tcp=8765 tcp://127.0.0.1:8765";
+      ExecStop = "${config.services.tailscale.package}/bin/tailscale serve --tcp=8765 off";
+    };
+  };
+
   system.stateVersion = "25.05";
 }

@@ -203,6 +203,42 @@ services:
     networks:
       - seafile_internal_net
 
+  # Search by meaning and exact words over the libraries shared read-only with its account. It reads through
+  # Seafile's API and keeps its own index; its API answers on the host's loopback (tailnet via `tailscale serve`).
+  rummage:
+    image: ghcr.io/soffits/rummage:0.1
+    restart: unless-stopped
+    environment:
+      RUMMAGE_CONFIG: /run/rummage.toml
+      RUMMAGE_TOKEN: ${RUMMAGE_TOKEN:?set HQCAT_SERVICES_RUMMAGE_TOKEN in Komodo}
+      SEAFILE_TOKEN: ${RUMMAGE_SEAFILE_TOKEN:?set HQCAT_SERVICES_RUMMAGE_SEAFILE_TOKEN in Komodo}
+    configs:
+      - source: rummage_config
+        target: /run/rummage.toml
+    volumes:
+      - ${APPDATA_PATH}/rummage:/data
+    ports:
+      - "127.0.0.1:8765:8765"
+    depends_on:
+      seafile:
+        condition: service_healthy
+    networks:
+      - seafile_internal_net
+      - shared_seafile_net
+
+configs:
+  rummage_config:
+    content: |
+      [runtime]
+      threads = 2
+      nice = 10
+
+      [sources.seafile]
+      type = "seafile"
+      url = "http://seafile"
+      internal_url = "http://seafile"
+      token_env = "SEAFILE_TOKEN"
+
 networks:
   shared_seafile_net:
     external: true
