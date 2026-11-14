@@ -25,8 +25,8 @@ jobs:
       run:
         working-directory: nixos
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: DeterminateSystems/determinate-nix-action@16f94ba7aae399b9f9077c254b6719ec6de7e3e3 # v3.24.2
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/determinate-nix-action@v3
       - name: Check flake
         run: nix flake check
       - name: List server hosts
@@ -47,7 +47,7 @@ jobs:
       run:
         working-directory: nixos
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: DeterminateSystems/determinate-nix-action@16f94ba7aae399b9f9077c254b6719ec6de7e3e3 # v3.24.2
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/determinate-nix-action@v3
       - name: Build
         run: nix build --no-link .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel

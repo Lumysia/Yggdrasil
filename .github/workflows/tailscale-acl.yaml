@@ -1,0 +1,58 @@
+name: Tailscale ACL
+
+# Tests tailscale/acls.hujson on pull requests and applies it to the tailnet on
+# push to main, so the repo file is the only source of the live policy.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tailscale/acls.hujson'
+      - '.github/workflows/tailscale-acl.yaml'
+  pull_request:
+    paths:
+      - 'tailscale/acls.hujson'
+      - '.github/workflows/tailscale-acl.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tailscale-acl
+  cancel-in-progress: false
+
+jobs:
+  acl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # gitops-pusher keeps the last applied version here, so it refuses to
+      # overwrite a policy that was edited in the admin console since.
+      - name: Restore version cache
+        uses: actions/cache@v6
+        with:
+          path: ./version-cache.json
+          key: version-cache.json-${{ github.run_id }}
+          restore-keys: |
+            version-cache.json-
+
+      - name: Apply ACL
+        if: github.event_name == 'push'
+        uses: tailscale/gitops-acl-action@v1
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tailnet: ${{ secrets.TS_TAILNET }}
+          policy-file: tailscale/acls.hujson
+          action: apply
+
+      - name: Test ACL
+        if: github.event_name == 'pull_request'
+        uses: tailscale/gitops-acl-action@v1
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tailnet: ${{ secrets.TS_TAILNET }}
+          policy-file: tailscale/acls.hujson
+          action: test
