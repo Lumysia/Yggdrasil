@@ -32,10 +32,9 @@ jobs:
       - name: List server hosts
         id: hosts
         run: |
-          echo "servers=$(nix eval --json .#nixosConfigurations --apply 'c: builtins.filter (n: n != "kawaii") (builtins.attrNames c)')" >> "$GITHUB_OUTPUT"
+          echo "servers=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" >> "$GITHUB_OUTPUT"
 
   # Builds the server hosts, catching compile failures that evaluation can't see.
-  # kawaii (desktop) is evaluated above but too heavy to build on a hosted runner.
   build-servers:
     needs: check-flake
     runs-on: ubuntu-latest
