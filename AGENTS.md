@@ -13,7 +13,7 @@ This file is the project guidance index. Load the relevant skill for detailed wo
 
 ## Tailscale ACLs
 
-- Keep Tailnet ACL templates under `tailscale/`.
+- `tailscale/acls.hujson` is the live tailnet policy: the `Tailscale ACL` workflow tests it on pull requests and applies it on merge to `main`. Change it here, not in the admin console; a console edit makes the next apply stop until the file catches up.
 - Prefer tag-based grants over fixed Tailscale IPs for reusable forwarding rules.
 - Treat ACL files as infrastructure policy: they are not secrets, but they do reveal access intent.
 
