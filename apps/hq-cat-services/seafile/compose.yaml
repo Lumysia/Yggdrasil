@@ -206,7 +206,7 @@ services:
   # Search by meaning and exact words over the libraries shared read-only with its account. It reads through
   # Seafile's API and keeps its own index; its API answers on the host's loopback (tailnet via `tailscale serve`).
   rummage:
-    image: ghcr.io/soffits/rummage:0.1
+    image: ghcr.io/soffits/rummage:0.3
     restart: unless-stopped
     environment:
       RUMMAGE_CONFIG: /run/rummage.toml
