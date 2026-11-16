@@ -30,6 +30,12 @@
 			"ip":  ["tcp:22"],
 		},
 		{
+			// Speech server on a member's own machine, reached by the agent.
+			"src": ["tag:sakina"],
+			"dst": ["autogroup:member"],
+			"ip":  ["tcp:8091"],
+		},
+		{
 			"src": ["autogroup:admin"],
 			"dst": ["tag:pve-nodes", "tag:routers", "tag:komodo-core", "tag:komodo-nodes"],
 			"ip":  ["tcp:22"],
