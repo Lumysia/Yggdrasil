@@ -33,7 +33,7 @@ tags = ["origin"]
 [server.config]
 address = "https://100.110.4.6:8120"
 region = "ca-central"
-enabled = true
+enabled = false
 
 ##
 
