@@ -863,7 +863,7 @@ remove_user() {
     for f in passwd group shadow; do
       if [ -f "$R/etc/$f" ]; then sed -i "/^$USER_NAME:/d" "$R/etc/$f"; fi
     done
-    rm -rf "${R:?}$USER_HOME"
+    rm -rf "$R$USER_HOME"
   else
     userdel -r "$USER_NAME" 2>/dev/null || userdel "$USER_NAME"
   fi
@@ -1245,7 +1245,7 @@ remove_all() {
   remove_user
   for h in $HELPERS; do rm -f "$R$h"; done
   rm -f "$R$SELF"
-  rm -rf "${R:?}$CONF_DIR" "${R:?}$RUN_DIR"
+  rm -rf "$R$CONF_DIR" "$R$RUN_DIR"
   log "all access removed"
   echo "All of Sakina's access is removed, this script included."
 }
