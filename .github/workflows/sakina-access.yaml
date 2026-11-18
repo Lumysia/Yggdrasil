@@ -18,29 +18,24 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      SSHD: /usr/sbin/sshd
     steps:
       - uses: actions/checkout@v7
-      - name: ShellCheck
-        run: shellcheck scripts/sakina-access/sakina-access scripts/sakina-access/test.sh
-      - name: Install sshd
-        run: test -x /usr/sbin/sshd || { sudo apt-get update && sudo apt-get install -y openssh-server; }
-      - name: Test
-        run: scripts/sakina-access/test.sh
-        env:
-          SSHD: /usr/sbin/sshd
-
-  test-openwrt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install busybox
-        run: sudo apt-get update && sudo apt-get install -y busybox
+        with:
+          # tests take older versions from the history
+          fetch-depth: 0
+      - name: Install sshd and busybox
+        run: sudo apt-get update && sudo apt-get install -y openssh-server busybox
       - name: ShellCheck
         run: |
-          shellcheck -s sh scripts/sakina-access/sakina-access-openwrt scripts/sakina-access/test-openwrt.sh
-          busybox sh scripts/sakina-access/sakina-access-openwrt show |
-            awk '/^===== \/usr\/sbin/ { f = 1; next } /^===== / { f = 0 } f' > "$RUNNER_TEMP/sakina-ssh"
-          shellcheck -s sh "$RUNNER_TEMP/sakina-ssh"
+          cd scripts/sakina-access
+          shellcheck -s sh sakina-access sakina-access-openwrt test.sh
+          mkdir -p "$RUNNER_TEMP/openwrt/etc" && touch "$RUNNER_TEMP/openwrt/etc/openwrt_release"
+          for root in "$RUNNER_TEMP/linux" "$RUNNER_TEMP/openwrt"; do
+            SAKINA_ACCESS_ROOT=$root sh sakina-access show | awk '/^===== / { n++; next } n == 1' > "$root.helper"
+            shellcheck -s sh "$root.helper"
+          done
       - name: Find the dropbear current OpenWrt stable ships
         run: |
           stable=$(curl -fsSL https://downloads.openwrt.org/.versions.json | jq -r .stable_version)
@@ -59,8 +54,10 @@ jobs:
           cd "dropbear-$DROPBEAR_VERSION"
           ./configure --disable-zlib --disable-lastlog --disable-utmp --disable-wtmp --disable-utmpx --disable-wtmpx > /dev/null
           make -j"$(nproc)" PROGRAMS="dropbear dropbearkey" > /dev/null
-      - name: Test
-        run: scripts/sakina-access/test-openwrt.sh
-        env:
-          BUSYBOX: /usr/bin/busybox
-          DROPBEAR: ${{ runner.temp }}/dropbear-${{ env.DROPBEAR_VERSION }}/dropbear
+          echo "DROPBEAR=$PWD/dropbear" >> "$GITHUB_ENV"
+      - name: Test with dash
+        run: dash scripts/sakina-access/test.sh
+      - name: Test with BusyBox
+        run: busybox sh scripts/sakina-access/test.sh
+      - name: Test with bash
+        run: bash scripts/sakina-access/test.sh
