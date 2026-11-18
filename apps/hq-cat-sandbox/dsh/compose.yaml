@@ -13,16 +13,11 @@ services:
       TZ: America/Toronto
       DSH_PUBLIC_URL: https://dsh.${COMMON_DOMAIN_A}/
       DSH_TRUSTED_HOSTS: dsh.${COMMON_DOMAIN_A}
-      # DSH itself listens on loopback only; dsh-oidc's gateway (below) is the one
-      # listener Caddy reaches, and it refuses to start if DSH isn't on loopback.
-      DSH_LISTEN_HOST: 127.0.0.1
-      DSH_PORT: "3081"
       # DSH's bash tool inherits PATH from the dsh process, and the profile can't
       # set it; supervisord passes the container env through to the program.
       PATH: /home/cua/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       # @soffits/dsh-oidc reads its site config from here; these win over the
-      # profile. Without them the plugin refuses to start, nothing answers on 3080
-      # and Caddy returns 502.
+      # profile. Without them the plugin refuses to start and Caddy denies all.
       DSH_OIDC_ISSUER: https://${COMMON_DOMAIN_AUTH}
       # Public PKCE client: the id is not a secret (it shows in every login redirect).
       DSH_OIDC_CLIENT_ID: afc9056d-16dc-443e-b0dd-b0ca612b3313
@@ -33,22 +28,29 @@ services:
       # subnet is fixed where the gateway creates it (hq-cat-sandbox.toml).
       DSH_OIDC_TRUSTED_PROXIES: '["172.25.0.0/16"]'
       DSH_OIDC_DIRECT_LOGIN: "true"
-      # Gateway mode: every request and WebSocket needs a dsh-oidc session, and the
-      # plugin keeps DSH's own cookie to itself, so signing out or revoking a
-      # session cuts it off completely. 0.0.0.0 inside the container reaches only
-      # loopback and shared_dsh_net.
-      DSH_OIDC_MODE: gateway
-      DSH_OIDC_GATEWAY_LISTEN: 0.0.0.0:3080
     volumes:
       - ${APPDATA_PATH}/dsh/home:/home/cua
-    # Caddy only terminates TLS: the dsh-oidc gateway on 3080 decides every
-    # request itself. Caddy keeps Host; the client address header feeds the
-    # login rate limit and the sessions list.
+    # dsh-oidc: its login endpoints go straight to DSH; everything else, including
+    # the sidebar's /_dsh-oidc/session, needs a valid session from /auth/check.
+    # The bypass matches the raw request URI exactly and case-sensitively, because
+    # Caddy's path matcher folds case and decodes/cleans the path while
+    # reverse_proxy forwards the raw URI: /AUTH/CHECK or an %2F..%2F path would
+    # skip forward_auth and still reach a DSH route. Any other spelling gets
+    # forward_auth.
+    # Caddy keeps Host by default. Upgrade headers are dropped only on the check
+    # subrequest so WebSockets still pass.
     labels:
       caddy: dsh.${COMMON_DOMAIN_A}
       caddy.import: common_tls
-      caddy.reverse_proxy: "{{upstreams 3080}}"
-      caddy.reverse_proxy.header_up: X-Dsh-Oidc-Client-Ip {client_ip}
+      caddy.@oidc: vars_regexp {http.request.uri} ^/auth/(login|callback|check|signin|logout)([?].*)?$$
+      caddy.0_handle: "@oidc"
+      caddy.0_handle.reverse_proxy: "{{upstreams 3080}}"
+      caddy.0_handle.reverse_proxy.header_up: X-Dsh-Oidc-Client-Ip {client_ip}
+      caddy.1_handle.forward_auth: "{{upstreams 3080}}"
+      caddy.1_handle.forward_auth.uri: /auth/check
+      caddy.1_handle.forward_auth.0_header_up: -Connection
+      caddy.1_handle.forward_auth.1_header_up: -Upgrade
+      caddy.1_handle.reverse_proxy: "{{upstreams 3080}}"
     networks:
       - shared_dsh_net
 
