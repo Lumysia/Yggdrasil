@@ -1,13 +1,4 @@
 #!/bin/sh
-# Tests for sakina-access, run as a normal user with stub commands on scratch roots:
-#   - the forced-command helper: allow/deny rules, secret masking, source check, root sessions
-#   - install, from lists, key lines (written through a symlink), grants, revokes, timers, cron,
-#     sysupgrade.conf, the sudo fallback, remove and the self-update, on Debian-like, NixOS and
-#     OpenWrt scratch roots
-#   - existing installs of the old two-script layout updating onto this script (needs git
-#     history; the Linux one needs bash)
-#   - the key lines against a real sshd ($SSHD or PATH) and a real dropbear ($DROPBEAR or PATH,
-#     with dropbearkey next to it)
 # Run it with dash, bash or `busybox sh`: the scripts under test run in the same shell. Under
 # BusyBox it re-runs itself with only BusyBox applets and the stubs on PATH, like on a router;
 # that needs a busybox built without FEATURE_SH_STANDALONE, like Debian's.
@@ -17,7 +8,7 @@ set -u
 here=$(cd "$(dirname "$0")" && pwd)
 script=$here/sakina-access
 stub=$here/sakina-access-openwrt
-OLD_REV=328cd73 # the last commit with the two separate scripts
+TWO_SCRIPTS_REV=328cd73
 
 shell_bin=$(readlink -f "/proc/$$/exe")
 if [ "${shell_bin##*/}" = busybox ] && [ -z "${FARM:-}" ]; then
@@ -36,7 +27,7 @@ fi
 HOST_PATH=${HOST_PATH:-$PATH}
 FARM=${FARM:-}
 if [ -n "$FARM" ]; then SH=$FARM/sh; else SH=$shell_bin; fi
-real() { # real <command>: its path on the host's PATH
+real() {
   (IFS=:; for d in $HOST_PATH; do if [ -x "$d/$1" ]; then echo "$d/$1"; break; fi; done)
 }
 BASH_BIN=$(real bash) GIT=$(real git) SSH_BIN=$(real ssh) KEYGEN=$(real ssh-keygen) PYTHON=$(real python3)
@@ -51,7 +42,7 @@ trap 'rm -rf "$work" ${FARM:+"$FARM"}' EXIT
 pass=0 fail=0
 ok()  { pass=$((pass + 1)); }
 bad() { fail=$((fail + 1)); echo "FAIL: $*"; }
-check() { # check <description> <command...>
+check() {
   d=$1; shift
   if "$@"; then ok; else bad "$d"; fi
 }
@@ -67,8 +58,6 @@ ro_blob=$(sed -n "s/^RO_KEY='ssh-ed25519 \(.*\)'$/\1/p" "$script")
 priv_blob=$(sed -n "s/^PRIV_KEY='ssh-ed25519 \(.*\)'$/\1/p" "$script")
 root_blob=$(sed -n "s/^ROOT_KEY='ssh-ed25519 \(.*\)'$/\1/p" "$script")
 other_key='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOtherOtherOtherOtherOtherOtherOtherOther admin@laptop'
-
-# ---------------------------------------------------------------- helper
 
 hstub=$work/helper-bin
 mkdir -p "$hstub" "$work/run"
@@ -87,7 +76,7 @@ printf '#!%s\n' "$SH" > "$hstub/logger"
 printf '#!%s\necho "${STUB_UID:-1000}"\n' "$SH" > "$hstub/id"
 chmod +x "$hstub"/*
 
-show_helper() { # show_helper <scratch root>: the helper the script installs there
+show_helper() {
   SAKINA_ACCESS_ROOT=$1 "$SH" "$script" show | awk '/^===== / { n++; next } n == 1'
 }
 mkdir -p "$work/lx-root" "$work/ow-root/etc"
@@ -96,31 +85,30 @@ show_helper "$work/lx-root" > "$work/helper-linux.orig"
 show_helper "$work/ow-root" > "$work/helper-openwrt.orig"
 from_file=$work/from
 sudo_rule=$work/sudo-rule
-test_helper() { # test_helper <shown helper>: points it at the stubs and the scratch files
+helper_on_stubs() {
   sed -e "s|^export PATH=[^ ]*|export PATH=$hstub:$REAL_PATH|" -e "s|^FROM_FILE=.*|FROM_FILE=$from_file|" \
     -e "s|^RUN_DIR=.*|RUN_DIR=$work/run|" -e "s|^ROOT_SHELL=.*|ROOT_SHELL=$SH|" -e "s|^SUDO_RULE=.*|SUDO_RULE=$sudo_rule|" "$1"
 }
 mkdir -p "$work/h"
-test_helper "$work/helper-linux.orig" > "$work/h/sakina-ro"
+helper_on_stubs "$work/helper-linux.orig" > "$work/h/sakina-ro"
 cp "$work/h/sakina-ro" "$work/h/sakina-ro-priv"
-test_helper "$work/helper-openwrt.orig" > "$work/h/sakina-ssh"
+helper_on_stubs "$work/helper-openwrt.orig" > "$work/h/sakina-ssh"
 
 client='192.0.2.10 40000 22'
-run_ssh() { # run_ssh <helper> <command line> [helper args...]: prints output, returns the exit code
+run_ssh() {
   hp=$1 l=$2; shift 2
   (cd "$work" && SSH_CLIENT=$client SSH_ORIGINAL_COMMAND=$l "$SH" "$work/h/$hp" "$@" 2>&1)
 }
-allow() { # allow <helper> <command line> <expected output>
+allow() {
   out=$(run_ssh "$1" "$2"); rc=$?
   if [ $rc -eq 0 ] && [ "$out" = "$3" ]; then ok; else bad "$1 should run [$2] as [$3], got rc=$rc [$out]"; fi
 }
-deny() { # deny <helper> <command line>
+deny() {
   out=$(run_ssh "$1" "$2"); rc=$?
   case $out in *RAN*) rc=99 ;; esac
   if [ $rc -eq 2 ]; then ok; else bad "$1 should refuse [$2], got rc=$rc [$out]"; fi
 }
 
-# Linux, read-only key
 export STUB_UID=1000
 H=sakina-ro
 allow $H 'journalctl -u ssh -n 20' 'RAN journalctl --no-pager -u ssh -n 20'
@@ -188,7 +176,6 @@ touch "$sudo_rule"
 allow $H 'docker ps -a' 'RAN sudo -n /usr/local/sbin/sakina-ro-priv docker ps -a'
 rm -f "$sudo_rule"
 
-# Linux, priv key (root)
 export STUB_UID=0
 H=sakina-ro-priv
 allow $H 'docker ps -a' 'RAN docker ps -a'
@@ -269,7 +256,6 @@ out=$(run_ssh sakina-root-session 'echo "hi $((1+1))"'); rc=$?
 check "the root session helper runs the command [$rc $out]" eval '[ $rc -eq 0 ] && [ "$out" = "hi 2" ]'
 check "and clears its record when it ends" [ -z "$(ls "$work/run")" ]
 
-# OpenWrt, read-only key
 export STUB_UID=1000
 H=sakina-ssh
 echo '192.0.2.0/24,2001:db8::/32' > "$from_file"
@@ -407,7 +393,6 @@ out=$(run_ssh $H 'help'); rc=$?
 check "help lists the ubus read methods" [ $rc -eq 0 ]
 case $out in *"network.interface.* status"*) ok ;; *) bad "help lacks the ubus list" ;; esac
 
-# OpenWrt, priv key (root)
 export STUB_UID=0
 allow $H 'wg show' 'RAN wg show'
 allow $H 'wg show wg0 latest-handshakes' 'RAN wg show wg0 latest-handshakes'
@@ -432,7 +417,6 @@ deny  $H 'grep x /proc/meminfo'
 deny  $H 'apk add x'
 export STUB_UID=1000
 
-# secret masking
 cat > "$work/uci.out" <<'EOF'
 wireless.default_radio0=wifi-iface
 wireless.default_radio0.ssid='Home'
@@ -511,8 +495,7 @@ if [ -n "$PYTHON" ]; then
   check "the masked reply is still JSON" [ $? -eq 0 ]
 fi
 
-# source check (OpenWrt; OpenSSH checks from= itself)
-from_case() { # from_case <list> <client address> <expected: yes|no>
+from_case() {
   echo "$1" > "$from_file"
   out=$(client="$2 40000 22" run_ssh $H uptime); rc=$?
   if [ "$3" = yes ]; then got=$([ $rc -eq 0 ] && echo yes || echo no); else got=$([ $rc -eq 2 ] && echo no || echo yes); fi
@@ -558,7 +541,6 @@ out=$(run_ssh $H uptime); rc=$?
 check "a missing from list refuses everything [$rc]" [ $rc -eq 2 ]
 mv "$from_file.x" "$from_file"
 
-# temporary root session (OpenWrt: the helper checks the expiry)
 future=$(date -u -d "@$(( $(date +%s) + 3600 ))" +%Y%m%d%H%M)
 past=$(date -u -d "@$(( $(date +%s) - 60 ))" +%Y%m%d%H%M)
 export STUB_UID=0
@@ -574,8 +556,6 @@ check "root session from outside the list is refused [$rc]" [ $rc -eq 2 ]
 export STUB_UID=1000
 out=$(run_ssh $H 'echo hi' root "$future"); rc=$?
 check "root session as a normal user is refused [$rc]" [ $rc -eq 2 ]
-
-# ---------------------------------------------------------------- main script
 
 mstub=$work/main-bin
 mkdir -p "$mstub"
@@ -598,7 +578,6 @@ cat > "$mstub/uci" <<EOF
 echo "dropbear.main=dropbear"
 echo "dropbear.main.RootLogin='\${STUB_ROOTLOGIN:-1}'"
 EOF
-# Serves the repo files by name; STUB_DOWNLOAD overrides what any URL returns.
 cat > "$mstub/curl" <<EOF
 #!$SH
 while [ \$# -gt 0 ]; do case \$1 in -o) out=\$2; shift ;; https://*) url=\$1 ;; esac; shift; done
@@ -612,14 +591,14 @@ ln -s "$SH" "$mstub/sh"
 mkdir -p "$work/repo"
 cp "$script" "$stub" "$work/repo/"
 
-host_tree() { # host_tree <dir>: base files every scratch host has
+host_tree() {
   rm -rf "$1"; : > "$calls"
   mkdir -p "$1/etc" "$1/home" "$1/usr/sbin" "$1/var/run"
   printf 'root:x:0:0:root:/root:/bin/sh\nold:x:59000:59000::/home/old:/bin/sh\n' > "$1/etc/passwd"
   printf 'root:x:0:\nadm:x:4:\nold:x:59000:\n' > "$1/etc/group"
   printf 'root:$1$x$y:20000:0:99999:7:::\n' > "$1/etc/shadow"
 }
-fresh_linux() { # a new fake Debian-like host: root's authorized_keys is a symlink, like on Proxmox
+fresh_linux() { # root's key file is a symlink, like on Proxmox
   h=$work/host
   host_tree "$h"
   mkdir -p "$h/root/.ssh" "$h/etc/pve/priv" "$h/usr/local/sbin" "$h/etc/systemd/system" "$h/etc/sudoers.d"
@@ -629,7 +608,7 @@ fresh_linux() { # a new fake Debian-like host: root's authorized_keys is a symli
   keyfile=$h/etc/pve/priv/authorized_keys
   self=$h/usr/local/sbin/sakina-access
 }
-fresh_router() { # a new fake OpenWrt router
+fresh_router() {
   h=$work/host
   host_tree "$h"
   mkdir -p "$h/etc/dropbear" "$h/etc/crontabs" "$h/etc/init.d" "$h/usr/share/acl.d"
@@ -644,7 +623,7 @@ fresh_router() { # a new fake OpenWrt router
   self=$h/usr/sbin/sakina-access
 }
 stage() { cp "$script" "$h/sakina-access"; }
-sa() { # sa <args...>: runs the script on the fake host
+sa() {
   SAKINA_ACCESS_ROOT=$h STUB_REPO=$work/repo PATH="$mstub:$REAL_PATH" "$SH" "$h/sakina-access" "$@"
 }
 upd() { SAKINA_ACCESS_ROOT=$h STUB_REPO=$work/repo PATH="$mstub:$REAL_PATH" "$SH" "${1:-$h/sakina-access}" update; }
@@ -653,8 +632,6 @@ count() { grep -c -F -- "$1" "$keyfile"; }
 still_link() { [ -L "$h/root/.ssh/authorized_keys" ]; }
 from_now() { cat "$h/etc/sakina-access/from"; }
 stamp_in() { date -u -d "@$(( $(date +%s) + $1 ))" +%Y%m%d%H%M; }
-
-# ---- Linux: from list
 
 fresh_linux; stage
 out=$(sa install --from "192.0.2.1, 198.51.100.0/24
@@ -672,7 +649,6 @@ sa install --from '192.0.2.1",command="/bin/sh' >/dev/null 2>&1
 check "linux: a list that could break out of from=\"...\" is refused" [ $? -ne 0 ]
 check "linux: and writes no list" [ ! -e "$h/etc/sakina-access/from" ]
 
-# lists from older versions
 fresh_linux; stage
 mkdir -p "$h/etc/sakina-access"
 echo 192.0.2.7,198.51.100.9 > "$h/etc/sakina-access/from"
@@ -701,8 +677,6 @@ fresh_linux; stage
 printf '%s\nrestrict,from="192.0.2.8",command="/usr/local/sbin/sakina-ro-priv" ssh-ed25519 %s sakina-cat-priv\n' "$other_key" "$priv_blob" > "$keyfile"
 sa install >/dev/null 2>&1
 check "linux: a single address taken over from a key line gives way to the defaults" [ "$(from_now)" = "$DEFAULTS" ]
-
-# ---- Linux: install, root's key file, grants, revokes
 
 fresh_linux; stage
 live=$(stamp_in 7200)
@@ -757,8 +731,6 @@ case $out in *"Root: off"*) ok ;; *) bad "linux: an expired grant is not active:
 sa install >/dev/null 2>&1
 check "linux: install clears an expired grant" [ "$(count "$root_blob")" -eq 0 ]
 
-# ---- Linux: PermitRootLogin no
-
 fresh_linux; stage
 STUB_PERMIT_ROOT=no sa 2 >/dev/null 2>&1
 check "linux: no temporary root when sshd refuses root logins" [ $? -ne 0 ]
@@ -775,8 +747,6 @@ STUB_PERMIT_ROOT=no sa install >/dev/null 2>&1
 check "linux: no sudo rule when sudoers has no drop-in directory" [ ! -e "$h/etc/sudoers.d/sakina-ro" ]
 check "linux: and no priv line" [ "$(count sakina-access-priv)" -eq 0 ]
 
-# ---- Linux: update timer
-
 fresh_linux; stage
 sa install >/dev/null 2>&1
 check "linux: update service is written" grep -q "^ExecStart=/usr/local/sbin/sakina-access update$" "$h/etc/systemd/system/sakina-access-update.service"
@@ -791,8 +761,6 @@ sa install >/dev/null 2>&1
 check "nixos: no unit files" [ -z "$(ls "$h/etc/systemd/system")" ]
 check "nixos: install works" [ "$(count sakina-access-priv)" -eq 1 ]
 
-# ---- Linux: remove
-
 fresh_linux; stage
 sa install >/dev/null 2>&1
 sa 3 >/dev/null 2>&1
@@ -806,8 +774,6 @@ check "linux: timer disabled" grep -q '^systemctl disable --now sakina-access-up
 for p in /usr/local/sbin/sakina-ro /usr/local/sbin/sakina-ro-priv /usr/local/sbin/sakina-root-session /usr/local/sbin/sakina-access /etc/sakina-access /etc/systemd/system/sakina-access-update.timer; do
   check "linux: remove deletes $p" [ ! -e "$h$p" ]
 done
-
-# ---- OpenWrt: from list
 
 fresh_router; stage
 sa install >/dev/null 2>&1
@@ -829,8 +795,6 @@ mkdir -p "$h/etc/sakina-access"
 echo 192.0.2.0/24 > "$h/etc/sakina-access/from"
 sa install >/dev/null 2>&1
 check "openwrt: an older version's list with a range stays" [ "$(from_now)" = 192.0.2.0/24 ]
-
-# ---- OpenWrt: install
 
 fresh_router; stage
 printf 'restrict %s\n%s\n' "ssh-ed25519 $priv_blob old" "ssh-ed25519 $root_blob stale-unrestricted" >> "$keyfile"
@@ -873,8 +837,6 @@ check "openwrt: reinstall keeps the update time" cmp -s "$h/etc/crontabs/root" "
 check "openwrt: reinstall adds no sysupgrade lines" cmp -s "$h/etc/sysupgrade.conf" "$work/sysupgrade.before"
 check "openwrt: reinstall restarts nothing" not grep -q -e '^cron' -e '^killall' "$calls"
 check "openwrt: reinstall leaves root's key file alone" [ -z "$(find "$keyfile" -newer "$work/keys.before")" ]
-
-# ---- OpenWrt: grant, toggle, expiry
 
 : > "$calls"
 before=$(date +%s)
@@ -923,16 +885,12 @@ printf 'no-port-forwarding,no-agent-forwarding,no-X11-forwarding,command="/usr/s
 sa install >/dev/null 2>&1
 check "openwrt: install clears an expired grant whose revoke was missed" [ "$(count root-temp)" -eq 0 ]
 
-# ---- OpenWrt: RootLogin off
-
 fresh_router; stage
 STUB_ROOTLOGIN=0 sa install --from 192.0.2.1 >/dev/null 2>&1
 check "openwrt: with RootLogin off there is no priv line" [ "$(count sakina-access)" -eq 0 ]
 STUB_ROOTLOGIN=off sa 2 >/dev/null 2>&1
 rc=$?
 check "openwrt: and no temporary root" eval '[ $rc -ne 0 ] && [ "$(count sakina-access)" -eq 0 ]'
-
-# ---- OpenWrt: remove
 
 fresh_router; stage
 echo '0 5 * * * /usr/bin/other-job' > "$h/etc/crontabs/root"
@@ -959,9 +917,7 @@ sa install --from 192.0.2.1 >/dev/null 2>&1
 sa remove >/dev/null 2>&1
 check "openwrt: a crontab with only our line is removed" [ ! -e "$h/etc/crontabs/root" ]
 
-# ---- self-update, on both kinds of host
-
-version() { # version <file> <name> [exit code of its install]
+version() {
   printf '#!/bin/sh\n%s\necho "%s $*" >> "%s"\nexit %s\n' "$(sed -n 2p "$script")" "$2" "$calls" "${3:-0}" > "$1"
 }
 for kind in linux router; do
@@ -1005,16 +961,13 @@ for kind in linux router; do
   check "$kind: the real script passes the update checks and installs" eval '[ $rc -eq 0 ] && cmp -s "$self" "$script"'
 done
 
-# ---------------------------------------------------------------- installs of the old layout
-
 old_dir=$work/old-layout
 mkdir -p "$old_dir"
-if [ -n "$GIT" ] && "$GIT" -C "$here" show "$OLD_REV:scripts/sakina-access/sakina-access-openwrt" > "$old_dir/openwrt" 2>/dev/null &&
-  "$GIT" -C "$here" show "$OLD_REV:scripts/sakina-access/sakina-access" > "$old_dir/linux" 2>/dev/null; then
+if [ -n "$GIT" ] && "$GIT" -C "$here" show "$TWO_SCRIPTS_REV:scripts/sakina-access/sakina-access-openwrt" > "$old_dir/openwrt" 2>/dev/null &&
+  "$GIT" -C "$here" show "$TWO_SCRIPTS_REV:scripts/sakina-access/sakina-access" > "$old_dir/linux" 2>/dev/null; then
   helper_now() { show_helper "$h"; }
 
-  # OpenWrt: the old updater fetches sakina-access-openwrt, which hands over to this script.
-  old_router() { # old_router <from list>: an install of the old script with a live grant
+  old_router() {
     fresh_router
     cp "$old_dir/openwrt" "$h/sakina-access-openwrt"
     SAKINA_ACCESS_ROOT=$h PATH="$mstub:$REAL_PATH" "$SH" "$h/sakina-access-openwrt" install --from "$1" >/dev/null 2>&1 &&
@@ -1063,7 +1016,6 @@ if [ -n "$GIT" ] && "$GIT" -C "$here" show "$OLD_REV:scripts/sakina-access/sakin
   check "old openwrt -> new: with nothing else changed" same_as_snapshot
   check "old openwrt -> new: and its list kept" [ "$(from_now)" = 192.0.2.10 ]
 
-  # Linux: the old updater fetches sakina-access and runs its install with bash.
   if [ -n "$BASH_BIN" ]; then
     oldstub=$work/old-bin
     mkdir -p "$oldstub"
@@ -1078,7 +1030,7 @@ done
 PATH=$HOST_PATH exec install "\$@"
 EOF
     chmod +x "$oldstub/install"
-    old_linux() { # old_linux <shell code>: runs it with the old script's functions on the fake host
+    old_linux() {
       SAKINA_ACCESS_ROOT=$h STUB_REPO=${OLD_REPO:-$work/repo} PATH="$oldstub:$mstub:$HOST_PATH" "$BASH_BIN" -c '
         source "$1"; set +e
         h=$2
@@ -1088,7 +1040,7 @@ EOF
         SELF=$h/usr/local/sbin/sakina-access
         eval "$3"' _ "$old_dir/linux" "$h" "$1"
     }
-    old_host() { # old_host <from list>: an install of the old script (as its install does it) with a live grant
+    old_host() {
       fresh_linux
       echo "sakina:x:59001:59001:Sakina (read-only):/home/sakina:/bin/bash" >> "$h/etc/passwd"
       mkdir -p "$h/home/sakina/.ssh"
@@ -1140,12 +1092,10 @@ EOF
     echo "SKIP: no bash, so no update test from the old Linux script"
   fi
 else
-  echo "SKIP: no git history with $OLD_REV, so no update tests from the old scripts"
+  echo "SKIP: no git history with $TWO_SCRIPTS_REV, so no update tests from the old scripts"
 fi
 
-# ---------------------------------------------------------------- real sshd
-
-real_helper() { # real_helper <shown helper> <output>: stub PATH, real everything else
+real_helper() {
   sed -e "s|^export PATH=[^ ]*|export PATH=$hstub:$REAL_PATH|" -e "s|^RUN_DIR=.*|RUN_DIR=$s/run|" \
     -e "s|^ROOT_SHELL=.*|ROOT_SHELL=$SH|" -e "s|^FROM_FILE=.*|FROM_FILE=$s/from|" "$1" > "$2"
 }
@@ -1159,7 +1109,6 @@ if [ -n "$SSHD_BIN" ] && [ -x "$SSHD_BIN" ] && [ -n "$SSH_BIN" ] && [ -n "$KEYGE
   sed 's|^me=.*|me=0|' "$s/sakina-ro" > "$s/sakina-ro-priv"
   cp "$s/sakina-ro-priv" "$s/sakina-root-session"
 
-  # The key lines exactly as the script writes them, with test keys and helper paths.
   fresh_linux; stage
   sa install --from "$DEFAULTS,127.0.0.0/8,::1" >/dev/null 2>&1
   sa 1 >/dev/null 2>&1
@@ -1191,7 +1140,7 @@ KbdInteractiveAuthentication no
 EOF
   session_bin=$(dirname "$SSHD_BIN")/../lib/openssh/sshd-session
   [ -x "$session_bin" ] && echo "SshdSessionPath $session_bin" >> "$s/sshd_config"
-  over_ssh() { # over_ssh <key> <command>: one connection to a fresh sshd -d, stdout only
+  over_ssh() {
     "$SSHD_BIN" -d -r -f "$s/sshd_config" > "$s/sshd.log" 2>&1 &
     spid=$!
     i=0
@@ -1222,8 +1171,6 @@ else
   echo "SKIP: no sshd found, set SSHD=/path/to/sshd for the real sshd checks"
 fi
 
-# ---------------------------------------------------------------- real dropbear
-
 if [ -n "$DB" ] && [ -x "$DB" ] && [ -n "$SSH_BIN" ] && [ -n "$KEYGEN" ]; then
   # dropbear refuses an authorized_keys file below a world-writable directory such as /tmp.
   s=$(mktemp -d "$HOME/.sakina-access-test.XXXXXX")
@@ -1236,7 +1183,6 @@ if [ -n "$DB" ] && [ -x "$DB" ] && [ -n "$SSH_BIN" ] && [ -n "$KEYGEN" ]; then
   sed -e 's|^me=.*|me=0|' "$s/ro-helper" > "$s/root-helper"
   sed -e "s|^FROM_FILE=.*|FROM_FILE=$s/from-other|" "$s/ro-helper" > "$s/other-helper"
 
-  # The key lines exactly as the script writes them, with test keys and helper paths.
   fresh_router; stage
   sa install >/dev/null 2>&1
   sa 1 >/dev/null 2>&1
@@ -1256,7 +1202,7 @@ if [ -n "$DB" ] && [ -x "$DB" ] && [ -n "$SSH_BIN" ] && [ -n "$KEYGEN" ]; then
   "$DB" -F -E -s -D "$s" -r "$s/hostkey" -p "127.0.0.1:$port" -P "$s/pid" > "$s/log" 2>&1 &
   dbpid=$!
   sleep 0.5
-  over_ssh() { # over_ssh <key> <command> [ssh options...]: stdout only
+  over_ssh() {
     k=$1 c=$2; shift 2
     "$SSH_BIN" -F /dev/null -p "$port" -i "$s/$k" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 "$@" "$(id -un)@127.0.0.1" "$c" 2>/dev/null

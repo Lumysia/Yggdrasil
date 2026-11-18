@@ -1,9 +1,6 @@
 #!/bin/sh
 # sakina-access-openwrt: give Sakina access to this OpenWrt router, or take it back.
-#
-# Moved into scripts/sakina-access/sakina-access, which covers OpenWrt too. Routers still on
-# the old OpenWrt-only script update to this file, which replaces itself with that script and
-# runs its install; when that fails, the old script's update puts the old version back.
+# Kept for routers whose old update fetches this file; it hands over to sakina-access.
 set -eu
 export PATH="${PATH:+$PATH:}/usr/sbin:/usr/bin:/sbin:/bin"
 URL=https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/sakina-access/sakina-access

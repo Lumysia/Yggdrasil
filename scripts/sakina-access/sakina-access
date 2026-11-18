@@ -1,8 +1,6 @@
 #!/bin/sh
 # sakina-access: give Sakina access to this Linux host, or take it back.
 #
-# Run as root on Debian/Ubuntu, Proxmox VE, NixOS (OpenSSH) or OpenWrt (dropbear, BusyBox).
-#
 #   sakina-access install [--from LIST] install or refresh the read-only access, no root
 #   sakina-access                       toggle temporary root: grant for 4 hours, or revoke
 #   sakina-access <hours>               grant temporary root for <hours> (1-72)
@@ -19,19 +17,6 @@
 #   curl -fsSLo /tmp/sakina-access URL      (OpenWrt: uclient-fetch -q -O /tmp/sakina-access URL)
 #   sh /tmp/sakina-access install
 #   URL=https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/sakina-access/sakina-access
-#
-# Read-only access is permanent:
-#   - user `sakina`, no password, whose key is pinned to a forced command that runs only an
-#     allow-list of read-only commands (on OpenWrt, ubusd lets the user call only the listed
-#     ubus read methods)
-#   - a root key pinned to the same command, which as root runs the reads that need root.
-#     Where sshd refuses root logins, the read-only command reaches them through a sudo rule
-#     instead, and temporary root is not available.
-# Temporary root is a key that stops working at its expiry and a timer that revokes it then.
-# OpenSSH checks the source list and the expiry itself; dropbear knows neither key option, so
-# on OpenWrt the forced command checks both.
-# A daily timer runs `update` (systemd, crond on OpenWrt, the Yggdrasil NixOS module on NixOS).
-# Everything is logged: journalctl -t sakina-access, or logread -e sakina-access.
 
 set -eu
 umask 022
@@ -43,15 +28,12 @@ UPDATE_URL=https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/saki
 RO_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMejbtAgot6Hq5GAp/8z2Q9M/EaRaCLLqVHPsmTCfxcM'
 PRIV_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFh87h6FtXtBc5X97UCCvzKQj3fS9kHLGmNcKdaoVd+B'
 ROOT_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJd1rhsBKrizb8VpXBuPET54OT5ijjr5AhUOhXBDRqPm'
-# Key lines are found by key, so lines with the marks of older versions (sakina-cat-priv,
-# sakina-cat-root-temp, sakina-cat-readonly) are found and replaced too.
 PRIV_MARK=sakina-access-priv
 ROOT_MARK=sakina-access-root-temp
 DEFAULT_HOURS=4
 DEFAULT_FROM=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10,fd7a:115c:a1e0::/48
 
-# ubus methods the forced command may call: object, then its methods. ubusd enforces the same
-# list for the sakina user. Only methods whose replies hold no secrets belong here.
+# object, then its methods; also written into the ubus ACL, so only methods with secret-free replies
 UBUS_READS='system board info
 network.interface dump
 network.interface.* status
@@ -62,7 +44,6 @@ hostapd.* get_clients get_status get_features
 dhcp ipv4leases ipv6leases
 log read'
 
-# SAKINA_ACCESS_ROOT prefixes every path; the tests point it at a scratch directory.
 R=${SAKINA_ACCESS_ROOT:-}
 if [ -e "$R/etc/openwrt_release" ]; then PLATFORM=openwrt
 elif [ -e "$R/etc/NIXOS" ]; then PLATFORM=nixos
@@ -73,8 +54,7 @@ USER_NAME=sakina
 USER_HOME=/home/sakina
 CONF_DIR=/etc/sakina-access
 FROM_FILE=/etc/sakina-access/from
-# Present once the list was set by a version that has the default ranges; lists from older
-# versions are single addresses, which the defaults replace once.
+# marks a list saved by a version that knows the default ranges
 FROM_SET=/etc/sakina-access/from-set
 SUDOERS=/etc/sudoers.d/sakina-ro
 if [ "$PLATFORM" = openwrt ]; then
@@ -118,16 +98,10 @@ usage() {
   else echo "usage: sakina-access [install [--from LIST] | <hours> | off | status | update | remove | show]"; fi
 }
 
-# ---------------------------------------------------------------- helper and ACL
-
-# One program for every forced command. Its mode comes from who runs it: the read-only user,
-# root (the priv key, or sudo from the read-only user), or a temporary root session.
 write_helper() {
 cat <<EOF
 #!/bin/sh
-# Forced command for Sakina's SSH keys, installed by sakina-access, which explains the modes.
-# Runs one allow-listed command from SSH_ORIGINAL_COMMAND (or from its arguments, through
-# sudo) and never evals it.
+# Forced command for Sakina's SSH keys, installed by sakina-access.
 set -f -u
 export PATH=/run/wrappers/bin:/run/current-system/sw/bin:/usr/sbin:/usr/bin:/sbin:/bin PAGER=cat SYSTEMD_PAGER='' SYSTEMD_COLORS=0 LESSSECURE=1
 PLATFORM=$PLATFORM
@@ -150,7 +124,7 @@ self=${0##*/}
 log() { logger -t sakina-access "$*"; }
 die() { echo "$self: $*" >&2; exit 2; }
 
-# The from list uses sshd's from= syntax: IPs, CIDRs, * and ? patterns, ! to exclude.
+# same syntax as sshd's from=
 from_ok() {
   [ -n "$client" ] || return 1
   list=""
@@ -201,8 +175,7 @@ from_ok() {
 
 mode=ro stamp=
 [ "$me" != 0 ] || mode=priv
-# The temporary root key runs this program by its own name under OpenSSH, and with `root STAMP`
-# under dropbear. The sudo rule lets any arguments through, so they never mean root elsewhere.
+# dropbear passes the mode as arguments; sudo lets any arguments through, so they mean nothing elsewhere
 if [ "$self" = sakina-root-session ]; then mode=root
 elif [ "$PLATFORM" = openwrt ] && [ "${1:-}" = root ]; then mode=root stamp=${2:-}
 fi
@@ -211,8 +184,6 @@ if [ "$PLATFORM" = openwrt ] && ! from_ok; then
   log "refused $mode from ${client:-unknown}: not in the from list"
   die "connections from ${client:-unknown} are not allowed"
 fi
-
-# ---- temporary root
 
 if [ $mode = root ]; then
   if [ "$PLATFORM" = openwrt ]; then
@@ -232,8 +203,6 @@ if [ $mode = root ]; then
   rm -f "$RUN_DIR/root.$$"
   exit $rc
 fi
-
-# ---- read-only commands
 
 usage() {
   cat <<'U'
@@ -273,7 +242,7 @@ if [ $# -eq 0 ]; then
     [ $mode = ro ] || die "no command"
     usage; exit 1
   fi
-  # Split like a shell would (quotes and backslashes), without any expansion or execution.
+  # shell-style splitting, nothing expanded
   words=$(awk 'BEGIN {
     s = ENVIRON["SSH_ORIGINAL_COMMAND"]; n = length(s); st = 0; tok = ""; have = 0
     for (i = 1; i <= n; i++) {
@@ -297,8 +266,6 @@ EOF
 fi
 cmd=$1; shift
 
-# need ro|root ARGS: the read-only key runs `ro` commands, root runs `root` ones; the
-# read-only user reaches `root` ones through the sudo rule where there is one.
 need() {
   w=$1; shift
   case $w:$me in
@@ -328,7 +295,6 @@ is_dev() {
 
 secret_re='key|pass|psk|secret|token|priv|cred'
 
-# uci show: masks every option whose name looks like a secret, multi-line values included.
 mask_uci() {
   awk -v re="$secret_re" '
     function scan(st, s,   i, c) { for (i = 1; i <= length(s); i++) { c = substr(s, i, 1)
@@ -342,7 +308,7 @@ mask_uci() {
       print }'
 }
 
-# ubus replies (pretty JSON, one member per line): masks members whose name looks like a secret.
+# relies on one member per line
 mask_json() {
   awk -v re="$secret_re" '
     depth { t = $0; sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t)
@@ -359,14 +325,14 @@ mask_json() {
     { print }'
 }
 
-run_masked() { # run_masked <mask function> <command...>
+run_masked() {
   m=$1; shift
   out=$("$@"); rc=$?
   [ -z "$out" ] || printf '%s\n' "$out" | "$m"
   exit $rc
 }
 
-ubus_allowed() { # ubus_allowed <object> <method>
+ubus_allowed() {
   printf '%s\n' "$UBUS_READS" | {
     while read -r o methods; do
       case $o in
@@ -379,7 +345,7 @@ ubus_allowed() { # ubus_allowed <object> <method>
   }
 }
 
-# Resolves symlinks; a tail that does not exist is kept as written if it has no . or .. parts.
+# a nonexistent tail is kept as written unless it has . or .. parts
 real_path() {
   p=$1 tail=
   until q=$(readlink -f "$p" 2>/dev/null) && [ -n "$q" ]; do
@@ -402,7 +368,6 @@ in_roots() {
   return 1
 }
 
-# File readers: short options are free, every other argument is a count or a path in the roots.
 check_files() {
   end=0
   for x in "$@"; do
@@ -413,7 +378,7 @@ check_files() {
   done
 }
 
-# grep: the pattern (first non-option, unless -e/-f given) is free; -f FILE and paths are checked.
+# the pattern is free; -f files and paths must be in the roots
 check_grep() {
   have_pat=0
   for x in "$@"; do case $x in -e|-e?*|-f|-f?*) have_pat=1 ;; --) break ;; esac; done
@@ -626,8 +591,7 @@ case $cmd in
       compose) [ "${1:-}" = ls ] || die "only docker compose ls" ;;
       *) die "docker subcommand not allowed: $sub" ;;
     esac
-    # These subcommands only read and start no shell, so the arguments only need to keep
-    # docker talking to the local daemon.
+    # these only read; keep docker on the local daemon
     for x in "$@"; do
       case $x in -H|--host|--host=*|--context|--context=*|--config|--config=*|-c) die "argument not allowed: $x" ;; esac
     done
@@ -742,9 +706,7 @@ EOF
 
 sudo_rule() { printf '%s ALL=(root) NOPASSWD: %s\n' "$USER_NAME" "$PRIV_CMD"; }
 
-# ---------------------------------------------------------------- files
-
-# Writes only when the content changed; returns 1 when nothing was written.
+# returns 1 when nothing changed
 install_file() { # install_file <path> <mode> <writer function>
   tmp=$(mktemp)
   "$3" > "$tmp"
@@ -754,13 +716,13 @@ install_file() { # install_file <path> <mode> <writer function>
   rm -f "$tmp"
 }
 
-# Rewrites a file in place, so a symlink, its owner and its mode stay. Returns 1 when unchanged.
-replace_content() { # replace_content <file> <new content file>
+# in place, so a symlink, its owner and mode stay; returns 1 when unchanged
+replace_content() {
   if [ -f "$1" ] && cmp -s "$2" "$1"; then return 1; fi
   cat "$2" > "$1"
 }
 
-remove_lines() { # remove_lines <file> <fixed string>...: drops lines containing any of them
+remove_lines() {
   f=$1; shift
   [ -f "$f" ] || return 0
   tmp=$(mktemp)
@@ -769,22 +731,19 @@ remove_lines() { # remove_lines <file> <fixed string>...: drops lines containing
   rm -f "$tmp"
 }
 
-append_line() { # append_line <file> <line>
+append_line() {
   if [ -s "$1" ] && [ -n "$(tail -c1 "$1")" ]; then echo >> "$1"; fi
   printf '%s\n' "$2" >> "$1"
 }
 
-# ---------------------------------------------------------------- from list
-
 valid_from() { case $1 in ''|*[!A-Za-z0-9.:/*?!_,-]*) return 1 ;; esac; }
 
-normalize_from() { # turns whitespace or newlines into commas
+normalize_from() {
   s=$(printf '%s' "$1" | tr -s ' \t\n,' ',')
   s=${s#,}; printf '%s' "${s%,}"
 }
 
-# The from= list on a key line, for installs made before FROM_FILE existed.
-installed_from() {
+from_in_old_key_lines() {
   for f in "$R$USER_HOME/.ssh/authorized_keys" "$R$ROOT_KEYS"; do
     [ -f "$f" ] || continue
     for k in "$RO_KEY" "$PRIV_KEY" "$ROOT_KEY"; do
@@ -794,13 +753,11 @@ installed_from() {
   return 1
 }
 
-# Sets FROM from --from, else FROM_FILE, else an older install's key lines, else the default
-# ranges, and saves it. A list an older version saved without any range gives way to the defaults.
-load_from() { # load_from [list]
+load_from() {
   src=${1:-}
   if [ -z "$src" ]; then
     src=$(cat "$R$FROM_FILE" 2>/dev/null) || src=""
-    [ -n "$src" ] || src=$(installed_from) || src=""
+    [ -n "$src" ] || src=$(from_in_old_key_lines) || src=""
     if [ -z "$src" ]; then src=$DEFAULT_FROM
     elif [ ! -e "$R$FROM_SET" ]; then
       case $src in
@@ -818,8 +775,6 @@ load_from() { # load_from [list]
   fi
   [ -e "$R$FROM_SET" ] || : > "$R$FROM_SET"
 }
-
-# ---------------------------------------------------------------- user
 
 user_exists() { grep -q "^$USER_NAME:" "$R/etc/passwd" 2>/dev/null; }
 user_uid() { awk -F: -v u="$USER_NAME" '$1 == u { print $3 }' "$R/etc/passwd"; }
@@ -869,11 +824,9 @@ remove_user() {
   fi
 }
 
-# ---------------------------------------------------------------- keys
-
 key_blob() { printf '%s' "$1" | cut -d' ' -f2; }
 
-# OpenSSH checks the source itself; under dropbear the forced command does.
+# dropbear has no from=; the forced command checks the source there
 from_opt() { is_openwrt || printf 'from="%s",' "$FROM"; }
 
 ro_line()   { printf 'restrict,%scommand="%s" %s %s' "$(from_opt)" "$RO_CMD" "$RO_KEY" "$USER_NAME-readonly"; }
@@ -889,11 +842,10 @@ root_line() { # root_line <expiry stamp YYYYmmddHHMM, UTC>
   fi
 }
 
-# Root's key file can be a symlink (into the cluster filesystem on Proxmox), so it is always
-# rewritten through the link, never replaced.
+# rewrites in place: the key file can be a symlink (Proxmox)
 strip_key() { remove_lines "$R$ROOT_KEYS" "$(key_blob "$1")"; }
 
-key_line_is() { # key_line_is <key> <line>: the only line with that key is exactly <line>
+key_line_is() {
   [ "$(grep -F "$(key_blob "$1")" "$R$ROOT_KEYS" 2>/dev/null)" = "$2" ]
 }
 
@@ -906,7 +858,7 @@ append_root_key() {
   append_line "$R$ROOT_KEYS" "$1"
 }
 
-root_expiry() { # prints the expiry stamp of the current grant, if any
+root_expiry() {
   [ -f "$R$ROOT_KEYS" ] || return 1
   grep -F "$(key_blob "$ROOT_KEY")" "$R$ROOT_KEYS" |
     sed -n -e 's/.*expiry-time="\([0-9]*\)Z".*/\1/p' -e 's/.*command="[^" ]* root \([0-9]*\)".*/\1/p' | head -n1
@@ -929,8 +881,6 @@ root_login_allowed() {
 sudo_reads_dropins() {
   command -v visudo >/dev/null 2>&1 && grep -Eqs '^[@#]includedir[[:space:]]+/etc/sudoers.d' "$R/etc/sudoers"
 }
-
-# ---------------------------------------------------------------- timers
 
 restart_cron() {
   "$R$CRON_INIT" enable >/dev/null 2>&1 || true
@@ -962,7 +912,7 @@ install_update_timer() {
       cron_has "$UPDATE_UNIT" && return 0
       when=$(awk 'BEGIN { srand(); printf "%d %d", int(rand() * 60), int(rand() * 24) }')
       cron_set "$UPDATE_UNIT" "$when * * * $SELF update >/dev/null 2>&1" ;;
-    nixos) ;; # NixOS owns /etc/systemd/system; the Yggdrasil NixOS module declares the timer.
+    nixos) ;; # the NixOS module declares the timer
     *)
       changed=0
       if install_file "$R$UNIT_DIR/$UPDATE_UNIT.service" 0644 write_update_service; then changed=1; fi
@@ -1019,9 +969,7 @@ forget_on_sysupgrade() {
   rm -f "$tmp"
 }
 
-# ---------------------------------------------------------------- sessions
-
-stat_field() { # stat_field <pid> <n>: field n after the command name in /proc/<pid>/stat
+stat_field() { # field <n> after the command name
   s=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
   s=${s##*) }
   printf '%s\n' "$s" | cut -d' ' -f"$2"
@@ -1030,7 +978,7 @@ ppid_of() { stat_field "$1" 2; }
 sid_of() { stat_field "$1" 4; }
 is_ssh_server() { case $(cat "/proc/$1/comm" 2>/dev/null) in sshd|sshd-session|dropbear) ;; *) return 1 ;; esac; }
 
-kill_tree() { # kill_tree <pid>: the process and all its descendants
+kill_tree() {
   for d in /proc/[0-9]*; do
     c=${d#/proc/}
     if [ "$(ppid_of "$c")" = "$1" ]; then kill_tree "$c"; fi
@@ -1038,14 +986,13 @@ kill_tree() { # kill_tree <pid>: the process and all its descendants
   kill -KILL "$1" 2>/dev/null || true
 }
 
-kill_session() { # kill_session <sid>
+kill_session() {
   for d in /proc/[0-9]*; do
     if [ "$(sid_of "${d#/proc/}")" = "$1" ]; then kill -KILL "${d#/proc/}" 2>/dev/null || true; fi
   done
 }
 
-# Ends each recorded root session: its processes, those that left its process tree but not its
-# login session, and the ssh server process of its connection (the listening one stays).
+# kills each session's connection process but never the listening sshd
 kill_root_sessions() {
   for f in "$R$RUN_DIR"/root.*; do
     [ -e "$f" ] || continue
@@ -1067,8 +1014,6 @@ kill_root_sessions() {
     fi
   done
 }
-
-# ---------------------------------------------------------------- actions
 
 reload_ubus_acl() { killall -HUP ubusd 2>/dev/null || true; }
 
@@ -1099,7 +1044,7 @@ install_readonly() {
   for h in $HELPERS; do install_file "$R$h" 0755 write_helper || true; done
   if is_openwrt && install_file "$R$ACL_FILE" 0644 write_acl; then reload_ubus_acl; fi
 
-  # Root owns the key file, so the sakina user can't loosen its options.
+  # root-owned, so the sakina user can't loosen the key options
   mkdir -p "$R$USER_HOME/.ssh"
   chown 0:0 "$R$USER_HOME/.ssh"
   chmod 0755 "$R$USER_HOME/.ssh"
@@ -1116,9 +1061,6 @@ install_readonly() {
   normalize_root_grant
 }
 
-# Leaves at most the one root key line this script writes: a live grant is rewritten in its
-# current form, any other line with the root key goes, and a grant whose revoke was missed
-# (the host was off at that moment) is revoked.
 normalize_root_grant() {
   e=$(root_expiry) || e=""
   if [ -n "$e" ] && root_active; then
@@ -1126,6 +1068,7 @@ normalize_root_grant() {
     strip_key "$ROOT_KEY"
     append_root_key "$(root_line "$e")"
   elif [ -n "$e" ]; then
+    # the host was off at the expiry
     revoke_root >/dev/null
   else
     strip_key "$ROOT_KEY"
@@ -1133,7 +1076,7 @@ normalize_root_grant() {
   fi
 }
 
-grant_root() { # grant_root <hours>
+grant_root() {
   root_login_allowed || die "the ssh server refuses root logins here, so temporary root is not available."
   exp=$(( $(date +%s) + $1 * 3600 ))
   stamp=$(date -u -d "@$exp" +%Y%m%d%H%M)
@@ -1150,11 +1093,11 @@ revoke_root() {
   cancel_revoke
   log "root revoked"
   echo "Root access taken back; Sakina's open root sessions were ended."
-  # Last, since this may be running inside one of those sessions.
+  # last: this may run inside one of those sessions
   kill_root_sessions
 }
 
-download() { # download <url> <file>
+download() {
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL --retry 3 --max-time 60 -o "$2" "$1"
   elif command -v uclient-fetch >/dev/null 2>&1; then
@@ -1164,8 +1107,6 @@ download() { # download <url> <file>
   fi
 }
 
-# Installs the repo version when it differs, then runs its install. A failed download or
-# check keeps the current version; a failed install puts the previous version back.
 update_self() {
   dir=$(mktemp -d)
   rc=0
@@ -1174,7 +1115,7 @@ update_self() {
   return $rc
 }
 
-update_from_repo() { # update_from_repo <download file> <backup file>
+update_from_repo() {
   new=$1 old=$2
   if ! download "$UPDATE_URL" "$new" 2>/dev/null; then
     log "update: download failed, keeping the current version"; echo "Download failed." >&2; return 1
@@ -1249,8 +1190,6 @@ remove_all() {
   log "all access removed"
   echo "All of Sakina's access is removed, this script included."
 }
-
-# ---------------------------------------------------------------- main
 
 main() {
   case ${1:-} in

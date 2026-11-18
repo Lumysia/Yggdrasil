@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # The tests update installs of older versions, which they take from the history.
+          # tests take older versions from the history
           fetch-depth: 0
       - name: Install sshd and busybox
         run: sudo apt-get update && sudo apt-get install -y openssh-server busybox
