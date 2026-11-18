@@ -1,21 +1,918 @@
 #!/bin/sh
 # sakina-access-openwrt: give Sakina access to this OpenWrt router, or take it back.
-# Kept for routers whose old update fetches this file; it hands over to sakina-access.
-set -eu
-export PATH="${PATH:+$PATH:}/usr/sbin:/usr/bin:/sbin:/bin"
-URL=https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/sakina-access/sakina-access
-HEADER='# sakina-access: give Sakina access to this Linux host, or take it back.'
-SELF=${SAKINA_ACCESS_ROOT:-}/usr/sbin/sakina-access
+#
+# Run as root on OpenWrt (BusyBox ash, dropbear, ubus, crond).
+#
+#   sakina-access install --from LIST   first install; LIST is the addresses Sakina may connect
+#                                       from (comma-separated IPs, CIDRs, * ? patterns, !negations)
+#   sakina-access install               install or refresh the read-only access, no root
+#   sakina-access                       toggle temporary root: grant for 4 hours, or revoke
+#   sakina-access <hours>               grant temporary root for <hours> (1-72)
+#   sakina-access off                   revoke temporary root now and end her root sessions
+#   sakina-access status                show what Sakina has right now
+#   sakina-access update                install the latest version from the repo if it changed
+#   sakina-access remove                remove everything, this script included
+#   sakina-access show                  print the helper and ubus ACL this installs, for review
+#
+# First install, from a file so the script can keep a copy of itself:
+#   uclient-fetch -q -O /tmp/sakina-access https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/sakina-access/sakina-access-openwrt
+#   sh /tmp/sakina-access install --from 'LIST'
+#
+# Read-only access is permanent:
+#   - user `sakina`, no password, whose key is pinned to the forced command sakina-ssh, which
+#     runs only an allow-list of read-only commands; ubusd lets this user call only the ubus
+#     read methods on that list
+#   - a root key pinned to the same command, which as root runs the reads that need root
+#     (uci show of root-only configs, wg show, tailscale status, dmesg)
+# dropbear has no from= or expiry-time= key options, so sakina-ssh refuses clients outside
+# the from list itself, and a temporary root session refuses to start after its expiry.
+# crond revokes temporary root at expiry and runs `update` daily. Every file is listed in
+# /etc/sysupgrade.conf, so a sysupgrade keeps all of it.
+# Everything is logged: logread -e sakina-access
 
-new=$(mktemp)
-trap 'rm -f "$new"' EXIT
-if command -v curl >/dev/null 2>&1; then curl -fsSL --retry 3 --max-time 60 -o "$new" "$URL"
-elif command -v uclient-fetch >/dev/null 2>&1; then uclient-fetch -q -T 60 -O "$new" "$URL"
-else wget -q -T 60 -O "$new" "$URL"
+set -eu
+umask 022
+export PATH="${PATH:+$PATH:}/usr/sbin:/usr/bin:/sbin:/bin"
+
+HEADER='# sakina-access-openwrt: give Sakina access to this OpenWrt router, or take it back.'
+UPDATE_URL=https://raw.githubusercontent.com/Lumysia/Yggdrasil/main/scripts/sakina-access/sakina-access-openwrt
+
+RO_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMejbtAgot6Hq5GAp/8z2Q9M/EaRaCLLqVHPsmTCfxcM'
+PRIV_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFh87h6FtXtBc5X97UCCvzKQj3fS9kHLGmNcKdaoVd+B'
+ROOT_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJd1rhsBKrizb8VpXBuPET54OT5ijjr5AhUOhXBDRqPm'
+PRIV_MARK=sakina-access-priv
+ROOT_MARK=sakina-access-root-temp
+DEFAULT_HOURS=4
+
+# ubus methods the read-only command may call: object, then its methods. ubusd enforces the
+# same list for the sakina user. Only methods whose replies hold no secrets belong here.
+UBUS_READS='system board info
+network.interface dump
+network.interface.* status
+network.device status
+luci-rpc getHostHints getDHCPLeases getNetworkDevices
+iwinfo devices info assoclist freqlist txpowerlist countrylist
+hostapd.* get_clients get_status get_features
+dhcp ipv4leases ipv6leases
+log read'
+
+# SAKINA_ACCESS_ROOT prefixes every path; the tests point it at a scratch directory.
+R=${SAKINA_ACCESS_ROOT:-}
+USER_NAME=sakina
+USER_HOME=/home/sakina
+SELF=/usr/sbin/sakina-access
+HELPER=/usr/sbin/sakina-ssh
+CONF_DIR=/etc/sakina-access
+FROM_FILE=/etc/sakina-access/from
+ACL_FILE=/usr/share/acl.d/sakina-access.json
+ROOT_KEYS=/etc/dropbear/authorized_keys
+CRONTAB=/etc/crontabs/root
+CRON_INIT=/etc/init.d/cron
+SYSUPGRADE_CONF=/etc/sysupgrade.conf
+RUN_DIR=/var/run/sakina-access
+KEEP_PATHS="$SELF
+$HELPER
+$CONF_DIR/
+$USER_HOME/
+$ACL_FILE"
+UPDATE_MARK=sakina-access-update
+EXPIRE_MARK=sakina-access-expire
+
+log() { logger -t sakina-access "$*"; }
+die() { echo "sakina-access: $*" >&2; exit 1; }
+
+has_header() { [ -f "$1" ] && [ "$(sed -n 2p "$1")" = "$HEADER" ]; }
+
+usage() {
+  if has_header "$0"; then sed -n '/^#   sakina-access /s/^#   //p' "$0"
+  else echo "usage: sakina-access [install [--from LIST] | <hours> | off | status | update | remove | show]"; fi
+}
+
+# ---------------------------------------------------------------- helper and ACL
+
+write_helper() {
+cat <<'HEAD_EOF'
+#!/bin/sh
+# sakina-ssh: forced command for Sakina's SSH keys (installed by sakina-access).
+#   sakina-ssh              run one allow-listed read-only command from SSH_ORIGINAL_COMMAND;
+#                           as root it also runs the reads that need root
+#   sakina-ssh root STAMP   temporary root session, refused from STAMP on (UTC YYYYmmddHHMM)
+# Every mode first refuses clients outside /etc/sakina-access/from. Never evals the command.
+set -f -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+FROM_FILE=/etc/sakina-access/from
+RUN_DIR=/var/run/sakina-access
+HEAD_EOF
+printf "UBUS_READS='%s'\n" "$UBUS_READS"
+cat <<'HELPER_EOF'
+line=${SSH_ORIGINAL_COMMAND:-}
+client=${SSH_CLIENT:-}
+client=${client%% *}
+client=${client%%\%*}
+me=$(id -u)
+
+log() { logger -t sakina-access "$*"; }
+die() { echo "sakina-ssh: $*" >&2; exit 2; }
+
+# The from list uses sshd's from= syntax: IPs, CIDRs, * and ? patterns, ! to exclude.
+from_ok() {
+  [ -n "$client" ] || return 1
+  list=""
+  { IFS= read -r list || [ -n "$list" ]; } < "$FROM_FILE" 2>/dev/null || return 1
+  awk -v ip="$client" -v list="$list" '
+    function bin(v, n,   s, d) { s = ""; d = 1; while (n-- > 1) d *= 2
+      while (d >= 1) { s = s int(v / d) % 2; d = int(d / 2) } return s }
+    function hex16(g,   s, i, c) { if (g !~ /^[0-9a-f]+$/ || length(g) > 4) return ""
+      s = ""; while (length(g) < 4) g = "0" g
+      for (i = 1; i <= 4; i++) { c = index("0123456789abcdef", substr(g, i, 1)) - 1; s = s bin(c, 4) }
+      return s }
+    function bits(a,   p, i, s, dc, l, r, nl, nr, L, Rr, h) {
+      a = tolower(a)
+      if (a ~ /^::ffff:[0-9]+(\.[0-9]+)\.[0-9]+\.[0-9]+$/) a = substr(a, 8)
+      if (a ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) {
+        split(a, p, "."); s = "4"
+        for (i = 1; i <= 4; i++) { if (p[i] + 0 > 255) return ""; s = s bin(p[i] + 0, 8) }
+        return s }
+      if (a !~ /^[0-9a-f:]+$/) return ""
+      dc = index(a, "::")
+      if (dc) { l = substr(a, 1, dc - 1); r = substr(a, dc + 2); if (index(r, "::")) return "" }
+      else { l = a; r = "" }
+      nl = l == "" ? 0 : split(l, L, ":"); nr = r == "" ? 0 : split(r, Rr, ":")
+      if (dc ? nl + nr > 7 : nl != 8) return ""
+      s = "6"
+      for (i = 1; i <= nl; i++) { h = hex16(L[i]); if (h == "") return ""; s = s h }
+      for (i = nl + nr; i < 8; i++) s = s "0000000000000000"
+      for (i = 1; i <= nr; i++) { h = hex16(Rr[i]); if (h == "") return ""; s = s h }
+      return s }
+    function matches(pat,   n, pb, len, re) {
+      if (index(pat, "/")) {
+        n = index(pat, "/"); pb = bits(substr(pat, 1, n - 1)); len = substr(pat, n + 1)
+        if (pb == "" || len !~ /^[0-9]+$/ || len + 0 > length(pb) - 1) return 0
+        return substr(pb, 1, 1) == substr(ipb, 1, 1) && substr(pb, 2, len) == substr(ipb, 2, len) }
+      if (pat !~ /[*?]/) { pb = bits(pat); return pb != "" && pb == ipb }
+      re = tolower(pat); gsub(/\./, "[.]", re); gsub(/\?/, ".", re); gsub(/\*/, ".*", re)
+      return tolower(ip) ~ ("^" re "$") }
+    BEGIN {
+      ipb = bits(ip); if (ipb == "") exit 1
+      if (ip ~ /^::ffff:[0-9.]+$/) ip = substr(ip, 8)
+      n = split(list, pats, ","); ok = 0
+      for (i = 1; i <= n; i++) {
+        p = pats[i]
+        if (substr(p, 1, 1) == "!") { if (matches(substr(p, 2))) exit 1 }
+        else if (p != "" && matches(p)) ok = 1 }
+      exit !ok }'
+}
+
+if ! from_ok; then
+  log "refused ${1:-ro} from ${client:-unknown}: not in the from list"
+  die "connections from ${client:-unknown} are not allowed"
 fi
-sh -n "$new"
-[ "$(sed -n 2p "$new")" = "$HEADER" ]
-mkdir -p "$(dirname "$SELF")"
-cp "$new" "$SELF.new" && chmod 0755 "$SELF.new" && mv "$SELF.new" "$SELF"
-logger -t sakina-access "moved to the shared sakina-access script"
-sh "$SELF" "$@"
+
+# ---- temporary root
+
+if [ "${1:-}" = root ]; then
+  stamp=${2:-}
+  case $stamp in ????????????) ;; *) die "bad expiry" ;; esac
+  case $stamp in *[!0-9]*) die "bad expiry" ;; esac
+  [ "$me" = 0 ] || die "root sessions need root"
+  if [ "$(date -u +%Y%m%d%H%M)" -ge "$stamp" ]; then
+    log "root refused from $client: the grant expired at $stamp UTC"
+    die "temporary root has expired"
+  fi
+  mkdir -p "$RUN_DIR"
+  echo $$ > "$RUN_DIR/root.$$"
+  log "root session $$ from $client: ${line:-<interactive shell>}"
+  if [ -n "$line" ]; then /bin/ash -c "$line"; else /bin/ash -l; fi
+  rc=$?
+  rm -f "$RUN_DIR/root.$$"
+  exit $rc
+fi
+
+# ---- read-only commands
+
+[ "$me" = 0 ] && who=priv || who=ro
+log "$who from $client: $line"
+
+usage() {
+  cat <<'U'
+Read-only commands (quote arguments like a shell):
+  ubus [-v] list [PATH]          ubus [-t N] call OBJECT METHOD [JSON]   (read methods below)
+  logread [-l N] [-e PATTERN] [-f] [-t] [-z FACILITY]
+  ifstatus IFACE    uci show [CONFIG...]  (secrets masked)    apk list|info ...
+  iwinfo [DEV [info|assoclist|freqlist|txpowerlist|countrylist|htmodelist]]
+  ip [-OPTS] addr|link|route|neigh|rule [show|list|get ...]   ss [-OPTS]   netstat [-OPTS]
+  df free uptime uname date hostname   top -bn1
+  cat|head|tail|wc|ls|grep FILES under /proc /sys /var/log /tmp/dhcp.leases  (read-only key)
+  wg show ...   tailscale status|ip|version ...   dmesg [-r]  (root key)
+ubus read methods:
+U
+  printf '%s\n' "$UBUS_READS" | sed 's/^/  /'
+}
+
+nl='
+'
+cr=$(printf '\r')
+case $line in *"$nl"*|*"$cr"*) die "newlines are not allowed" ;; esac
+[ -n "$line" ] || { usage; exit 1; }
+
+# Split like a shell would (quotes and backslashes), without any expansion or execution.
+words=$(awk 'BEGIN {
+  s = ENVIRON["SSH_ORIGINAL_COMMAND"]; n = length(s); st = 0; tok = ""; have = 0
+  for (i = 1; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (st == 1) { if (c == "\047") st = 0; else tok = tok c; continue }
+    if (st == 2) {
+      if (c == "\"") { st = 0; continue }
+      if (c == "\\" && i < n && index("\"\\$`", substr(s, i + 1, 1))) { i++; c = substr(s, i, 1) }
+      tok = tok c; continue }
+    if (c == "\047") { st = 1; have = 1; continue }
+    if (c == "\"") { st = 2; have = 1; continue }
+    if (c == "\\") { if (i < n) { i++; tok = tok substr(s, i, 1); have = 1 } continue }
+    if (c == " " || c == "\t") { if (have) print "x" tok; tok = ""; have = 0; continue }
+    tok = tok c; have = 1 }
+  if (st) exit 1
+  if (have) print "x" tok }') || die "cannot parse command"
+[ -n "$words" ] || { usage; exit 1; }
+set --
+while IFS= read -r w; do set -- "$@" "${w#x}"; done <<EOF
+$words
+EOF
+cmd=$1; shift
+
+is_num() { case $1 in ''|*[!0-9]*) return 1 ;; esac; }
+is_name() { case $1 in ''|*[!A-Za-z0-9_.@-]*) return 1 ;; esac; }
+is_short_opts() { case $1 in -*[!A-Za-z0-9]*|-|--*) return 1 ;; -*) return 0 ;; esac; return 1; }
+
+secret_re='key|pass|psk|secret|token|priv|cred'
+
+# uci show: masks every option whose name looks like a secret, multi-line values included.
+mask_uci() {
+  awk -v re="$secret_re" '
+    function scan(st, s,   i, c) { for (i = 1; i <= length(s); i++) { c = substr(s, i, 1)
+        if (st) { if (c == "\047") st = 0 } else if (c == "\047") st = 1; else if (c == "\\") i++ }
+      return st }
+    st { st = scan(1, $0); if (!masking) print; next }
+    { masking = 0; eq = index($0, "=")
+      if (eq) { lhs = substr($0, 1, eq - 1); n = split(lhs, p, "."); name = tolower(p[n])
+        st = scan(0, substr($0, eq + 1))
+        if (n >= 3 && name != "public_key" && name ~ re) { masking = 1; print lhs "=\047***\047"; next } }
+      print }'
+}
+
+# ubus replies (pretty JSON, one member per line): masks members whose name looks like a secret.
+mask_json() {
+  awk -v re="$secret_re" '
+    depth { t = $0; sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t)
+      if (t ~ /[[{]$/) depth++
+      if (t ~ /^[]}]/) depth--
+      if (!depth) print head "\"***\"" (t ~ /,$/ ? "," : "")
+      next }
+    match($0, /^[ \t]*"[^"]*": /) {
+      name = substr($0, RSTART, RLENGTH); sub(/^[ \t]*"/, "", name); sub(/": $/, "", name)
+      if (tolower(name) != "public_key" && tolower(name) ~ re) {
+        head = substr($0, 1, RLENGTH); rest = substr($0, RLENGTH + 1)
+        if (rest ~ /^[[{][ \t]*$/) { depth = 1; next }
+        print head "\"***\"" (rest ~ /,[ \t]*$/ ? "," : ""); next } }
+    { print }'
+}
+
+run_masked() { # run_masked <mask function> <command...>
+  m=$1; shift
+  out=$("$@"); rc=$?
+  [ -z "$out" ] || printf '%s\n' "$out" | "$m"
+  exit $rc
+}
+
+ubus_allowed() { # ubus_allowed <object> <method>
+  printf '%s\n' "$UBUS_READS" | {
+    while read -r o methods; do
+      case $o in
+        *'*') case $1 in "${o%\*}"?*) ;; *) continue ;; esac ;;
+        *) [ "$1" = "$o" ] || continue ;;
+      esac
+      for x in $methods; do [ "$x" = "$2" ] && exit 0; done
+    done
+    exit 1
+  }
+}
+
+# Paths must resolve, symlinks followed, inside the readable roots.
+in_roots() {
+  case $1 in /*) ;; *) return 1 ;; esac
+  p=$(readlink -f "$1") || return 1
+  case $p in */environ|*/mem|*/kcore|*/kmem|*/pagemap|*/auxv) return 1 ;; esac
+  case $p in
+    /proc|/proc/*|/sys|/sys/*|/var/log|/var/log/*|/tmp/log|/tmp/log/*|/tmp/dhcp.leases) return 0 ;;
+  esac
+  return 1
+}
+
+check_files() {
+  end=0
+  for x in "$@"; do
+    if [ $end = 0 ] && [ "$x" = -- ]; then end=1; continue; fi
+    if [ $end = 0 ]; then case $x in --*) die "long options are not allowed: $x" ;; -*) continue ;; esac; fi
+    is_num "$x" && continue
+    in_roots "$x" || die "path not allowed: $x"
+  done
+}
+
+# grep: the pattern (first non-option, unless -e/-f given) is free; -f FILE and paths are checked.
+check_grep() {
+  have_pat=0
+  for x in "$@"; do case $x in -e|-e?*|-f|-f?*) have_pat=1 ;; --) break ;; esac; done
+  end=0 skip=
+  for x in "$@"; do
+    if [ -n "$skip" ]; then
+      [ "$skip" = patfile ] && { in_roots "$x" || die "pattern file not allowed"; }
+      skip=; continue
+    fi
+    if [ $end = 0 ]; then
+      case $x in
+        --) end=1; continue ;;
+        -e|-A|-B|-C|-m) skip=arg; continue ;;
+        -f) skip=patfile; continue ;;
+        -f?*) in_roots "${x#-f}" || die "pattern file not allowed"; continue ;;
+        -e?*) continue ;;
+        --*) die "long options are not allowed: $x" ;;
+        -*[rRdD]*) die "recursive and directory options are not allowed: $x" ;;
+        -*[ef]*) die "give -e and -f on their own: $x" ;;
+        -*) continue ;;
+      esac
+    fi
+    if [ $have_pat = 0 ]; then have_pat=1; continue; fi
+    in_roots "$x" || die "path not allowed: $x"
+  done
+}
+
+check_ubus() {
+  while [ $# -gt 0 ]; do
+    case $1 in
+      -v) shift ;;
+      -t) is_num "${2:-}" || die "bad timeout"; shift 2 ;;
+      -*) die "ubus option not allowed: $1" ;;
+      *) break ;;
+    esac
+  done
+  case ${1:-} in
+    list)
+      [ $# -le 2 ] || die "ubus list takes one pattern"
+      [ $# -lt 2 ] || case $2 in *[!A-Za-z0-9_.*-]*) die "bad pattern" ;; esac ;;
+    call)
+      [ $# -ge 3 ] && [ $# -le 4 ] || die "usage: ubus call OBJECT METHOD [JSON]"
+      if ! is_name "$2" || ! is_name "$3"; then die "bad object or method"; fi
+      ubus_allowed "$2" "$3" || die "ubus method not allowed: $2 $3" ;;
+    *) die "ubus subcommand not allowed: ${1:-}" ;;
+  esac
+}
+
+check_logread() {
+  while [ $# -gt 0 ]; do
+    case $1 in
+      -l|-z) is_num "${2:-}" || die "bad $1 value"; shift 2 ;;
+      -e) [ $# -ge 2 ] || die "-e needs a pattern"; shift 2 ;;
+      -f|-t) shift ;;
+      *) die "logread option not allowed: $1" ;;
+    esac
+  done
+}
+
+case $cmd in
+  ubus)
+    check_ubus "$@"
+    run_masked mask_json ubus "$@" ;;
+  logread)
+    check_logread "$@"
+    exec logread "$@" ;;
+  ifstatus)
+    if [ $# -ne 1 ] || ! is_name "$1"; then die "usage: ifstatus IFACE"; fi
+    run_masked mask_json ifstatus "$1" ;;
+  uci)
+    sub=""
+    for x in "$@"; do
+      case $x in
+        -X|-q) ;;
+        -*) die "uci option not allowed: $x" ;;
+        *) if [ -z "$sub" ]; then sub=$x
+           else case $x in *[!A-Za-z0-9_.@\[\]-]*) die "bad uci target: $x" ;; esac; fi ;;
+      esac
+    done
+    [ "$sub" = show ] || die "only uci show"
+    run_masked mask_uci uci "$@" ;;
+  apk)
+    sub=${1:-}; [ $# -gt 0 ] && shift
+    case $sub in
+      list) ok='-u --upgradable --upgradeable -I --installed -a --available -o --origin -O --orphaned -P --providers' ;;
+      info) ok='-L --contents -R --depends -d --description -s --size -w --webpage -a --all -e --installed -W --who-owns -r --rdepends -P --provides -i --install-if -I --rinstall-if --license' ;;
+      *) die "apk subcommand not allowed: $sub" ;;
+    esac
+    for x in "$@"; do
+      case $x in
+        -*) case " $ok " in *" $x "*) ;; *) die "apk option not allowed: $x" ;; esac ;;
+        *[!A-Za-z0-9._+*@/-]*) die "bad package name: $x" ;;
+      esac
+    done
+    exec apk "$sub" "$@" ;;
+  iwinfo)
+    if [ $# -gt 0 ]; then
+      is_name "$1" || die "bad device"
+      case ${2:-info} in info|assoclist|freqlist|txpowerlist|countrylist|htmodelist) ;; *) die "iwinfo subcommand not allowed: $2" ;; esac
+      [ $# -le 2 ] || die "too many arguments"
+    fi
+    exec iwinfo "$@" ;;
+  ip)
+    obj="" verb=""
+    for x in "$@"; do
+      case $x in
+        -n|-netns|-b|-batch|-force|-[a-z]*=*) die "ip option not allowed: $x" ;;
+        -*) is_short_opts "$x" || die "ip option not allowed: $x" ;;
+        *) if [ -z "$obj" ]; then obj=$x
+           elif [ -z "$verb" ]; then verb=$x
+           else case $x in *[!A-Za-z0-9_.:/-]*) die "bad argument: $x" ;; esac; fi ;;
+      esac
+    done
+    case $obj in a|addr|address|l|link|r|ro|route|n|neigh|neighbor|neighbour|ru|rule|maddr|tunnel) ;; *) die "ip object not allowed: $obj" ;; esac
+    case $verb in ""|s|sh|show|l|ls|lst|list|get) ;; *) die "ip subcommand not allowed: $verb" ;; esac
+    exec ip "$@" ;;
+  ss|netstat)
+    for x in "$@"; do
+      case $x in
+        -*[KDF]*|--*) die "$cmd option not allowed: $x" ;;
+        -*) is_short_opts "$x" || die "$cmd option not allowed: $x" ;;
+        *) [ "$cmd" = ss ] || die "$cmd takes options only"
+           case $x in *[!A-Za-z0-9:.=/!\(\)-]*) die "bad filter: $x" ;; esac ;;
+      esac
+    done
+    exec "$cmd" "$@" ;;
+  df|free|uptime|uname)
+    for x in "$@"; do is_short_opts "$x" || die "$cmd takes options only"; done
+    exec "$cmd" "$@" ;;
+  date|hostname)
+    [ $# -eq 0 ] || die "$cmd takes no arguments"
+    exec "$cmd" ;;
+  top)
+    for x in "$@"; do case $x in -b|-n|1|-n1|-bn1|-m) ;; *) die "only top -bn1" ;; esac; done
+    exec top -b -n 1 ;;
+  cat|head|tail|wc|ls)
+    [ "$me" != 0 ] || die "$cmd: use the read-only key"
+    check_files "$@"
+    exec "$cmd" "$@" ;;
+  grep)
+    [ "$me" != 0 ] || die "$cmd: use the read-only key"
+    check_grep "$@"
+    exec grep "$@" ;;
+  wg)
+    [ "$me" = 0 ] || die "wg needs root: connect as root with the priv key"
+    [ "${1:-show}" = show ] || die "only wg show"
+    [ $# -le 3 ] || die "too many arguments"
+    [ $# -lt 2 ] || is_name "$2" || die "bad interface"
+    case ${3:-} in ""|public-key|listen-port|fwmark|peers|endpoints|allowed-ips|latest-handshakes|persistent-keepalive|transfer) ;; *) die "wg show field not allowed: $3" ;; esac
+    exec wg "$@" ;;
+  tailscale)
+    [ "$me" = 0 ] || die "tailscale needs root: connect as root with the priv key"
+    sub=${1:-}; [ $# -gt 0 ] && shift
+    case $sub in
+      status) for x in "$@"; do case $x in --json|--active|--self|--peers|--json=true|--json=false|--self=true|--self=false|--peers=true|--peers=false|--active=true) ;; *) die "tailscale status option not allowed: $x" ;; esac; done ;;
+      ip) for x in "$@"; do case $x in -4|-6|-1) ;; *) die "tailscale ip option not allowed: $x" ;; esac; done ;;
+      version) [ $# -eq 0 ] || die "tailscale version takes no arguments" ;;
+      *) die "tailscale subcommand not allowed: $sub" ;;
+    esac
+    exec tailscale "$sub" "$@" ;;
+  dmesg)
+    [ "$me" = 0 ] || die "dmesg needs root: connect as root with the priv key"
+    for x in "$@"; do [ "$x" = -r ] || die "dmesg option not allowed: $x"; done
+    exec dmesg "$@" ;;
+  help|-h|--help)
+    usage; exit 0 ;;
+  *)
+    die "command not allowed: $cmd (try: help)" ;;
+esac
+HELPER_EOF
+}
+
+write_acl() {
+  printf '%s\n' "$UBUS_READS" | awk -v user="$USER_NAME" '
+    { m = ""; for (i = 2; i <= NF; i++) m = m (i > 2 ? ", " : "") "\"" $i "\""
+      a[NR] = "\t\t\"" $1 "\": { \"methods\": [ " m " ] }" }
+    END { print "{"; print "\t\"user\": \"" user "\","; print "\t\"access\": {"
+      for (i = 1; i <= NR; i++) print a[i] (i < NR ? "," : "")
+      print "\t}"; print "}" }'
+}
+
+# ---------------------------------------------------------------- files
+
+# Writes only when the content changed; returns 1 when nothing was written.
+install_file() { # install_file <path> <mode> <writer function>
+  tmp=$(mktemp)
+  "$3" > "$tmp"
+  if [ -f "$1" ] && cmp -s "$tmp" "$1"; then rm -f "$tmp"; return 1; fi
+  mkdir -p "$(dirname "$1")"
+  cp "$tmp" "$1.new" && chmod "$2" "$1.new" && mv "$1.new" "$1"
+  rm -f "$tmp"
+}
+
+# Rewrites a file in place, so its owner and mode stay. Returns 1 when nothing changed.
+replace_content() { # replace_content <file> <new content file>
+  if [ -f "$1" ] && cmp -s "$2" "$1"; then return 1; fi
+  cat "$2" > "$1"
+}
+
+remove_lines() { # remove_lines <file> <fixed string>...: drops lines containing any of them
+  f=$1; shift
+  [ -f "$f" ] || return 0
+  tmp=$(mktemp)
+  pats=$(printf '%s\n' "$@")
+  grep -v -F -e "$pats" "$f" > "$tmp" || true
+  replace_content "$f" "$tmp" || true
+  rm -f "$tmp"
+}
+
+append_line() { # append_line <file> <line>
+  if [ -s "$1" ] && [ -n "$(tail -c1 "$1")" ]; then echo >> "$1"; fi
+  printf '%s\n' "$2" >> "$1"
+}
+
+# ---------------------------------------------------------------- from list
+
+valid_from() { case $1 in ''|*[!A-Za-z0-9.:/*?!_,-]*) return 1 ;; esac; }
+
+normalize_from() { # turns whitespace or newlines into commas
+  s=$(printf '%s' "$1" | tr -s ' \t\n,' ',')
+  s=${s#,}; printf '%s' "${s%,}"
+}
+
+# Sets FROM from --from, else FROM_FILE; saves it to FROM_FILE.
+load_from() { # load_from [list]
+  src=${1:-}
+  if [ -z "$src" ] && [ -f "$R$FROM_FILE" ]; then src=$(cat "$R$FROM_FILE"); fi
+  [ -n "$src" ] || die "no source address list: run 'sakina-access install --from LIST' once"
+  FROM=$(normalize_from "$src")
+  valid_from "$FROM" || die "bad --from list: $FROM"
+  if [ ! -f "$R$FROM_FILE" ] || [ "$(cat "$R$FROM_FILE")" != "$FROM" ]; then
+    mkdir -p "$R$CONF_DIR"
+    printf '%s\n' "$FROM" > "$R$FROM_FILE"
+    chmod 0644 "$R$FROM_FILE"
+  fi
+}
+
+# ---------------------------------------------------------------- user
+
+user_exists() { grep -q "^$USER_NAME:" "$R/etc/passwd" 2>/dev/null; }
+user_uid() { awk -F: -v u="$USER_NAME" '$1 == u { print $3 }' "$R/etc/passwd"; }
+
+ensure_user() {
+  if ! user_exists; then
+    id=$(awk -F: '$3 >= 1000 && $3 < 60000 && $3 > m { m = $3 } END { print m ? m + 1 : 1000 }' "$R/etc/passwd" "$R/etc/group")
+    append_line "$R/etc/passwd" "$USER_NAME:x:$id:$id:Sakina (read-only):$USER_HOME:/bin/ash"
+    grep -q "^$USER_NAME:" "$R/etc/group" || append_line "$R/etc/group" "$USER_NAME:x:$id:"
+    sed -i "/^$USER_NAME:/d" "$R/etc/shadow"
+    append_line "$R/etc/shadow" "$USER_NAME:*:0:0:99999:7:::"
+  fi
+  grep -qx /bin/ash "$R/etc/shells" 2>/dev/null || echo "Note: /bin/ash is not in /etc/shells, so dropbear will refuse the $USER_NAME user." >&2
+}
+
+kill_user_processes() {
+  uid=$(user_uid)
+  [ -n "$uid" ] || return 0
+  for d in /proc/[0-9]*; do
+    awk -v u="$uid" '$1 == "Uid:" && $2 == u { f = 1 } END { exit !f }' "$d/status" 2>/dev/null && kill -KILL "${d#/proc/}" 2>/dev/null
+  done
+  return 0
+}
+
+remove_user() {
+  user_exists || return 0
+  kill_user_processes
+  for f in passwd group shadow; do
+    [ -f "$R/etc/$f" ] && sed -i "/^$USER_NAME:/d" "$R/etc/$f"
+  done
+  rm -rf "${R:?}$USER_HOME"
+}
+
+# ---------------------------------------------------------------- keys
+
+key_blob() { printf '%s' "$1" | cut -d' ' -f2; }
+
+ro_line()   { printf 'restrict,command="%s" %s %s' "$HELPER" "$RO_KEY" "$USER_NAME-readonly"; }
+ro_keys()   { ro_line; echo; }
+priv_line() { printf 'restrict,command="%s" %s %s' "$HELPER" "$PRIV_KEY" "$PRIV_MARK"; }
+root_line() { # root_line <expiry stamp YYYYmmddHHMM, UTC>
+  printf 'no-port-forwarding,no-agent-forwarding,no-X11-forwarding,command="%s root %s" %s %s' \
+    "$HELPER" "$1" "$ROOT_KEY" "$ROOT_MARK"
+}
+
+# Lines are found by key, not only by mark, so no other line can carry one of these keys.
+strip_root_key() { remove_lines "$R$ROOT_KEYS" "$(key_blob "$1")"; }
+
+key_line_is() { # key_line_is <key> <line>: the only line with that key is exactly <line>
+  [ "$(grep -F "$(key_blob "$1")" "$R$ROOT_KEYS" 2>/dev/null)" = "$2" ]
+}
+
+append_root_key() {
+  if [ ! -f "$R$ROOT_KEYS" ]; then
+    mkdir -p "$(dirname "$R$ROOT_KEYS")"
+    : > "$R$ROOT_KEYS"
+    chmod 0600 "$R$ROOT_KEYS"
+  fi
+  append_line "$R$ROOT_KEYS" "$1"
+}
+
+root_expiry() { # prints the expiry stamp of the current grant, if any
+  [ -f "$R$ROOT_KEYS" ] || return 1
+  grep -F "$(key_blob "$ROOT_KEY")" "$R$ROOT_KEYS" | sed -n 's/.*command="[^" ]* root \([0-9]*\)".*/\1/p' | head -n1
+}
+
+root_active() {
+  e=$(root_expiry) || return 1
+  [ -n "$e" ] && [ "$e" -gt "$(date -u +%Y%m%d%H%M)" ]
+}
+
+root_login_allowed() {
+  ! uci -q show dropbear 2>/dev/null | grep -Eq "\.RootLogin='(0|off|no|false)'"
+}
+
+# ---------------------------------------------------------------- cron and sysupgrade
+
+restart_cron() {
+  "$R$CRON_INIT" enable >/dev/null 2>&1 || true
+  "$R$CRON_INIT" restart >/dev/null 2>&1 || echo "Note: could not restart cron" >&2
+}
+
+cron_set() { # cron_set <mark> [schedule and command]: replaces the line with that mark
+  f=$R$CRONTAB
+  mkdir -p "$(dirname "$f")"
+  tmp=$(mktemp)
+  if [ -f "$f" ]; then grep -v -F "# $1" "$f" > "$tmp" || true; fi
+  if [ -n "${2:-}" ]; then printf '%s # %s\n' "$2" "$1" >> "$tmp"; fi
+  changed=0
+  if [ -s "$tmp" ]; then
+    if [ ! -f "$f" ]; then : > "$f"; chmod 0600 "$f"; fi
+    replace_content "$f" "$tmp" && changed=1
+  elif [ -f "$f" ]; then
+    rm -f "$f"; changed=1
+  fi
+  rm -f "$tmp"
+  [ $changed = 0 ] || restart_cron
+}
+
+cron_has() { grep -qsF "# $1" "$R$CRONTAB"; }
+
+install_update_cron() {
+  cron_has "$UPDATE_MARK" && return 0
+  when=$(awk 'BEGIN { srand(); printf "%d %d", int(rand() * 60), int(rand() * 24) }')
+  cron_set "$UPDATE_MARK" "$when * * * $SELF update >/dev/null 2>&1"
+}
+
+keep_on_sysupgrade() {
+  f=$R$SYSUPGRADE_CONF
+  [ -f "$f" ] || : > "$f"
+  for p in $KEEP_PATHS; do grep -qxF "$p" "$f" || append_line "$f" "$p"; done
+}
+
+forget_on_sysupgrade() {
+  f=$R$SYSUPGRADE_CONF
+  [ -f "$f" ] || return 0
+  tmp=$(mktemp)
+  grep -v -x -F -e "$KEEP_PATHS" "$f" > "$tmp" || true
+  replace_content "$f" "$tmp" || true
+  rm -f "$tmp"
+}
+
+# ---------------------------------------------------------------- sessions
+
+ppid_of() { s=$(cat "/proc/$1/stat" 2>/dev/null) || return 1; s=${s##*) }; printf '%s\n' "$s" | cut -d' ' -f2; }
+comm_of() { cat "/proc/$1/comm" 2>/dev/null; }
+
+kill_tree() { # kill_tree <pid>: the process and all its descendants
+  for d in /proc/[0-9]*; do
+    c=${d#/proc/}
+    [ "$(ppid_of "$c")" = "$1" ] && kill_tree "$c"
+  done
+  kill -KILL "$1" 2>/dev/null || true
+}
+
+# Ends each recorded root session: its processes, then the dropbear process of its connection.
+kill_root_sessions() {
+  for f in "$R$RUN_DIR"/root.*; do
+    [ -e "$f" ] || continue
+    pid=${f##*.}
+    rm -f "$f"
+    case $pid in ''|*[!0-9]*) continue ;; esac
+    grep -qs sakina-ssh "/proc/$pid/cmdline" || continue
+    conn=$(ppid_of "$pid") || conn=""
+    while [ -n "$conn" ] && [ "$conn" -gt 1 ] && [ "$(comm_of "$conn")" != dropbear ]; do
+      conn=$(ppid_of "$conn") || conn=""
+    done
+    kill_tree "$pid"
+    # The connection's parent is the listening dropbear, which stays.
+    if [ -n "$conn" ] && [ "$conn" -gt 1 ] && [ "$(comm_of "$(ppid_of "$conn")")" = dropbear ]; then
+      kill -KILL "$conn" 2>/dev/null || true
+    fi
+  done
+}
+
+# ---------------------------------------------------------------- actions
+
+reload_ubus_acl() { killall -HUP ubusd 2>/dev/null || true; }
+
+install_priv_access() {
+  strip_root_key "$RO_KEY"
+  if root_login_allowed; then
+    key_line_is "$PRIV_KEY" "$(priv_line)" && return 0
+    strip_root_key "$PRIV_KEY"
+    append_root_key "$(priv_line)"
+  else
+    strip_root_key "$PRIV_KEY"
+    echo "Note: dropbear refuses root logins (RootLogin off), so root-only reads are off." >&2
+  fi
+}
+
+install_readonly() {
+  ensure_user
+  install_file "$R$HELPER" 0755 write_helper || true
+  if install_file "$R$ACL_FILE" 0644 write_acl; then reload_ubus_acl; fi
+
+  # Root owns the key file, so the sakina user can't loosen its options.
+  mkdir -p "$R$USER_HOME/.ssh"
+  chmod 0755 "$R$USER_HOME" "$R$USER_HOME/.ssh"
+  install_file "$R$USER_HOME/.ssh/authorized_keys" 0644 ro_keys || true
+  install_priv_access
+
+  if has_header "$0" && [ "$(readlink -f "$0")" != "$(readlink -f "$R$SELF")" ]; then
+    mkdir -p "$(dirname "$R$SELF")"
+    cp "$0" "$R$SELF.new" && chmod 0755 "$R$SELF.new" && mv "$R$SELF.new" "$R$SELF"
+  fi
+  [ -f "$R$SELF" ] || echo "Note: $SELF is missing (run from a pipe?), so there are no updates. Install from a file." >&2
+  install_update_cron
+  keep_on_sysupgrade
+  normalize_root_grant
+}
+
+# Leaves at most the one root key line this script writes: a live grant is rewritten in its
+# canonical form, any other line with the root key goes, and a grant whose revoke was missed
+# (the router was off at that minute) is revoked.
+normalize_root_grant() {
+  e=$(root_expiry) || e=""
+  if [ -n "$e" ] && root_active; then
+    key_line_is "$ROOT_KEY" "$(root_line "$e")" && return 0
+    strip_root_key "$ROOT_KEY"
+    append_root_key "$(root_line "$e")"
+  elif [ -n "$e" ]; then
+    revoke_root >/dev/null
+  else
+    strip_root_key "$ROOT_KEY"
+  fi
+}
+
+grant_root() { # grant_root <hours>
+  root_login_allowed || die "dropbear refuses root logins on this router (RootLogin off), so temporary root is not available."
+  exp=$(( $(date +%s) + $1 * 3600 ))
+  stamp=$(date -u -d "@$exp" +%Y%m%d%H%M)
+  strip_root_key "$ROOT_KEY"
+  append_root_key "$(root_line "$stamp")"
+  read -r mi hh dd mo <<EOF
+$(date -d "@$exp" '+%M %H %d %m')
+EOF
+  cron_set "$EXPIRE_MARK" "${mi#0} ${hh#0} ${dd#0} ${mo#0} * $SELF off >/dev/null 2>&1"
+  log "root granted for ${1}h (until $stamp UTC)"
+  echo "Sakina now has root for $1 hours (until $(date -d "@$exp" '+%Y-%m-%d %H:%M %Z'))."
+  echo "Run 'sakina-access' again to take it back sooner."
+}
+
+revoke_root() {
+  strip_root_key "$ROOT_KEY"
+  cron_has "$EXPIRE_MARK" && cron_set "$EXPIRE_MARK"
+  log "root revoked"
+  echo "Root access taken back; Sakina's open root sessions were ended."
+  # Last, since this may be running inside one of those sessions.
+  kill_root_sessions
+}
+
+download() { # download <url> <file>
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 3 --max-time 60 -o "$2" "$1"
+  elif command -v uclient-fetch >/dev/null 2>&1; then
+    uclient-fetch -q -T 60 -O "$2" "$1"
+  else
+    wget -q -T 60 -O "$2" "$1"
+  fi
+}
+
+# Installs the repo version when it differs, then runs its install. A failed download or
+# check keeps the current version; a failed install puts the previous version back.
+update_self() {
+  dir=$(mktemp -d)
+  rc=0
+  update_from_repo "$dir/new" "$dir/old" || rc=$?
+  rm -rf "$dir"
+  return $rc
+}
+
+update_from_repo() { # update_from_repo <download file> <backup file>
+  new=$1 old=$2
+  if ! download "$UPDATE_URL" "$new" 2>/dev/null; then
+    log "update: download failed, keeping the current version"; echo "Download failed." >&2; return 1
+  fi
+  if ! sh -n "$new" 2>/dev/null || ! has_header "$new"; then
+    log "update: downloaded file failed the checks, keeping the current version"; echo "Downloaded file failed the checks." >&2; return 1
+  fi
+  if [ -f "$R$SELF" ] && cmp -s "$new" "$R$SELF"; then
+    echo "Already up to date."; return 0
+  fi
+  if [ -f "$R$SELF" ]; then cp -p "$R$SELF" "$old" || return 1; fi
+  cp "$new" "$R$SELF.new" && chmod 0755 "$R$SELF.new" && mv "$R$SELF.new" "$R$SELF" || return 1
+  if sh "$R$SELF" install; then
+    log "update: installed the new version"
+    return 0
+  fi
+  log "update: the new version's install failed, restoring the previous one"
+  if [ -s "$old" ]; then
+    cp "$old" "$R$SELF.new" && chmod 0755 "$R$SELF.new" && mv "$R$SELF.new" "$R$SELF"
+    sh "$R$SELF" install || true
+  fi
+  return 1
+}
+
+status() {
+  if user_exists && [ -s "$R$USER_HOME/.ssh/authorized_keys" ]; then
+    if grep -qsF "$PRIV_MARK" "$R$ROOT_KEYS"; then how="root key"; else how="off"; fi
+    echo "Read-only: on (user $USER_NAME, forced command $HELPER; root reads: $how)"
+  else
+    echo "Read-only: off"
+  fi
+  if root_active; then
+    echo "Root: on, expires $(root_expiry | sed 's/^\(....\)\(..\)\(..\)\(..\)\(..\)$/\1-\2-\3 \4:\5/') UTC"
+  else
+    echo "Root: off"
+  fi
+  echo "Allowed from: $(cat "$R$FROM_FILE" 2>/dev/null || echo '(not set)')"
+  if cron_has "$UPDATE_MARK"; then
+    echo "Auto-update: daily at $(grep -F "# $UPDATE_MARK" "$R$CRONTAB" | awk '{ printf "%02d:%02d", $2, $1 }') (crond)"
+  else
+    echo "Auto-update: off"
+  fi
+  missing=""
+  for p in $KEEP_PATHS; do grep -qsxF "$p" "$R$SYSUPGRADE_CONF" || missing="$missing $p"; done
+  echo "Kept on sysupgrade: ${missing:+no, missing$missing}${missing:-yes}"
+  echo "Router: $(cat /proc/sys/kernel/hostname 2>/dev/null)"
+  ip -o addr show 2>/dev/null | awk '$2 != "lo" && /scope global/ { print "  " $2 " " $4 }'
+  echo "Recent activity: logread -e sakina-access"
+}
+
+remove_all() {
+  revoke_root
+  strip_root_key "$PRIV_KEY"
+  strip_root_key "$RO_KEY"
+  cron_has "$UPDATE_MARK" && cron_set "$UPDATE_MARK"
+  forget_on_sysupgrade
+  remove_user
+  if [ -f "$R$ACL_FILE" ]; then rm -f "$R$ACL_FILE"; reload_ubus_acl; fi
+  rm -f "$R$HELPER" "$R$SELF"
+  rm -rf "${R:?}$CONF_DIR" "${R:?}$RUN_DIR"
+  log "all access removed"
+  echo "All of Sakina's access is removed, this script included."
+}
+
+# ---------------------------------------------------------------- main
+
+main() {
+  case ${1:-} in
+    show) echo "===== $HELPER"; write_helper; echo "===== $ACL_FILE"; write_acl; exit 0 ;;
+    -h|--help|help) usage; exit 0 ;;
+  esac
+
+  [ "$(id -u)" -eq 0 ] || die "run as root."
+
+  case ${1:-} in
+    "")
+      load_from
+      install_readonly
+      if root_active; then revoke_root; else grant_root "$DEFAULT_HOURS"; fi ;;
+    install)
+      case ${2:-} in
+        "") load_from ;;
+        --from) [ -n "${3:-}" ] || die "--from needs a list"; load_from "$3" ;;
+        --from=*) load_from "${2#--from=}" ;;
+        *) usage; exit 1 ;;
+      esac
+      install_readonly
+      log "installed/updated (read-only)"
+      echo "Read-only access installed/updated; root not granted." ;;
+    update)
+      load_from
+      update_self
+      exit $? ;;
+    off) revoke_root ;;
+    status) ;;
+    remove) remove_all; exit 0 ;;
+    *)
+      case $1 in ''|*[!0-9]*) usage; exit 1 ;; esac
+      [ "$1" -ge 1 ] && [ "$1" -le 72 ] || { usage; exit 1; }
+      load_from
+      install_readonly
+      grant_root "$1" ;;
+  esac
+  status
+}
+
+main "$@"
