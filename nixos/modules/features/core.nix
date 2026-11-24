@@ -24,9 +24,12 @@
     networking.networkmanager.enable = true;
     
     # Boot & Kernel
+    boot.kernelModules = [ "tcp_bbr" ];
     boot.kernel.sysctl = {
       "net.core.rmem_max" = 8388608;
       "net.core.wmem_max" = 8388608;
+      "net.core.default_qdisc" = "fq";
+      "net.ipv4.tcp_congestion_control" = "bbr";
     };
 
     # Locale
