@@ -20,6 +20,10 @@ services:
       # DSH's bash tool inherits PATH from the dsh process, and the profile can't
       # set it; supervisord passes the container env through to the program.
       PATH: /home/cua/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      # Keeps DSH's session telemetry row off even if the profile loses its own
+      # disable line. DSH reads it only from the launch environment: a DSH_* name
+      # in ~/.dsh/.env stops DSH from starting.
+      DSH_TELEMETRY_DISABLED: "1"
       # @soffits/dsh-oidc reads its site config from here; these win over the
       # profile. Without them the plugin refuses to start, nothing answers on 3080
       # and Caddy returns 502.
