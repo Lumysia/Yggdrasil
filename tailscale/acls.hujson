@@ -74,7 +74,7 @@
 		{
 			"src": ["tag:remnawave-entry"],
 			"dst": ["tag:remnawave-bridge"],
-			"ip":  ["tcp:22401"],
+			"ip":  ["tcp:22401", "udp:22401"],
 		},
 		{
 			"src": ["autogroup:admin"],
